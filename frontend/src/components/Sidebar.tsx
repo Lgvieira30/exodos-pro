@@ -6,10 +6,16 @@ interface SidebarProps {
   onPageChange: (page: 'dashboard' | 'analytics' | 'wizard' | 'creative') => void;
   isOpen: boolean;
   onToggle: () => void;
+  onCollapse?: (collapsed: boolean) => void;
 }
 
-export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle, onCollapse }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+
+  const handleCollapse = (value: boolean) => {
+    setCollapsed(value);
+    onCollapse?.(value);
+  };
 
   return (
     <>
@@ -40,7 +46,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
 
         {/* Collapse Button */}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => handleCollapse(!collapsed)}
           className="absolute -right-3 top-20 bg-blue-600 p-1 rounded-full hover:bg-blue-700 text-white hidden lg:block"
         >
           <ChevronLeft className={`w-4 h-4 transition ${collapsed ? 'rotate-180' : ''}`} />
