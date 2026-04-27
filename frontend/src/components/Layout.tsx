@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BarChart2, Megaphone, Paintbrush, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, BarChart2, Megaphone, Paintbrush, Settings, LogOut, Zap } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -19,27 +19,47 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-slate-950 text-white overflow-hidden">
+    <div className="flex h-screen overflow-hidden" style={{ background: '#080c14' }}>
       {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
-        <div className="p-6 border-b border-slate-800">
-          <h1 className="text-xl font-bold text-white">ÊXODOS PRO</h1>
-          <p className="text-xs text-slate-500 mt-1">Gestão de Campanhas</p>
+      <aside className="w-64 flex-shrink-0 flex flex-col" style={{
+        background: 'linear-gradient(180deg, #0d1526 0%, #0a1020 100%)',
+        borderRight: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        {/* Logo */}
+        <div className="p-6 mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              boxShadow: '0 0 20px rgba(59,130,246,0.4)',
+            }}>
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-white text-sm tracking-wide">ÊXODOS PRO</p>
+              <p className="text-xs" style={{ color: '#475569' }}>Gestão de Campanhas</p>
+            </div>
+          </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        {/* Nav */}
+        <nav className="flex-1 px-3 space-y-1">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    ? 'text-white'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                 }`
               }
+              style={({ isActive }) => isActive ? {
+                background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2))',
+                border: '1px solid rgba(59,130,246,0.3)',
+                boxShadow: '0 0 12px rgba(59,130,246,0.1)',
+              } : {}}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
               {label}
@@ -47,10 +67,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        {/* Footer */}
+        <div className="p-3 mt-auto">
+          <div className="rounded-xl p-3 mb-2" style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}>
+            <p className="text-xs text-slate-500 mb-0.5">Logado como</p>
+            <p className="text-sm text-slate-300 font-medium truncate">lgvieira.far@gmail.com</p>
+          </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all w-full"
           >
             <LogOut className="w-4 h-4" />
             Sair
@@ -58,9 +86,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Main */}
       <main className="flex-1 overflow-y-auto">
-        {children}
+        <div className="fade-in">
+          {children}
+        </div>
       </main>
     </div>
   );

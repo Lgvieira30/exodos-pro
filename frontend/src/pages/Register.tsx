@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../lib/api';
+import { Zap } from 'lucide-react';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -10,10 +11,7 @@ export default function Register() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (form.password.length < 8) {
-      setError('Senha deve ter no mínimo 8 caracteres');
-      return;
-    }
+    if (form.password.length < 8) { setError('Senha deve ter no mínimo 8 caracteres'); return; }
     setLoading(true);
     setError('');
     try {
@@ -28,69 +26,85 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.08) 0%, #080c14 60%)',
+    }}>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-20 pointer-events-none" style={{
+        background: 'radial-gradient(circle, #8b5cf6 0%, transparent 70%)',
+        filter: 'blur(60px)',
+      }} />
+
+      <div className="w-full max-w-sm relative">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">ÊXODOS PRO</h1>
-          <p className="text-slate-400 mt-2">Gestão de Campanhas</p>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{
+            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            boxShadow: '0 0 30px rgba(139,92,246,0.4)',
+          }}>
+            <Zap className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">ÊXODOS PRO</h1>
+          <p className="text-slate-500 text-sm mt-1">Gestão de Campanhas</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-slate-900 rounded-xl p-8 space-y-4 border border-slate-800">
-          <h2 className="text-xl font-semibold text-white mb-2">Criar conta</h2>
+        <div className="rounded-2xl p-8" style={{
+          background: 'rgba(15,23,42,0.8)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(20px)',
+        }}>
+          <h2 className="text-lg font-semibold text-white mb-6">Criar sua conta</h2>
 
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">Nome</label>
-            <input
-              type="text"
-              required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-              placeholder="Seu nome"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {[
+              { label: 'Nome', key: 'name', type: 'text', placeholder: 'Seu nome completo' },
+              { label: 'Email', key: 'email', type: 'email', placeholder: 'seu@email.com' },
+              { label: 'Senha', key: 'password', type: 'password', placeholder: 'Mínimo 8 caracteres' },
+            ].map(({ label, key, type, placeholder }) => (
+              <div key={key}>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">{label}</label>
+                <input
+                  type={type}
+                  required
+                  className="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-slate-600 focus:outline-none transition-all"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.5)'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                  placeholder={placeholder}
+                  value={form[key as keyof typeof form]}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                />
+              </div>
+            ))}
 
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-              placeholder="seu@email.com"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            />
-          </div>
+            {error && (
+              <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.2)',
+              }}>
+                {error}
+              </div>
+            )}
 
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">Senha</label>
-            <input
-              type="password"
-              required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-              placeholder="Mínimo 8 caracteres"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            />
-          </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-all disabled:opacity-60"
+              style={{
+                background: loading ? '#4c1d95' : 'linear-gradient(135deg, #6d28d9, #3b82f6)',
+                boxShadow: loading ? 'none' : '0 0 20px rgba(139,92,246,0.3)',
+              }}
+            >
+              {loading ? 'Criando conta...' : 'Criar conta'}
+            </button>
+          </form>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg transition"
-          >
-            {loading ? 'Criando conta...' : 'Criar conta'}
-          </button>
-
-          <p className="text-center text-slate-500 text-sm">
+          <p className="text-center text-slate-600 text-sm mt-6">
             Já tem conta?{' '}
-            <Link to="/login" className="text-blue-400 hover:text-blue-300">
+            <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
               Entrar
             </Link>
           </p>
-        </form>
+        </div>
       </div>
     </div>
   );

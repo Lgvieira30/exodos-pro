@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { AlertCircle, TrendingUp, Users, DollarSign, Plus } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Users, DollarSign, Zap, Plus, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { campaignsApi, metricsApi } from '../lib/api';
 
 interface Campaign {
   id: string;
   name: string;
+  platform: string;
   status: 'active' | 'paused' | 'completed' | 'draft';
   avg_cpa: number;
   avg_ctr: number;
@@ -22,6 +23,12 @@ interface Summary {
   campaigns: number;
 }
 
+const PLATFORM_COLORS: Record<string, string> = {
+  meta: '#1877f2',
+  google: '#ea4335',
+  linkedin: '#0a66c2',
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -33,22 +40,15 @@ export default function Dashboard() {
   useEffect(() => {
     async function load() {
       try {
-        setLoading(true);
         const [metricsRes, campaignsRes] = await Promise.all([
           metricsApi.dashboard().catch(() => null),
           campaignsApi.list(),
         ]);
-
-        if (metricsRes?.data?.summary) {
-          setSummary(metricsRes.data.summary);
-          setWeekly(metricsRes.data.weekly || []);
-        } else {
-          setSummary({ spend: 0, leads: 0, cpa: 0, roas: 0, campaigns: 0 });
-        }
-
+        setSummary(metricsRes?.data?.summary || { spend: 0, leads: 0, cpa: 0, roas: 0, campaigns: 0 });
+        setWeekly(metricsRes?.data?.weekly || []);
         setCampaigns(campaignsRes.data.campaigns || []);
-      } catch (err) {
-        setError('Erro ao carregar dashboard. Verifique sua conexão.');
+      } catch {
+        setError('Erro ao carregar dados.');
       } finally {
         setLoading(false);
       }
@@ -56,159 +56,169 @@ export default function Dashboard() {
     load();
   }, []);
 
-  const activeCampaigns = campaigns.filter((c) => c.status === 'active');
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-400 text-sm">Carregando dados...</p>
-        </div>
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <div className="w-10 h-10 rounded-full border-2 border-blue-500 border-t-transparent spinner mx-auto mb-3" />
+        <p className="text-slate-500 text-sm">Carregando...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-          <p className="text-red-400">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-4 text-sm text-slate-400 hover:text-white underline">
-            Tentar novamente
-          </button>
-        </div>
+  if (error) return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <p className="text-red-400 mb-3">{error}</p>
+        <button onClick={() => window.location.reload()} className="text-sm text-slate-400 hover:text-white underline">Tentar novamente</button>
       </div>
-    );
-  }
+    </div>
+  );
+
+  const activeCampaigns = campaigns.filter(c => c.status === 'active');
+
+  const metrics = [
+    { label: 'Investimento', value: `R$ ${(summary?.spend || 0).toLocaleString('pt-BR')}`, icon: DollarSign, gradient: 'from-blue-600 to-blue-400', glow: 'rgba(59,130,246,0.2)' },
+    { label: 'Leads Gerados', value: (summary?.leads || 0).toLocaleString('pt-BR'), icon: Users, gradient: 'from-emerald-600 to-emerald-400', glow: 'rgba(16,185,129,0.2)' },
+    { label: 'CPA Médio', value: summary?.cpa ? `R$ ${summary.cpa.toFixed(2)}` : '—', icon: TrendingUp, gradient: 'from-orange-600 to-orange-400', glow: 'rgba(249,115,22,0.2)' },
+    { label: 'ROAS', value: summary?.roas ? `${summary.roas.toFixed(1)}x` : '—', icon: Zap, gradient: 'from-purple-600 to-purple-400', glow: 'rgba(139,92,246,0.2)' },
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-slate-400 mt-1">Visão geral das suas campanhas</p>
+    <div className="p-8 min-h-screen" style={{ background: '#080c14' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-1">Visão geral das suas campanhas</p>
+        </div>
+        <button
+          onClick={() => navigate('/wizard')}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+          style={{ background: 'linear-gradient(135deg, #3b82f6, #6d28d9)', boxShadow: '0 0 20px rgba(59,130,246,0.25)' }}
+        >
+          <Plus className="w-4 h-4" /> Nova Campanha
+        </button>
       </div>
 
       {/* Métricas */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <MetricCard label="Investimento" value={`R$ ${summary.spend.toLocaleString('pt-BR')}`} icon={<DollarSign className="w-5 h-5" />} color="blue" />
-          <MetricCard label="Leads" value={summary.leads.toLocaleString('pt-BR')} icon={<Users className="w-5 h-5" />} color="green" />
-          <MetricCard label="CPA Médio" value={summary.cpa > 0 ? `R$ ${summary.cpa.toFixed(2)}` : '—'} icon={<TrendingUp className="w-5 h-5" />} color="orange" />
-          <MetricCard label="ROAS" value={summary.roas > 0 ? `${summary.roas.toFixed(1)}x` : '—'} icon={<TrendingUp className="w-5 h-5" />} color="purple" />
-        </div>
-      )}
-
-      {/* Campanhas */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">
-            Campanhas Ativas ({activeCampaigns.length})
-          </h2>
-          <button
-            onClick={() => navigate('/wizard')}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" /> Criar Nova
-          </button>
-        </div>
-
-        {campaigns.length === 0 ? (
-          <div className="bg-slate-800 rounded-lg p-12 text-center">
-            <p className="text-slate-400 mb-4">Nenhuma campanha criada ainda</p>
-            <button
-              onClick={() => navigate('/wizard')}
-              className="bg-blue-600 hover:bg-blue-700 px-6 py-2.5 rounded-lg text-sm font-medium transition"
-            >
-              Criar primeira campanha
-            </button>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {metrics.map(({ label, value, icon: Icon, gradient, glow }) => (
+          <div key={label} className="rounded-2xl p-5 card-hover" style={{
+            background: 'rgba(15,23,42,0.8)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            boxShadow: `0 0 30px ${glow}`,
+          }}>
+            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 opacity-90`}>
+              <Icon className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
+            <p className="text-2xl font-bold text-white">{value}</p>
           </div>
-        ) : (
-          <div className="bg-slate-800 rounded-lg divide-y divide-slate-700">
-            {campaigns.map((c) => (
-              <div key={c.id} className="p-4 hover:bg-slate-700 transition flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{c.name}</p>
-                  <p className="text-sm text-slate-400 mt-0.5">
-                    {c.status === 'active' ? '🟢 Ativa' :
-                     c.status === 'paused' ? '🔴 Pausada' :
-                     c.status === 'draft' ? '⚪ Rascunho' : '✅ Concluída'}
-                  </p>
-                </div>
-                {c.status === 'active' && (
-                  <div className="flex gap-8">
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400">CPA</p>
-                      <p className={`font-bold ${c.avg_cpa > 60 ? 'text-red-400' : c.avg_cpa > 0 ? 'text-green-400' : 'text-slate-400'}`}>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Campanhas */}
+        <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{
+          background: 'rgba(15,23,42,0.8)',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div>
+              <h2 className="text-base font-semibold text-white">Campanhas</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{activeCampaigns.length} ativas</p>
+            </div>
+          </div>
+
+          {campaigns.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                <Zap className="w-5 h-5 text-blue-400" />
+              </div>
+              <p className="text-slate-400 text-sm mb-4">Nenhuma campanha ainda</p>
+              <button onClick={() => navigate('/wizard')} className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors">
+                Criar primeira campanha →
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+              {campaigns.map((c) => (
+                <div key={c.id} className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{
+                      background: c.status === 'active' ? '#10b981' : c.status === 'paused' ? '#f59e0b' : '#64748b',
+                      boxShadow: c.status === 'active' ? '0 0 6px #10b981' : 'none',
+                    }} />
+                    <div>
+                      <p className="text-sm font-medium text-white">{c.name}</p>
+                      <p className="text-xs text-slate-500 capitalize">{c.platform} · {c.status === 'active' ? 'Ativa' : c.status === 'paused' ? 'Pausada' : c.status === 'draft' ? 'Rascunho' : 'Concluída'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6 text-right">
+                    <div>
+                      <p className="text-xs text-slate-500">Spend</p>
+                      <p className="text-sm font-semibold text-white">R$ {Number(c.total_spend).toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Leads</p>
+                      <p className="text-sm font-semibold text-white">{c.total_leads}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">CPA</p>
+                      <p className={`text-sm font-semibold ${c.avg_cpa > 60 ? 'text-red-400' : c.avg_cpa > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
                         {c.avg_cpa > 0 ? `R$ ${Number(c.avg_cpa).toFixed(0)}` : '—'}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400">CTR</p>
-                      <p className="font-bold">{c.avg_ctr > 0 ? `${Number(c.avg_ctr).toFixed(1)}%` : '—'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400">Spend</p>
-                      <p className="font-bold">R$ {Number(c.total_spend).toLocaleString('pt-BR')}</p>
-                    </div>
                   </div>
-                )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Gráfico / Quick Stats */}
+        <div className="space-y-4">
+          <div className="rounded-2xl p-5" style={{
+            background: 'rgba(15,23,42,0.8)',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white">Performance</h3>
+              <span className="text-xs text-slate-500">7 dias</span>
+            </div>
+            {weekly.length > 0 ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={weekly}>
+                  <XAxis dataKey="day" stroke="#334155" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                    labelStyle={{ color: '#94a3b8' }}
+                  />
+                  <Line type="monotone" dataKey="leads" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-40 flex items-center justify-center">
+                <p className="text-slate-600 text-xs text-center">Sem dados ainda.<br />Adicione métricas às campanhas.</p>
               </div>
-            ))}
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Gráfico */}
-      {weekly.length > 0 && (
-        <div className="bg-slate-800 rounded-lg p-6">
-          <h2 className="text-lg font-bold mb-4">Performance (Últimos 7 dias)</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={weekly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="day" stroke="#64748b" />
-              <YAxis stroke="#64748b" />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-              <Legend />
-              <Line type="monotone" dataKey="spend" name="Spend (R$)" stroke="#3b82f6" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="leads" name="Leads" stroke="#10b981" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="rounded-2xl p-5" style={{
+            background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1))',
+            border: '1px solid rgba(59,130,246,0.2)',
+          }}>
+            <div className="flex items-center gap-3 mb-3">
+              <ArrowUpRight className="w-4 h-4 text-blue-400" />
+              <p className="text-sm font-semibold text-white">Ir para Analytics</p>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">Veja gráficos detalhados e compare performance.</p>
+            <button onClick={() => navigate('/analytics')} className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
+              Ver Analytics →
+            </button>
+          </div>
         </div>
-      )}
-
-      {weekly.length === 0 && campaigns.length > 0 && (
-        <div className="bg-slate-800 rounded-lg p-6 text-center">
-          <p className="text-slate-400 text-sm">Sem dados de performance ainda — adicione métricas às campanhas para ver o gráfico.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface MetricCardProps {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  color: 'blue' | 'green' | 'orange' | 'purple';
-}
-
-function MetricCard({ label, value, icon, color }: MetricCardProps) {
-  const colors = {
-    blue: 'bg-blue-900/30 border-blue-700/50 text-blue-400',
-    green: 'bg-green-900/30 border-green-700/50 text-green-400',
-    orange: 'bg-orange-900/30 border-orange-700/50 text-orange-400',
-    purple: 'bg-purple-900/30 border-purple-700/50 text-purple-400',
-  };
-  return (
-    <div className={`${colors[color]} border rounded-lg p-6`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-slate-400 text-sm">{label}</p>
-          <p className="text-2xl font-bold mt-2 text-white">{value}</p>
-        </div>
-        <div className="opacity-50">{icon}</div>
       </div>
     </div>
   );
