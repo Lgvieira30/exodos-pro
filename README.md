@@ -241,8 +241,8 @@ railway deploy
 
 ## 📞 Suporte
 
-- **Issues:** Use GitHub Issues
-- **Email:** lucas@exodos.com.br
+- **Issues:** lgvieira30
+- **Email:** lgvieira.far@gmail.com
 - **WhatsApp:** Só em caso de urgência
 
 ---
