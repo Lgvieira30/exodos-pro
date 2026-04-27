@@ -85,7 +85,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
               onPageChange('creative');
               onToggle();
             }}
-            active={currentPage === 'creative'}
+            active={currentPage === 'creative' || currentPage === 'settings'}
             collapsed={collapsed}
           />
         </nav>
@@ -217,7 +217,7 @@ function MenuItem({ icon, label, onClick, active, collapsed }: MenuItemProps) {
               onPageChange('creative');
               onToggle();
             }}
-            active={currentPage === 'creative'}
+            active={currentPage === 'creative' || currentPage === 'settings'}
             collapsed={collapsed}
           />
         </nav>
