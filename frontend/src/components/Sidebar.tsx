@@ -1,9 +1,9 @@
 import React from 'react';
-import { BarChart3, TrendingUp, Settings, LogOut, Menu } from 'lucide-react';
+import { BarChart3, TrendingUp, Zap, Palette, Settings, LogOut, Menu } from 'lucide-react';
 
 interface SidebarProps {
-  currentPage: 'dashboard' | 'analytics';
-  onPageChange: (page: 'dashboard' | 'analytics') => void;
+  currentPage: 'dashboard' | 'analytics' | 'wizard' | 'creative';
+  onPageChange: (page: 'dashboard' | 'analytics' | 'wizard' | 'creative') => void;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -50,6 +50,24 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
               onToggle();
             }}
             active={currentPage === 'analytics'}
+          />
+          <MenuItem
+            icon={<Zap className="w-5 h-5" />}
+            label="Criar Campanha"
+            onClick={() => {
+              onPageChange('wizard');
+              onToggle();
+            }}
+            active={currentPage === 'wizard'}
+          />
+          <MenuItem
+            icon={<Palette className="w-5 h-5" />}
+            label="Creative Studio"
+            onClick={() => {
+              onPageChange('creative');
+              onToggle();
+            }}
+            active={currentPage === 'creative'}
           />
         </nav>
 
