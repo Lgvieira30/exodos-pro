@@ -20,7 +20,7 @@ export default function App() {
       />
 
       <div className="flex-1 lg:ml-0">
-        {currentPage === 'dashboard' && <Dashboard />}
+        {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
         {currentPage === 'analytics' && <Analytics />}
         {currentPage === 'wizard' && <CampaignWizard />}
         {currentPage === 'creative' && <CreativeStudio />}

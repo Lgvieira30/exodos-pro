@@ -26,7 +26,11 @@ interface Alert {
   message: string;
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  onNavigate?: (page: 'wizard') => void;
+}
+
+export default function Dashboard({ onNavigate }: DashboardProps) {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -189,7 +193,10 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">🚀 Campanhas Ativas ({campaigns.filter(c => c.status === 'active').length})</h2>
-          <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+          <button 
+            onClick={() => onNavigate?.('wizard')}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-4 py-2 rounded-lg transition font-semibold shadow-lg shadow-blue-500/50"
+          >
             + Criar Nova
           </button>
         </div>
