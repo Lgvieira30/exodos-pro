@@ -21,7 +21,7 @@ export default function App() {
         onCollapse={(collapsed) => setSidebarCollapsed(collapsed)}
       />
 
-      <div className={`flex-1 overflow-auto transition-all duration-300 ${collapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+      <div className={`flex-1 overflow-auto transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
         {currentPage === 'analytics' && <Analytics />}
         {currentPage === 'wizard' && <CampaignWizard />}
