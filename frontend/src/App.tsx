@@ -9,7 +9,6 @@ import './styles/globals.css';
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'analytics' | 'wizard' | 'creative'>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-950 flex">
@@ -18,10 +17,9 @@ export default function App() {
         onPageChange={setCurrentPage}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
-        onCollapse={(collapsed) => setSidebarCollapsed(collapsed)}
       />
 
-      <div className={`flex-1 overflow-auto transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+      <div className="flex-1 overflow-auto">
         {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
         {currentPage === 'analytics' && <Analytics />}
         {currentPage === 'wizard' && <CampaignWizard />}
