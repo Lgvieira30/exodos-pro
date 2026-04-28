@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Wizard from './pages/Wizard';
 import CreativeStudio from './pages/CreativeStudio';
+import Professor from './pages/Professor';
 import Settings from './pages/Settings';
 
 export default function App() {
