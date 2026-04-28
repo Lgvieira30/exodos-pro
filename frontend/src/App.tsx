@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
-import CampaignWizard from './pages/CampaignWizard';
+import Wizard from './pages/Wizard';
 import CreativeStudio from './pages/CreativeStudio';
 import Professor from './pages/Professor';
 import CommandCenter from './pages/CommandCenter';
@@ -18,7 +19,7 @@ const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
   { id: 'creative', label: 'Studio', icon: '🎨' },
 ];
 
-export default function App() {
+function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('command');
 
   return (
@@ -45,11 +46,19 @@ export default function App() {
       <div>
         {currentPage === 'command' && <CommandCenter />}
         {currentPage === 'professor' && <Professor />}
-        {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage as any} />}
+        {currentPage === 'dashboard' && <Dashboard />}
         {currentPage === 'analytics' && <Analytics />}
-        {currentPage === 'wizard' && <CampaignWizard />}
+        {currentPage === 'wizard' && <Wizard />}
         {currentPage === 'creative' && <CreativeStudio />}
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
