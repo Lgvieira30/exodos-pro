@@ -191,7 +191,12 @@ integrationsApi → GET/POST /integrations, DELETE /integrations/:platform
 - `Layout.tsx` usa a cor correta `#3DB8E8` ✅
 - `App.tsx` usa `#6B9AE8` (azul similar mas não é a cor oficial — pendente padronizar)
 
-### 8. Segurança
+### 8. Integração Meta Ads — ONLINE ✅
+- Settings page salva credenciais via `integrationsApi.save()`
+- `/api/sync/meta` implementado e funcionando
+- Dados reais sendo puxados da conta Meta
+
+### 9. Segurança
 - `helmet()` ativo no backend
 - CORS configurado (só aceita frontend URL ou `*.vercel.app`)
 - JWT com expiração de 24h
@@ -228,9 +233,7 @@ integrationsApi → GET/POST /integrations, DELETE /integrations/:platform
 - [ ] Trocar dados mock do Analytics por chamadas reais
 - [ ] Trocar dados mock do Professor por chamadas reais via `analyzeApi.dashboard()`
 
-### 5. Vincular Meta Ads + Google Ads
-- [ ] Settings page: salvar credenciais via `integrationsApi.save()`
-- [ ] Backend `sync.ts`: implementar `/api/sync/meta` real
+### 5. Vincular Google Ads
 - [ ] Backend `sync.ts`: implementar `/api/sync/google` real
 - [ ] Cron job a cada 1 hora
 
@@ -340,7 +343,7 @@ git push origin main
 ## 💡 IDEIAS PRA PRÓXIMA FASE
 
 ### Curto prazo (1-2 meses)
-- [ ] Conectar Meta Ads API real
+- [x] Conectar Meta Ads API real ✅
 - [ ] Conectar Google Ads API real
 - [ ] Sistema de notificações (email + WhatsApp)
 - [ ] Relatórios PDF automáticos
