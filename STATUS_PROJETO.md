@@ -55,8 +55,8 @@ Axios (Meta Ads / Google Ads APIs)
 ### Deploy
 ```
 Frontend: Vercel ✅ ONLINE
-Backend: Railway ⏳ Pendente (railway.toml e render.yaml já criados)
-Database: Neon ⏳ Pendente (código pronto, falta DATABASE_URL no Railway)
+Backend: Railway ✅ ONLINE
+Database: Neon ✅ ONLINE (DATABASE_URL + JWT_SECRET configurados)
 ```
 
 ---
@@ -165,15 +165,14 @@ exodos-pro/
 - **Frontend:** `lib/api.ts` com interceptor JWT (inclui `Authorization: Bearer <token>` em toda requisição, redireciona para /login em 401)
 - **Banco:** tabela `users` com `password_hash` (bcrypt rounds=12)
 
-### 5. Banco de Dados PostgreSQL (Neon) — CÓDIGO PRONTO ✅
+### 5. Banco de Dados PostgreSQL (Neon) — ONLINE ✅
 - `backend/src/db/index.ts` — cliente `postgres` conectando via `DATABASE_URL`
 - Migrations automáticas no startup do servidor (`runMigrations()` em `server.ts`)
-- Tabelas criadas automaticamente:
+- Tabelas ativas em produção:
   - `users` (id, email, password_hash, name, timestamps)
   - `campaigns` (id, user_id FK, name, platform, objective, status, budget, dates)
   - `metrics` (id, campaign_id FK, date, spend, leads, conversions, impressions, clicks, cpc, cpa, roas, ctr)
   - `user_integrations` (id, user_id FK, platform, app_id, app_secret, access_token, account_id, last_sync)
-- **Falta:** configurar `DATABASE_URL` no Railway para ativar
 
 ### 6. API Client Frontend — IMPLEMENTADO ✅
 Arquivo: `frontend/src/lib/api.ts`
@@ -224,29 +223,10 @@ integrationsApi → GET/POST /integrations, DELETE /integrations/:platform
 - [ ] Opção A: re-adicionar rota `/command-center` no `App.tsx`
 - [ ] Opção B: remover o arquivo se não for usar
 
-### 3. Deploy do Backend (Railway)
-- [ ] Criar conta Neon (https://neon.tech)
-- [ ] Copiar `DATABASE_URL` do Neon
-- [ ] Railway: settings → root directory = `backend`
-- [ ] Adicionar env vars no Railway:
-  ```
-  DATABASE_URL=postgresql://...
-  JWT_SECRET=<string-aleatória-longa>
-  JWT_EXPIRES_IN=24h
-  PORT=3001
-  NODE_ENV=production
-  FRONTEND_URL=https://exodos-pro-9d9i.vercel.app
-  META_APP_ID=...
-  META_APP_SECRET=...
-  GOOGLE_CLIENT_ID=...
-  GOOGLE_CLIENT_SECRET=...
-  ```
-- [ ] Redeploy no Railway
-
-### 4. Conectar Frontend ↔ Backend
-- [ ] Adicionar variável `VITE_API_URL=https://<backend-railway-url>/api` no Vercel
-- [ ] Testar login/register real
-- [ ] Trocar dados mock das páginas (Dashboard, Analytics, Professor) por chamadas reais via `api.ts`
+### 3. Conectar dados reais nas páginas
+- [ ] Trocar dados mock do Dashboard por chamadas reais via `metricsApi.dashboard()`
+- [ ] Trocar dados mock do Analytics por chamadas reais
+- [ ] Trocar dados mock do Professor por chamadas reais via `analyzeApi.dashboard()`
 
 ### 5. Vincular Meta Ads + Google Ads
 - [ ] Settings page: salvar credenciais via `integrationsApi.save()`
