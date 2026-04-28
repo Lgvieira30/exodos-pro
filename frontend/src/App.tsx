@@ -4,73 +4,48 @@ import Analytics from './pages/Analytics';
 import CampaignWizard from './pages/CampaignWizard';
 import CreativeStudio from './pages/CreativeStudio';
 import Professor from './pages/Professor';
+import CommandCenter from './pages/CommandCenter';
 import './styles/globals.css';
 
+type Page = 'command' | 'professor' | 'dashboard' | 'analytics' | 'wizard' | 'creative';
+
+const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
+  { id: 'command', label: 'Command Center', icon: '⚡' },
+  { id: 'professor', label: 'Professor', icon: '🧠' },
+  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'analytics', label: 'Analytics', icon: '📈' },
+  { id: 'wizard', label: 'Campanha', icon: '🚀' },
+  { id: 'creative', label: 'Studio', icon: '🎨' },
+];
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'analytics' | 'wizard' | 'creative' | 'professor'>('professor');
+  const [currentPage, setCurrentPage] = useState<Page>('command');
 
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* Simple Navigation */}
-      <div className="bg-slate-800 border-b border-slate-700 p-4">
-        <div className="max-w-7xl mx-auto flex gap-4">
-          <button
-            onClick={() => setCurrentPage('professor')}
-            className={`px-4 py-2 rounded-lg transition ${
-              currentPage === 'professor'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            🧠 Professor
-          </button>
-          <button
-            onClick={() => setCurrentPage('dashboard')}
-            className={`px-4 py-2 rounded-lg transition ${
-              currentPage === 'dashboard'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            📊 Dashboard
-          </button>
-          <button
-            onClick={() => setCurrentPage('analytics')}
-            className={`px-4 py-2 rounded-lg transition ${
-              currentPage === 'analytics'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            📈 Analytics
-          </button>
-          <button
-            onClick={() => setCurrentPage('wizard')}
-            className={`px-4 py-2 rounded-lg transition ${
-              currentPage === 'wizard'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            🚀 Campanha
-          </button>
-          <button
-            onClick={() => setCurrentPage('creative')}
-            className={`px-4 py-2 rounded-lg transition ${
-              currentPage === 'creative'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            🎨 Studio
-          </button>
+      <div className="bg-slate-900 border-b border-slate-800 px-4 py-3 sticky top-0 z-10 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex gap-2 overflow-x-auto">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setCurrentPage(item.id)}
+              className={`px-4 py-2 rounded-lg transition whitespace-nowrap text-sm font-medium ${
+                currentPage === item.id
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+              }`}
+            >
+              <span className="mr-2">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Pages */}
       <div>
+        {currentPage === 'command' && <CommandCenter />}
         {currentPage === 'professor' && <Professor />}
-        {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
+        {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage as any} />}
         {currentPage === 'analytics' && <Analytics />}
         {currentPage === 'wizard' && <CampaignWizard />}
         {currentPage === 'creative' && <CreativeStudio />}
