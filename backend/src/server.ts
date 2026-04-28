@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -39,14 +39,16 @@ async function runMigrations() {
     await sql`CREATE TABLE IF NOT EXISTS metrics (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE, date DATE NOT NULL, spend NUMERIC(12,2) DEFAULT 0, leads INTEGER DEFAULT 0, conversions INTEGER DEFAULT 0, impressions INTEGER DEFAULT 0, clicks INTEGER DEFAULT 0, cpc NUMERIC(8,4) DEFAULT 0, cpa NUMERIC(8,4) DEFAULT 0, roas NUMERIC(8,4) DEFAULT 0, ctr NUMERIC(8,4) DEFAULT 0, created_at TIMESTAMPTZ DEFAULT NOW(), UNIQUE (campaign_id, date))`;
     await sql`CREATE INDEX IF NOT EXISTS idx_campaigns_user_id ON campaigns(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_metrics_campaign_id ON metrics(campaign_id)`;
-    console.log('✅ Banco de dados pronto');
+    await sql`CREATE TABLE IF NOT EXISTS user_integrations (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, platform TEXT NOT NULL, app_id TEXT, app_secret TEXT, access_token TEXT NOT NULL, account_id TEXT NOT NULL, last_sync_at TIMESTAMPTZ, last_sync_status TEXT DEFAULT 'never', created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW(), UNIQUE(user_id, platform))`;
+    await sql`ALTER TABLE metrics ADD COLUMN IF NOT EXISTS roas NUMERIC(8,4) DEFAULT 0`;
+    console.log('âœ… Banco de dados pronto');
   } catch (err) {
-    console.error('❌ Erro nas migrations:', err);
+    console.error('âŒ Erro nas migrations:', err);
   }
 }
 
 app.listen(PORT, async () => {
-  console.log(`🚀 ÊXODOS PRO backend rodando na porta ${PORT}`);
+  console.log(`ðŸš€ ÃŠXODOS PRO backend rodando na porta ${PORT}`);
   await runMigrations();
 });
 

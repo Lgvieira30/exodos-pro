@@ -44,3 +44,21 @@ export const metricsApi = {
   dashboard: () => api.get('/metrics/dashboard').then((r) => r.data),
   campaign: (id: string) => api.get(`/metrics/${id}`).then((r) => r.data),
 };
+
+export const syncApi = {
+  status: () => api.get('/sync/status').then((r) => r.data),
+  meta: () => api.post('/sync/meta').then((r) => r.data),
+  google: () => api.post('/sync/google').then((r) => r.data),
+};
+
+export const analyzeApi = {
+  dashboard: () => api.get('/analyze/dashboard').then((r) => r.data),
+  campaign: (id: string) => api.get(`/analyze/${id}`).then((r) => r.data),
+};
+
+export const integrationsApi = {
+  list: () => api.get('/integrations').then((r) => r.data),
+  save: (data: { platform: string; app_id?: string; app_secret?: string; access_token: string; account_id: string }) =>
+    api.post('/integrations', data).then((r) => r.data),
+  remove: (platform: string) => api.delete(`/integrations/${platform}`).then((r) => r.data),
+};
