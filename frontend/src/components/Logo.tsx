@@ -1,52 +1,59 @@
-export function Logo({ size = 36 }: { size?: number }) {
-  const c = 50;
-  const r = 18;
-  const dist = 16;
-  const angles = [0, 60, 120, 180, 240, 300];
+﻿const BLUE = '#3D6EC9';
+const BLUE_DARK = '#1E4590';
+const BLUE_LIGHT = '#6B9AE8';
 
+// Ring sector: outer r=30, inner r=18, 240deg arc starting at top (-90deg)
+// Outer start: (50, 20)
+// Outer end after 240deg CW: (50+30*cos(150deg), 50+30*sin(150deg)) = (24.02, 65)
+// Inner end: (50+18*cos(150deg), 50+18*sin(150deg)) = (34.41, 59)
+// Inner start: (50, 32)
+const BLADE = "M 50 20 A 30 30 0 1 1 24.02 65 L 34.41 59 A 18 18 0 1 0 50 32 Z";
+
+export function Logo({ size = 36 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="lg1" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#3DB8E8" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#0d5a7a" stopOpacity="0.7" />
+        <radialGradient id="bladeGrad" cx="40%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={BLUE_LIGHT} />
+          <stop offset="100%" stopColor={BLUE_DARK} />
         </radialGradient>
-        <radialGradient id="lg2" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#5ecfee" />
-          <stop offset="100%" stopColor="#1a7ca8" />
-        </radialGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="1.5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        <filter id="logoShadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="0" stdDeviation="1" floodColor={BLUE_DARK} floodOpacity="0.4" />
         </filter>
       </defs>
 
-      {/* 6 círculos sobrepostos em anel — padrão flor de vida */}
-      {angles.map((angle, i) => {
-        const rad = (angle * Math.PI) / 180;
-        const cx = c + dist * Math.cos(rad);
-        const cy = c + dist * Math.sin(rad);
-        return (
-          <circle
-            key={i}
-            cx={cx}
-            cy={cy}
-            r={r}
-            fill="none"
-            stroke="url(#lg2)"
-            strokeWidth="4.5"
-            opacity="0.85"
-            filter="url(#glow)"
-          />
-        );
-      })}
+      {/* 6 blades rotated at 60deg intervals */}
+      {[0, 60, 120, 180, 240, 300].map((angle, i) => (
+        <path
+          key={i}
+          d={BLADE}
+          fill="url(#bladeGrad)"
+          opacity="0.88"
+          transform={`rotate(${angle} 50 50)`}
+          filter="url(#logoShadow)"
+        />
+      ))}
 
-      {/* Círculo central */}
-      <circle cx={c} cy={c} r={r} fill="none" stroke="url(#lg1)" strokeWidth="4.5" opacity="0.9" filter="url(#glow)" />
-
-      {/* Ponto branco central */}
-      <circle cx={c} cy={c} r="5" fill="white" opacity="0.95" />
-      <circle cx={c} cy={c} r="2.5" fill="#3DB8E8" opacity="1" />
+      {/* White center dot */}
+      <circle cx="50" cy="50" r="7" fill="white" />
+      <circle cx="50" cy="50" r="3.5" fill={BLUE} />
     </svg>
+  );
+}
+
+export function LogoWithText({ size = 36 }: { size?: number }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <Logo size={size} />
+      <span style={{
+        fontSize: `${size * 0.42}px`,
+        fontWeight: 400,
+        color: BLUE_LIGHT,
+        letterSpacing: '0.5px',
+        fontFamily: "'Inter', sans-serif",
+      }}>
+        conversion
+      </span>
+    </div>
   );
 }

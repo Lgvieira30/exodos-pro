@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
@@ -8,9 +8,10 @@ import SettingsPage from './pages/Settings';
 import Professor from './pages/Professor';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { Logo } from './components/Logo';
 import './styles/globals.css';
 
-const CYAN = '#3DB8E8';
+const CYAN = '#6B9AE8';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -34,15 +35,10 @@ function Sidebar() {
     }}>
       <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '32px', height: '32px', borderRadius: '8px',
-            background: `linear-gradient(135deg, ${CYAN}, #1a8ab8)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '14px', fontWeight: 800, color: '#000',
-          }}>E</div>
+          <Logo size={38} />
           <div>
-            <div style={{ color: '#fff', fontSize: '13px', fontWeight: 700 }}>exodos</div>
-            <div style={{ color: CYAN, fontSize: '10px', opacity: 0.8 }}>system conversion</div>
+            <div style={{ color: '#fff', fontSize: '13px', fontWeight: 700, letterSpacing: '-0.2px' }}>êxodos</div>
+            <div style={{ color: CYAN, fontSize: '10px', opacity: 0.9, letterSpacing: '0.3px' }}>conversion</div>
           </div>
         </div>
       </div>
