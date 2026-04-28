@@ -28,7 +28,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{
-      background: 'radial-gradient(ellipse at 50% 0%, rgba(61,184,232,0.06) 0%, #070b12 60%)',
+      background: 'radial-gradient(ellipse at 50% 0%, rgba(61,184,232,0.07) 0%, #000 55%)',
     }}>
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 pointer-events-none" style={{
         background: `radial-gradient(circle, ${CYAN}15 0%, transparent 70%)`,

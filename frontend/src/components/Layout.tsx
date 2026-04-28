@@ -12,42 +12,31 @@ const navItems = [
 ];
 
 const CYAN = '#3DB8E8';
-const CYAN_DIM = 'rgba(61,184,232,0.15)';
-const CYAN_BORDER = 'rgba(61,184,232,0.25)';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
-  function handleLogout() {
-    localStorage.removeItem('token');
-    navigate('/login');
-  }
-
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#070b12' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#000000' }}>
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{
-        background: 'linear-gradient(180deg, #0b1422 0%, #080d18 100%)',
-        borderRight: '1px solid rgba(61,184,232,0.08)',
+        background: '#0a0a0a',
+        borderRight: '1px solid #1a1a1a',
       }}>
-
-        {/* Logo / Brand */}
-        <div className="px-5 py-6 mb-2">
+        {/* Brand */}
+        <div className="px-5 py-6">
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0" style={{
-              filter: `drop-shadow(0 0 12px ${CYAN}60)`,
-            }}>
-              <Logo size={38} />
+            <div style={{ filter: `drop-shadow(0 0 10px ${CYAN}60)` }}>
+              <Logo size={36} />
             </div>
             <div>
-              <p className="font-bold text-white text-sm leading-tight tracking-wide">êxodos</p>
-              <p className="text-xs leading-tight" style={{ color: CYAN, opacity: 0.8 }}>system conversion</p>
+              <p className="font-semibold text-white text-sm tracking-wide">êxodos</p>
+              <p className="text-xs" style={{ color: CYAN }}>system conversion</p>
             </div>
           </div>
         </div>
 
-        {/* Divisor */}
-        <div className="mx-5 mb-4" style={{ height: '1px', background: 'rgba(61,184,232,0.08)' }} />
+        <div className="mx-5 mb-3" style={{ height: '1px', background: '#1a1a1a' }} />
 
         {/* Nav */}
         <nav className="flex-1 px-3 space-y-0.5">
@@ -57,15 +46,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive ? 'text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]'
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  isActive ? 'text-white' : 'text-[#666] hover:text-white hover:bg-white/[0.05]'
                 }`
               }
               style={({ isActive }) => isActive ? {
-                background: CYAN_DIM,
-                border: `1px solid ${CYAN_BORDER}`,
-                color: 'white',
-                boxShadow: `0 0 15px rgba(61,184,232,0.1)`,
+                background: 'rgba(61,184,232,0.1)',
+                border: `1px solid rgba(61,184,232,0.2)`,
               } : { border: '1px solid transparent' }}
             >
               {({ isActive }) => (
@@ -80,17 +67,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Footer */}
         <div className="p-3 mt-auto">
-          <div className="mx-2 mb-3" style={{ height: '1px', background: 'rgba(255,255,255,0.04)' }} />
-          <div className="px-3 py-2.5 rounded-xl mb-1" style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.05)',
-          }}>
-            <p className="text-xs text-slate-600 mb-0.5">Conta</p>
-            <p className="text-xs text-slate-400 font-medium truncate">lgvieira.far@gmail.com</p>
+          <div className="mx-2 mb-2" style={{ height: '1px', background: '#1a1a1a' }} />
+          <div className="px-3 py-2.5 rounded-lg mb-1" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <p className="text-xs text-[#444] mb-0.5">Conta</p>
+            <p className="text-xs text-[#888] font-medium truncate">lgvieira.far@gmail.com</p>
           </div>
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all w-full"
+            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#555] hover:text-red-400 hover:bg-red-500/[0.06] transition-all w-full"
             style={{ border: '1px solid transparent' }}
           >
             <LogOut className="w-4 h-4" />
@@ -100,7 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-y-auto fade-in">
+      <main className="flex-1 overflow-y-auto fade-in" style={{ background: '#000' }}>
         {children}
       </main>
     </div>

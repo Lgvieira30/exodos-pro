@@ -98,7 +98,7 @@ export default function Analytics() {
   };
 
   return (
-    <div className="min-h-screen p-8" style={{ background: '#080c14' }}>
+    <div className="min-h-screen p-8" style={{ background: '#000' }}>
 
       {/* Header */}
       <div className="mb-8">

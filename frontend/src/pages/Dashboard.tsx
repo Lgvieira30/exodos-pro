@@ -126,7 +126,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen p-8" style={{ background: '#080c14' }}>
+    <div className="min-h-screen p-8" style={{ background: '#000' }}>
 
       {/* Header */}
       <div className="flex items-start justify-between mb-10">
