@@ -1,43 +1,61 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Brain,
-  ShoppingCart,
-  PenTool,
-  BarChart3,
-  ShieldCheck,
-  Zap,
-  AlertTriangle,
-  TrendingUp,
   Activity,
-  XCircle,
-  Info,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  CheckCircle2,
+  Sparkles,
+  Bot,
+  Zap,
+  Target,
+  BarChart2,
+  ShieldCheck,
+  PenTool,
+  Brain,
+  Clock,
+  ArrowUpRight,
+  ChevronRight,
 } from 'lucide-react';
 
-interface Agent {
-  id: string;
-  name: string;
-  initials: string;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-  action: string;
-  status: 'active' | 'thinking' | 'acting';
-}
+const COLORS = {
+  primary: '#00B7B7',
+  primaryDark: '#008A8A',
+  primaryLight: '#E0F7F7',
+  bg: '#F5F7FA',
+  surface: '#FFFFFF',
+  border: '#E5E9F0',
+  borderStrong: '#D1D7E0',
+  text: '#1A1F2E',
+  textSoft: '#4A5568',
+  textMuted: '#8B95A7',
+  success: '#10B981',
+  successLight: '#E8F8F2',
+  warning: '#F59E0B',
+  warningLight: '#FEF6E7',
+  danger: '#EF4444',
+  dangerLight: '#FEEBEB',
+  info: '#3B82F6',
+  infoLight: '#EBF2FE',
+};
 
 interface Recommendation {
   id: string;
-  severity: 'success' | 'critical' | 'warning';
-  action: string;
-  detail: string;
-  impact: string;
+  type: 'success' | 'critical' | 'warning';
+  title: string;
+  description: string;
+  agent: string;
   confidence: number;
+  impact: string;
+  impactLabel: string;
 }
 
 interface Anomaly {
   id: string;
-  type: 'critical' | 'warning' | 'info';
+  level: 'critical' | 'warning' | 'info';
   title: string;
   detail: string;
+  time: string;
 }
 
 interface Decision {
@@ -46,206 +64,328 @@ interface Decision {
   confidence: number;
 }
 
-interface ChannelMix {
+interface Channel {
   name: string;
-  allocation: number;
+  alloc: number;
   roas: number;
+  spend: number;
+}
+
+interface Agent {
+  initials: string;
+  name: string;
+  role: string;
+  status: 'ativo' | 'pensando' | 'agindo';
+  icon: React.ReactNode;
   color: string;
 }
 
-const AGENTS: Agent[] = [
-  { id: 'strategy', name: 'Strategy Agent', initials: 'SA', icon: <Brain className="w-4 h-4" />, color: 'text-violet-200', bgColor: 'bg-violet-500/10', action: 'Analisando padrões de 47 campanhas históricas', status: 'thinking' },
-  { id: 'media-buyer', name: 'Media Buyer Agent', initials: 'MB', icon: <ShoppingCart className="w-4 h-4" />, color: 'text-sky-200', bgColor: 'bg-sky-500/10', action: 'Realocando R$ 600 de LinkedIn → Google Search', status: 'acting' },
-  { id: 'content', name: 'Content Agent', initials: 'CA', icon: <PenTool className="w-4 h-4" />, color: 'text-amber-200', bgColor: 'bg-amber-500/10', action: 'Gerou 8 variações de headline para teste A/B', status: 'active' },
-  { id: 'analytics', name: 'Analytics Agent', initials: 'AA', icon: <BarChart3 className="w-4 h-4" />, color: 'text-emerald-200', bgColor: 'bg-emerald-500/10', action: '3 anomalias detectadas · padrão sazonal identificado', status: 'active' },
-  { id: 'compliance', name: 'Compliance Agent', initials: 'CP', icon: <ShieldCheck className="w-4 h-4" />, color: 'text-rose-200', bgColor: 'bg-rose-500/10', action: 'Validou 12 criativos · bloqueou 1 por política', status: 'active' },
-  { id: 'decision', name: 'Decision Agent', initials: 'DA', icon: <Zap className="w-4 h-4" />, color: 'text-stone-200', bgColor: 'bg-stone-500/10', action: 'Aguardando aprovação para escalar 2 campanhas', status: 'thinking' },
-];
-
 const RECOMMENDATIONS: Recommendation[] = [
-  { id: '1', severity: 'success', action: 'Escale Lipoaspiração em 35%', detail: 'ROAS 3.2x sustentado por 14 dias. CPA R$ 40 estável. Audience saturação em 31% — espaço para crescer.', impact: '+R$ 2.400/mês lucro', confidence: 94 },
-  { id: '2', severity: 'critical', action: 'Pause Divórcio em 48h', detail: 'ROAS 1.8x abaixo do break-even (2.0x). 3 testes de criativo falharam. Audience exausto.', impact: 'Economia: R$ 1.320/semana', confidence: 87 },
-  { id: '3', severity: 'warning', action: 'Teste novo headline em Imobiliária', detail: 'CTR 2.8% bom mas plateau detectado. Variações geradas pelo Content Agent prontas.', impact: 'Potencial: +12% CTR', confidence: 71 },
+  {
+    id: '1',
+    type: 'success',
+    title: 'Aumentar Lipoaspiração em 35%',
+    description: 'ROAS de 3,2× sustentado por 14 dias. CPA estável em R$ 40. Audience com saturação de apenas 31%.',
+    agent: 'Decision Agent',
+    confidence: 94,
+    impact: '+ R$ 2.400',
+    impactLabel: 'lucro/mês',
+  },
+  {
+    id: '2',
+    type: 'critical',
+    title: 'Encerrar Divórcio em 48 horas',
+    description: 'ROAS de 1,8× abaixo do break-even. 3 testes de criativo falharam. Audience exausto.',
+    agent: 'Strategy Agent',
+    confidence: 87,
+    impact: '– R$ 1.320',
+    impactLabel: 'economia/sem.',
+  },
+  {
+    id: '3',
+    type: 'warning',
+    title: 'Testar variações em Imobiliária',
+    description: 'CTR de 2,8% bom, mas plateau detectado. 8 variações de headline prontas.',
+    agent: 'Content Agent',
+    confidence: 71,
+    impact: '+ 12%',
+    impactLabel: 'CTR potencial',
+  },
 ];
 
 const ANOMALIES: Anomaly[] = [
-  { id: '1', type: 'critical', title: 'Spike de CPA em Divórcio', detail: 'CPA subiu 47% nas últimas 6h. Causa provável: aumento de bid competitor. Ação: pausar e reavaliar.' },
-  { id: '2', type: 'warning', title: 'Queda de impressions em Lipoaspiração', detail: '23% menos impressions nas últimas 12h. Audience pode estar saturando. Recomendação: expandir lookalike de 1% para 3%.' },
-  { id: '3', type: 'info', title: 'Padrão sazonal detectado', detail: 'Conversões aumentam 34% nas terças entre 14h-17h. Sistema realocou 22% do budget para esse horário automaticamente.' },
+  { id: '1', level: 'critical', title: 'Spike de CPA em Divórcio', detail: 'CPA subiu 47% nas últimas 6h. Aumento de bid de competidor identificado.', time: '14:08' },
+  { id: '2', level: 'warning', title: 'Queda de impressions em Lipoaspiração', detail: '23% menos impressions em 12h. Audience saturando, expanda lookalike.', time: '11:42' },
+  { id: '3', level: 'info', title: 'Padrão sazonal detectado', detail: 'Conversões aumentam 34% nas terças entre 14h–17h. Budget realocado.', time: '09:15' },
 ];
 
 const DECISIONS: Decision[] = [
-  { time: '14:32', text: 'Realocou R$ 200 de YouTube → Google Search (CPA 3.4x melhor)', confidence: 96 },
-  { time: '13:18', text: 'Pausou criativo "Headline 4" em Lipoaspiração (CTR 0.8% após 1.200 impressions)', confidence: 91 },
-  { time: '12:45', text: 'Aumentou bid em palavras-chave de alta conversão (+18% impressions previsto)', confidence: 88 },
-  { time: '11:22', text: 'Detectou audience overlap entre 2 ad sets — mesclou para reduzir custo', confidence: 93 },
-  { time: '10:07', text: 'Ativou variação de criativo gerada pelo Content Agent (CTR previsto 3.1%)', confidence: 79 },
-  { time: '09:33', text: 'Bloqueou anúncio por violação de política (Compliance Agent flag)', confidence: 100 },
-  { time: '08:15', text: 'Expandiu lookalike audience de 1% para 2% (saturação detectada)', confidence: 85 },
+  { time: '14:32', text: 'Realocou R$ 200 de YouTube para Google Search', confidence: 96 },
+  { time: '13:18', text: 'Pausou criativo "Headline 4" em Lipoaspiração', confidence: 91 },
+  { time: '12:45', text: 'Aumentou bid em palavras-chave de alta conversão', confidence: 88 },
+  { time: '11:22', text: 'Mesclou ad sets com audience overlap detectado', confidence: 93 },
+  { time: '10:07', text: 'Ativou variação de criativo gerada pelo Content Agent', confidence: 79 },
+  { time: '09:33', text: 'Bloqueou anúncio por violação de política', confidence: 100 },
 ];
 
-const CHANNEL_MIX: ChannelMix[] = [
-  { name: 'Meta Ads', allocation: 42, roas: 3.1, color: 'bg-sky-500/60' },
-  { name: 'Google Search', allocation: 35, roas: 3.4, color: 'bg-emerald-500/60' },
-  { name: 'LinkedIn', allocation: 18, roas: 2.4, color: 'bg-violet-500/60' },
-  { name: 'YouTube', allocation: 5, roas: 1.9, color: 'bg-amber-500/60' },
+const CHANNELS: Channel[] = [
+  { name: 'Meta Ads', alloc: 42, roas: 3.1, spend: 1815 },
+  { name: 'Google Search', alloc: 35, roas: 3.4, spend: 1512 },
+  { name: 'LinkedIn', alloc: 18, roas: 2.4, spend: 778 },
+  { name: 'YouTube', alloc: 5, roas: 1.9, spend: 215 },
 ];
 
-const StatusBadge: React.FC<{ status: Agent['status'] }> = ({ status }) => {
-  const config = {
-    active: { label: 'ativo', className: 'bg-emerald-500/10 text-emerald-300/80 border-emerald-500/20' },
-    thinking: { label: 'pensando', className: 'bg-violet-500/10 text-violet-300/80 border-violet-500/20' },
-    acting: { label: 'agindo', className: 'bg-amber-500/10 text-amber-300/80 border-amber-500/20' },
-  }[status];
+const AGENTS: Agent[] = [
+  { initials: 'SA', name: 'Strategy Agent', role: 'Analisa padrões de 47 campanhas', status: 'pensando', icon: <Brain size={14} />, color: '#8B5CF6' },
+  { initials: 'MB', name: 'Media Buyer Agent', role: 'Realocando budget entre canais', status: 'agindo', icon: <Target size={14} />, color: '#3B82F6' },
+  { initials: 'CA', name: 'Content Agent', role: '8 variações de headline geradas', status: 'ativo', icon: <PenTool size={14} />, color: '#F59E0B' },
+  { initials: 'AA', name: 'Analytics Agent', role: '3 anomalias detectadas hoje', status: 'ativo', icon: <BarChart2 size={14} />, color: '#10B981' },
+  { initials: 'CP', name: 'Compliance Agent', role: '12 criativos validados', status: 'ativo', icon: <ShieldCheck size={14} />, color: '#EC4899' },
+  { initials: 'DA', name: 'Decision Agent', role: 'Aguarda aprovação para escalar', status: 'pensando', icon: <Zap size={14} />, color: '#00B7B7' },
+];
+
+/* ─────────── Helpers ─────────── */
+
+function Card({ children, padding = '24px', style = {} }: { children: React.ReactNode; padding?: string; style?: React.CSSProperties }) {
   return (
-    <span className={`text-[10px] px-2 py-0.5 rounded font-medium border ${config.className}`}>
-      {config.label}
+    <div style={{
+      background: COLORS.surface,
+      border: `1px solid ${COLORS.border}`,
+      borderRadius: '8px',
+      padding,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Badge({ type, children }: { type: 'success' | 'critical' | 'warning' | 'info' | 'primary'; children: React.ReactNode }) {
+  const palette = {
+    success: { bg: COLORS.successLight, color: COLORS.success },
+    critical: { bg: COLORS.dangerLight, color: COLORS.danger },
+    warning: { bg: COLORS.warningLight, color: COLORS.warning },
+    info: { bg: COLORS.infoLight, color: COLORS.info },
+    primary: { bg: COLORS.primaryLight, color: COLORS.primaryDark },
+  }[type];
+
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontSize: '11px',
+      fontWeight: 600,
+      padding: '3px 8px',
+      borderRadius: '4px',
+      background: palette.bg,
+      color: palette.color,
+      whiteSpace: 'nowrap',
+    }}>
+      {children}
     </span>
   );
-};
+}
 
-const RecommendationCard: React.FC<{ rec: Recommendation }> = ({ rec }) => {
-  const styles = {
-    success: 'bg-emerald-500/[0.04] border-l-emerald-500/40',
-    critical: 'bg-rose-500/[0.04] border-l-rose-500/40',
-    warning: 'bg-amber-500/[0.04] border-l-amber-500/40',
-  }[rec.severity];
-
+function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
-    <div className={`p-3 rounded-lg border-l-2 mb-2 ${styles}`}>
-      <p className="text-sm font-medium text-slate-100 mb-1">{rec.action}</p>
-      <p className="text-xs text-slate-400 leading-relaxed mb-2">{rec.detail}</p>
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="px-2 py-1 bg-slate-800/40 rounded text-slate-300">{rec.impact}</span>
-        <span className="text-slate-500">confiança {rec.confidence}%</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px', gap: '16px', flexWrap: 'wrap' }}>
+      <div>
+        <h2 style={{ fontSize: '16px', fontWeight: 600, color: COLORS.text, margin: '0 0 2px' }}>{title}</h2>
+        {subtitle && <p style={{ fontSize: '13px', color: COLORS.textMuted, margin: 0 }}>{subtitle}</p>}
       </div>
+      {action}
     </div>
   );
-};
+}
 
-const AnomalyRow: React.FC<{ anomaly: Anomaly }> = ({ anomaly }) => {
-  const config = {
-    critical: { bg: 'bg-rose-500/10', color: 'text-rose-300/80', icon: <XCircle className="w-3.5 h-3.5" /> },
-    warning: { bg: 'bg-amber-500/10', color: 'text-amber-300/80', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
-    info: { bg: 'bg-sky-500/10', color: 'text-sky-300/80', icon: <Info className="w-3.5 h-3.5" /> },
-  }[anomaly.type];
-
-  return (
-    <div className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg mb-2">
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${config.bg} ${config.color}`}>
-        {config.icon}
-      </div>
-      <div className="flex-1 text-xs leading-relaxed">
-        <p className="font-medium text-slate-100 mb-1">{anomaly.title}</p>
-        <p className="text-slate-400">{anomaly.detail}</p>
-      </div>
-    </div>
-  );
-};
+/* ─────────── Main ─────────── */
 
 export default function CommandCenter() {
   const [budget, setBudget] = useState(450);
 
   const scenario = useMemo(() => {
     const leads = budget / 40;
-    const conversions = leads * 0.24;
-    const revenue = conversions * 500;
-    const profit = revenue - budget;
+    const conv = leads * 0.24;
+    const rev = conv * 500;
+    const profit = rev - budget;
     return {
       leads: leads.toFixed(1).replace('.', ','),
-      conversions: conversions.toFixed(1).replace('.', ','),
-      revenue: Math.round(revenue),
-      profit: Math.round(profit),
+      conv: conv.toFixed(1).replace('.', ','),
+      rev: Math.round(rev).toLocaleString('pt-BR'),
+      profit: Math.round(profit).toLocaleString('pt-BR'),
+      profitPositive: profit > 0,
     };
   }, [budget]);
 
   return (
-    <div className="min-h-screen bg-slate-950 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/60">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-100 flex items-center gap-2">
-              <Activity className="w-6 h-6 text-emerald-400/70" />
-              ÊXODOS Command Center
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Sistema autônomo de gestão de campanhas</p>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="w-2 h-2 rounded-full bg-emerald-400/70 animate-pulse" />
-            6 agentes ativos · análise contínua
-          </div>
-        </div>
+    <div style={{
+      minHeight: '100vh',
+      background: COLORS.bg,
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+      color: COLORS.text,
+    }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px 80px' }}>
 
-        {/* Métricas */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-            <p className="text-xs text-slate-500 mb-1">Budget total</p>
-            <p className="text-2xl font-semibold text-slate-100">R$ 4.320</p>
-            <p className="text-xs text-emerald-400/70 mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> +R$ 600 realocado hoje
+        {/* TOP HEADER */}
+        <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 4px', color: COLORS.text, letterSpacing: '-0.3px' }}>
+              Command Center
+            </h1>
+            <p style={{ fontSize: '14px', color: COLORS.textSoft, margin: 0 }}>
+              Sistema autônomo de gestão de campanhas · 6 agentes ativos
             </p>
           </div>
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-            <p className="text-xs text-slate-500 mb-1">ROAS médio</p>
-            <p className="text-2xl font-semibold text-slate-100">2.83x</p>
-            <p className="text-xs text-emerald-400/70 mt-1">↑ 0.4x vs ontem</p>
-          </div>
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-            <p className="text-xs text-slate-500 mb-1">Decisões hoje</p>
-            <p className="text-2xl font-semibold text-slate-100">17</p>
-            <p className="text-xs text-slate-500 mt-1">14 autônomas · 3 revisão</p>
-          </div>
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-            <p className="text-xs text-slate-500 mb-1">Lucro projetado</p>
-            <p className="text-2xl font-semibold text-slate-100">R$ 8.890</p>
-            <p className="text-xs text-emerald-400/70 mt-1">+18% via IA</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              background: COLORS.successLight,
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: COLORS.success,
+            }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                background: COLORS.success,
+                borderRadius: '50%',
+                animation: 'pulse 2s infinite',
+              }} />
+              Sistema operando
+            </span>
           </div>
         </div>
 
-        {/* Agentes */}
-        <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
-            Agentes especializados em ação
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {AGENTS.map((agent) => (
-              <div
-                key={agent.id}
-                className="flex items-center gap-3 p-3 bg-slate-900/40 rounded-lg border border-slate-800/60"
-              >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${agent.bgColor} ${agent.color}`}>
-                  {agent.icon}
+        {/* MÉTRICAS */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '16px',
+          marginBottom: '32px',
+        }}>
+          {[
+            { label: 'Budget total', value: 'R$ 4.320', delta: '+R$ 600 realocados', up: true, icon: <Activity size={16} /> },
+            { label: 'ROAS médio', value: '2,83×', delta: '+0,4 vs ontem', up: true, icon: <TrendingUp size={16} /> },
+            { label: 'Decisões hoje', value: '17', delta: '14 autônomas', up: null, icon: <Bot size={16} /> },
+            { label: 'Lucro projetado', value: 'R$ 8.890', delta: '+18% via IA', up: true, icon: <Sparkles size={16} /> },
+          ].map((m, i) => (
+            <Card key={i} padding="20px">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <span style={{ fontSize: '12px', color: COLORS.textMuted, fontWeight: 500 }}>{m.label}</span>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  background: COLORS.primaryLight,
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: COLORS.primary,
+                }}>
+                  {m.icon}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-100">{agent.name}</p>
-                  <p className="text-xs text-slate-500 truncate">{agent.action}</p>
-                </div>
-                <StatusBadge status={agent.status} />
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.5px' }}>
+                {m.value}
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: m.up === true ? COLORS.success : m.up === false ? COLORS.danger : COLORS.textMuted,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontWeight: 500,
+              }}>
+                {m.up === true && <ArrowUpRight size={12} />}
+                {m.delta}
+              </div>
+            </Card>
+          ))}
         </div>
 
-        {/* Recomendações + Simulador */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-          <div>
-            <h2 className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
-              Recomendações prescritivas
-            </h2>
-            {RECOMMENDATIONS.map((rec) => (
-              <RecommendationCard key={rec.id} rec={rec} />
-            ))}
-          </div>
-          <div>
-            <h2 className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
-              Simulador de cenários
-            </h2>
-            <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-              <p className="text-xs text-slate-500 mb-4">Ajuste o budget e veja a previsão</p>
+        {/* RECOMENDAÇÕES + SIMULADOR */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px', marginBottom: '32px' }}>
+          <Card padding="0">
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${COLORS.border}` }}>
+              <SectionHeader
+                title="Recomendações prescritivas"
+                subtitle="Ações sugeridas pelos agentes IA"
+              />
+            </div>
+            <div>
+              {RECOMMENDATIONS.map((rec, i) => (
+                <div key={rec.id} style={{
+                  padding: '20px 24px',
+                  borderBottom: i === RECOMMENDATIONS.length - 1 ? 'none' : `1px solid ${COLORS.border}`,
+                  display: 'flex',
+                  gap: '16px',
+                  alignItems: 'flex-start',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = COLORS.bg)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: rec.type === 'success' ? COLORS.successLight : rec.type === 'critical' ? COLORS.dangerLight : COLORS.warningLight,
+                    color: rec.type === 'success' ? COLORS.success : rec.type === 'critical' ? COLORS.danger : COLORS.warning,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    {rec.type === 'success' ? <CheckCircle2 size={18} /> : rec.type === 'critical' ? <AlertCircle size={18} /> : <Clock size={18} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <h3 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: COLORS.text }}>
+                        {rec.title}
+                      </h3>
+                    </div>
+                    <p style={{ fontSize: '13px', color: COLORS.textSoft, margin: '0 0 8px', lineHeight: 1.5 }}>
+                      {rec.description}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <Badge type="primary">{rec.agent}</Badge>
+                      <span style={{ fontSize: '12px', color: COLORS.textMuted }}>
+                        Confiança {rec.confidence}%
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: rec.type === 'critical' ? COLORS.danger : COLORS.success, lineHeight: 1.2 }}>
+                      {rec.impact}
+                    </div>
+                    <div style={{ fontSize: '11px', color: COLORS.textMuted, marginTop: '2px' }}>
+                      {rec.impactLabel}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-xs text-slate-500 min-w-[100px]">Budget diário</span>
+          <Card padding="0">
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${COLORS.border}` }}>
+              <SectionHeader title="Simulador de cenário" subtitle="Projeção em tempo real" />
+            </div>
+            <div style={{ padding: '24px' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: COLORS.textSoft }}>Budget diário</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: COLORS.primary, letterSpacing: '-0.3px' }}>
+                    R$ {budget.toLocaleString('pt-BR')}
+                  </span>
+                </div>
                 <input
                   type="range"
                   min={100}
@@ -253,103 +393,286 @@ export default function CommandCenter() {
                   step={50}
                   value={budget}
                   onChange={(e) => setBudget(Number(e.target.value))}
-                  className="flex-1 accent-emerald-500/60"
+                  style={{
+                    width: '100%',
+                    accentColor: COLORS.primary,
+                    height: '4px',
+                  }}
                 />
-                <span className="text-sm font-medium text-slate-100 min-w-[80px] text-right">
-                  R$ {budget.toLocaleString('pt-BR')}
-                </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: COLORS.textMuted, marginTop: '4px' }}>
+                  <span>R$ 100</span>
+                  <span>R$ 1.000</span>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-950/40 rounded">
-                  <span className="text-xs text-slate-500">Leads previstos</span>
-                  <span className="text-sm font-medium text-slate-100">{scenario.leads}</span>
-                </div>
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-950/40 rounded">
-                  <span className="text-xs text-slate-500">Conversões esperadas</span>
-                  <span className="text-sm font-medium text-slate-100">{scenario.conversions}</span>
-                </div>
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-950/40 rounded">
-                  <span className="text-xs text-slate-500">Receita estimada</span>
-                  <span className="text-sm font-medium text-slate-100">
-                    R$ {scenario.revenue.toLocaleString('pt-BR')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[
+                  { label: 'Leads previstos', value: scenario.leads },
+                  { label: 'Conversões esperadas', value: scenario.conv },
+                  { label: 'Receita estimada', value: 'R$ ' + scenario.rev },
+                ].map((s, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', color: COLORS.textSoft }}>{s.label}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 600 }}>{s.value}</span>
+                  </div>
+                ))}
+                <div style={{
+                  marginTop: '8px',
+                  padding: '12px 16px',
+                  background: scenario.profitPositive ? COLORS.successLight : COLORS.dangerLight,
+                  borderRadius: '6px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: scenario.profitPositive ? COLORS.success : COLORS.danger }}>
+                    Lucro líquido
                   </span>
-                </div>
-                <div className="flex justify-between items-center px-3 py-2 bg-emerald-500/[0.06] rounded border border-emerald-500/20">
-                  <span className="text-xs text-emerald-300/80">Lucro líquido</span>
-                  <span className="text-sm font-semibold text-emerald-300/90">
-                    R$ {scenario.profit.toLocaleString('pt-BR')}
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: scenario.profitPositive ? COLORS.success : COLORS.danger, letterSpacing: '-0.3px' }}>
+                    R$ {scenario.profit}
                   </span>
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
-        {/* Marketing Mix */}
-        <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
-            Marketing Mix Modeling — alocação ótima de canal
-          </h2>
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-            {CHANNEL_MIX.map((channel) => (
-              <div key={channel.name} className="flex items-center gap-3 py-2.5 border-b border-slate-800/40 last:border-b-0">
-                <span className="text-sm font-medium text-slate-100 min-w-[100px]">{channel.name}</span>
-                <div className="flex-1 h-6 bg-slate-950/40 rounded overflow-hidden">
-                  <div
-                    className={`h-full ${channel.color} flex items-center px-2 text-[11px] font-medium text-slate-100`}
-                    style={{ width: `${channel.allocation}%` }}
-                  >
-                    {channel.allocation}%
-                  </div>
+        {/* MIX DE CANAIS */}
+        <Card padding="0" style={{ marginBottom: '32px' }}>
+          <div style={{ padding: '20px 24px', borderBottom: `1px solid ${COLORS.border}` }}>
+            <SectionHeader
+              title="Mix de canais"
+              subtitle="Performance por plataforma"
+              action={
+                <button style={{
+                  fontSize: '13px',
+                  color: COLORS.primary,
+                  background: 'transparent',
+                  border: 'none',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}>
+                  Ver detalhes <ChevronRight size={14} />
+                </button>
+              }
+            />
+          </div>
+          <div style={{ padding: '8px 0' }}>
+            {CHANNELS.map((ch, i) => (
+              <div key={ch.name} style={{
+                padding: '16px 24px',
+                borderBottom: i === CHANNELS.length - 1 ? 'none' : `1px solid ${COLORS.border}`,
+                display: 'grid',
+                gridTemplateColumns: '1fr 2fr auto auto',
+                gap: '20px',
+                alignItems: 'center',
+              }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '2px' }}>{ch.name}</div>
+                  <div style={{ fontSize: '12px', color: COLORS.textMuted }}>R$ {ch.spend.toLocaleString('pt-BR')}</div>
                 </div>
-                <span className="text-xs text-slate-500 min-w-[80px] text-right">ROAS {channel.roas}x</span>
+                <div>
+                  <div style={{ height: '8px', background: COLORS.bg, borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${ch.alloc}%`,
+                      background: ch.roas >= 3 ? COLORS.success : ch.roas >= 2 ? COLORS.primary : COLORS.warning,
+                      borderRadius: '4px',
+                    }} />
+                  </div>
+                  <div style={{ fontSize: '11px', color: COLORS.textMuted, marginTop: '4px' }}>{ch.alloc}% do budget</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: ch.roas >= 3 ? COLORS.success : ch.roas >= 2 ? COLORS.text : COLORS.warning }}>
+                    {ch.roas.toFixed(1).replace('.', ',')}×
+                  </div>
+                  <div style={{ fontSize: '11px', color: COLORS.textMuted }}>ROAS</div>
+                </div>
+                <Badge type={ch.roas >= 3 ? 'success' : ch.roas >= 2 ? 'info' : 'warning'}>
+                  {ch.roas >= 3 ? 'Escalar' : ch.roas >= 2 ? 'Manter' : 'Revisar'}
+                </Badge>
               </div>
             ))}
-            <p className="text-xs text-slate-400 mt-3 p-3 bg-slate-950/40 rounded leading-relaxed">
-              <span className="text-sky-300/80 font-medium">Recomendação do Media Buyer Agent: </span>
-              aumentar Google Search para 45%, reduzir YouTube para 0%. Lucro projetado: +R$ 720/semana.
-            </p>
           </div>
-        </div>
-
-        {/* Anomalias */}
-        <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
-            Anomalias detectadas em tempo real
-          </h2>
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-            {ANOMALIES.map((anomaly) => (
-              <AnomalyRow key={anomaly.id} anomaly={anomaly} />
-            ))}
+          <div style={{
+            padding: '16px 24px',
+            background: COLORS.primaryLight,
+            borderTop: `1px solid ${COLORS.border}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              background: COLORS.primary,
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              flexShrink: 0,
+            }}>
+              <Sparkles size={16} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: COLORS.primaryDark, marginBottom: '2px' }}>
+                Sugestão do Media Buyer Agent
+              </div>
+              <div style={{ fontSize: '13px', color: COLORS.text }}>
+                Aumentar Google Search para 45% e zerar YouTube. Lucro projetado: <strong>+R$ 720/semana</strong>
+              </div>
+            </div>
+            <button style={{
+              padding: '8px 14px',
+              background: COLORS.primary,
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}>
+              Aplicar sugestão
+            </button>
           </div>
-        </div>
+        </Card>
 
-        {/* Histórico */}
-        <div>
-          <h2 className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
-            Histórico de decisões autônomas
-          </h2>
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800/60">
-            <div className="max-h-64 overflow-y-auto">
-              {DECISIONS.map((decision, i) => (
-                <div
-                  key={i}
-                  className="flex gap-3 py-2.5 text-xs border-b border-slate-800/40 last:border-b-0"
-                >
-                  <span className="text-slate-600 font-mono min-w-[50px]">{decision.time}</span>
-                  <span className="flex-1 text-slate-400 leading-relaxed">
-                    {decision.text}
-                    <span className="ml-2 inline-block px-1.5 py-0.5 bg-sky-500/10 text-sky-300/80 text-[10px] rounded font-medium">
-                      {decision.confidence}%
-                    </span>
-                  </span>
+        {/* AGENTES + ANOMALIAS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
+          <Card padding="0">
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${COLORS.border}` }}>
+              <SectionHeader title="Agentes em ação" subtitle="Status em tempo real" />
+            </div>
+            <div>
+              {AGENTS.map((agent, i) => (
+                <div key={agent.initials} style={{
+                  padding: '14px 24px',
+                  borderBottom: i === AGENTS.length - 1 ? 'none' : `1px solid ${COLORS.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: agent.color + '15',
+                    color: agent.color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}>
+                    {agent.initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '2px' }}>{agent.name}</div>
+                    <div style={{ fontSize: '12px', color: COLORS.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {agent.role}
+                    </div>
+                  </div>
+                  <Badge type={agent.status === 'agindo' ? 'warning' : agent.status === 'pensando' ? 'info' : 'success'}>
+                    {agent.status}
+                  </Badge>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
+
+          <Card padding="0">
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${COLORS.border}` }}>
+              <SectionHeader title="Anomalias detectadas" subtitle="Alertas em tempo real" />
+            </div>
+            <div>
+              {ANOMALIES.map((a, i) => (
+                <div key={a.id} style={{
+                  padding: '16px 24px',
+                  borderBottom: i === ANOMALIES.length - 1 ? 'none' : `1px solid ${COLORS.border}`,
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'flex-start',
+                }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: a.level === 'critical' ? COLORS.dangerLight : a.level === 'warning' ? COLORS.warningLight : COLORS.infoLight,
+                    color: a.level === 'critical' ? COLORS.danger : a.level === 'warning' ? COLORS.warning : COLORS.info,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <AlertCircle size={16} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.title}</span>
+                      <span style={{ fontSize: '11px', color: COLORS.textMuted, whiteSpace: 'nowrap' }}>{a.time}</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: COLORS.textSoft, margin: 0, lineHeight: 1.5 }}>{a.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
+
+        {/* HISTÓRICO */}
+        <Card padding="0">
+          <div style={{ padding: '20px 24px', borderBottom: `1px solid ${COLORS.border}` }}>
+            <SectionHeader title="Histórico de decisões" subtitle="Últimas ações executadas autonomamente" />
+          </div>
+          <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+            {DECISIONS.map((d, i) => (
+              <div key={i} style={{
+                padding: '12px 24px',
+                borderBottom: i === DECISIONS.length - 1 ? 'none' : `1px solid ${COLORS.border}`,
+                display: 'grid',
+                gridTemplateColumns: '60px 1fr auto',
+                gap: '16px',
+                alignItems: 'center',
+                fontSize: '13px',
+              }}>
+                <span style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '11px',
+                  color: COLORS.textMuted,
+                  fontWeight: 500,
+                }}>
+                  {d.time}
+                </span>
+                <span style={{ color: COLORS.textSoft }}>{d.text}</span>
+                <span style={{
+                  fontWeight: 600,
+                  color: d.confidence >= 90 ? COLORS.success : d.confidence >= 80 ? COLORS.primary : COLORS.warning,
+                  fontSize: '13px',
+                }}>
+                  {d.confidence}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        @media (max-width: 768px) {
+          .grid-2-col { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }
