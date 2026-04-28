@@ -50,12 +50,12 @@ export default function Dashboard() {
         metricsApi.dashboard().catch(() => null),
         campaignsApi.list().catch(() => ({ campaigns: [] })),
       ]);
-      setSummary(metricsRes?.summary || { spend: 0, leads: 0, cpa: 0, roas: 0, campaigns: 0 });
-      setWeekly(metricsRes?.weekly || []);
-      setCampaigns(campaignsRes?.campaigns || []);
+      setSummary(metricsRes?.data?.summary || { spend: 0, leads: 0, cpa: 0, roas: 0, campaigns: 0 });
+      setWeekly(metricsRes?.data?.weekly || []);
+      setCampaigns(campaignsRes?.data?.campaigns || []);
 
       const analysisRes = await analyzeApi.dashboard().catch(() => null);
-      if (analysisRes) setAnalysis(analysisRes);
+      if (analysisRes?.data) setAnalysis(analysisRes.data);
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function Dashboard() {
     setSyncMsg('');
     try {
       const res = await syncApi.meta();
-      setSyncMsg(res.message || 'Sincronizado com sucesso!');
+      setSyncMsg(res.data?.message || res.message || 'Sincronizado com sucesso!');
       await load();
     } catch (err: any) {
       setSyncMsg(err.response?.data?.error?.message || 'Erro ao sincronizar. Configure o Meta Ads em Configuracoes.');
