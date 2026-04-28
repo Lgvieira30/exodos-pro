@@ -36,158 +36,203 @@ React Router 6
 Recharts (gráficos)
 ReactFlow (fluxos)
 Lucide React (ícones)
+@headlessui/react
+Axios
 ```
 
 ### Backend
 ```
-Node.js + Express
-TypeScript
-PostgreSQL (Neon — pendente)
+Node.js + Express 4
+TypeScript (ESM)
+PostgreSQL via Neon (postgres ^3.4 — driver nativo, sem ORM)
+Redis ^4.6 (dependência instalada, ainda não em uso)
+JWT (jsonwebtoken + bcryptjs)
+Helmet (segurança HTTP)
+express-validator
 Axios (Meta Ads / Google Ads APIs)
 ```
 
 ### Deploy
 ```
 Frontend: Vercel ✅ ONLINE
-Backend: Railway ⏳ Pendente (precisa root dir = "backend")
-Database: Neon ⏳ Pendente
+Backend: Railway ⏳ Pendente (railway.toml e render.yaml já criados)
+Database: Neon ⏳ Pendente (código pronto, falta DATABASE_URL no Railway)
 ```
 
 ---
 
-## 🗂️ ESTRUTURA DO REPOSITÓRIO
+## 🗂️ ESTRUTURA DO REPOSITÓRIO (ATUAL)
 
 ```
 exodos-pro/
+├── .prettierrc
+├── README.md
+├── STATUS_PROJETO.md
+│
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx                    ⚡ Nav principal + roteamento
+│   │   ├── App.tsx                    ⚡ Nav + roteamento + Sidebar integrada
 │   │   ├── main.tsx
+│   │   ├── lib/
+│   │   │   └── api.ts                 ✅ Cliente HTTP completo (axios + JWT interceptor)
 │   │   ├── pages/
-│   │   │   ├── CommandCenter.tsx      🆕 Sistema autônomo (PÁGINA NOVA)
-│   │   │   ├── Professor.tsx          🆕 Dashboard que explica métricas
 │   │   │   ├── Dashboard.tsx          📊 Visão geral
-│   │   │   ├── Analytics.tsx          📈 4 gráficos + KPIs
+│   │   │   ├── Professor.tsx          🆕 Dashboard que explica métricas
+│   │   │   ├── Analytics.tsx          📈 Gráficos + KPIs
 │   │   │   ├── Wizard.tsx             🚀 Criação de campanha (5 steps)
 │   │   │   ├── CreativeStudio.tsx     🎨 Editor de criativos
-│   │   │   ├── Settings.tsx           ⚙️ API credentials
+│   │   │   ├── CommandCenter.tsx      ⚠️  Existe mas NÃO está roteado no App.tsx
+│   │   │   ├── Settings.tsx           ⚙️  API credentials
 │   │   │   ├── Login.tsx
 │   │   │   └── Register.tsx
 │   │   ├── components/
-│   │   │   └── Sidebar.tsx
+│   │   │   ├── Layout.tsx             🆕 Layout alternativo com sidebar (não usado pelo App.tsx)
+│   │   │   ├── Logo.tsx               🆕 Logo geométrica Êxodos (usada no header)
+│   │   │   ├── ProtectedRoute.tsx     🆕 Guarda de rota autenticada
+│   │   │   └── Tooltip.tsx            🆕 Componente tooltip
 │   │   └── styles/globals.css
-│   ├── index.html                     (com Google Fonts)
+│   ├── index.html
 │   ├── package.json
-│   └── vercel.json                    (configurado pra deploy)
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   ├── vite.config.ts
+│   └── vercel.json
 │
 ├── backend/
 │   ├── src/
-│   │   ├── index.ts                   (Express + CORS + rotas)
-│   │   ├── models/index.ts            (interfaces TypeScript)
-│   │   ├── services/
-│   │   │   └── campaignProfessor.ts   🆕 Sistema Professor (analisa CPA/CTR/ROAS)
+│   │   ├── server.ts                  ⚡ Express + CORS + Helmet + migrations inline
+│   │   ├── db/
+│   │   │   ├── index.ts               🆕 Conexão PostgreSQL (Neon)
+│   │   │   └── migrate.ts             🆕 Runner de migrations
+│   │   ├── middleware/
+│   │   │   ├── auth.ts                🆕 Middleware JWT (requireAuth)
+│   │   │   └── errorHandler.ts        🆕 Error handler global
 │   │   └── routes/
-│   │       ├── campaigns.ts           (CRUD campanhas)
-│   │       ├── credentials.ts         (Meta/Google/LinkedIn)
-│   │       ├── sync.ts                (sincronização APIs)
-│   │       └── insights.ts            🆕 API do Professor
-│   ├── Dockerfile                     (Railway deploy)
+│   │       ├── index.ts               🆕 Router central
+│   │       ├── auth.ts                🆕 Login / Register / Me (completo)
+│   │       ├── campaigns.ts           CRUD campanhas
+│   │       ├── metrics.ts             🆕 Métricas do dashboard
+│   │       ├── sync.ts                Sincronização APIs externas
+│   │       ├── analyze.ts             🆕 Análise/insights (substitui insights.ts)
+│   │       └── integrations.ts        🆕 Credenciais Meta/Google (substitui credentials.ts)
+│   ├── railway.toml                   🆕 Config deploy Railway
+│   ├── render.yaml                    🆕 Config deploy Render (alternativa)
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── .env.example
 │
 └── docs/
-    ├── ROADMAP_COMPLETO.md
-    ├── DEPLOY.md
-    ├── DEPLOY_RAILWAY.md
-    └── SISTEMA_PROFESSOR.md
+    └── architecture.md                (substitui todos os docs anteriores)
 ```
+
+### Removidos desde o último status:
+- `backend/src/index.ts` → renomeado para `server.ts`
+- `backend/src/models/index.ts` → substituído por schemas no DB
+- `backend/src/services/campaignProfessor.ts` → lógica movida para `routes/analyze.ts`
+- `backend/src/routes/credentials.ts` → substituído por `routes/integrations.ts`
+- `backend/src/routes/insights.ts` → substituído por `routes/analyze.ts`
+- `backend/Dockerfile` → removido
+- `frontend/src/components/Sidebar.tsx` → integrada diretamente no `App.tsx`
+- `docs/ROADMAP_COMPLETO.md`, `docs/DEPLOY.md`, `docs/DEPLOY_RAILWAY.md`, `docs/SISTEMA_PROFESSOR.md` → substituídos por `docs/architecture.md`
 
 ---
 
-## ✅ O QUE JÁ FOI FEITO (commits no GitHub)
+## ✅ O QUE JÁ FOI FEITO
 
-### 1. Base do projeto (commits anteriores)
-- Frontend completo com 5 páginas
-- Backend completo com APIs
+### 1. Base do projeto
+- Frontend completo com páginas funcionais
+- Backend completo com APIs estruturadas
 - Deploy Vercel funcionando
-- Documentação completa
+- Documentação de arquitetura (`docs/architecture.md`)
 
-### 2. Sistema Professor (commit `b6e7c13`)
-**Localização:** `frontend/src/pages/Professor.tsx` + `backend/src/services/campaignProfessor.ts`
-
-Sistema que:
+### 2. Sistema Professor (página `Professor.tsx`)
 - Analisa CPA, CTR, ROAS, CPC, ROI
 - Explica cada métrica em linguagem natural
 - Recomenda ações específicas
-- Calcula impacto estimado
 - Score de saúde 0-100
 
-**API:**
+### 3. Command Center (`CommandCenter.tsx`)
+- 6 agentes especializados (Strategy, Media Buyer, Content, Analytics, Compliance, Decision)
+- Simulador de cenários com slider de budget
+- Marketing Mix Modeling
+- Anomaly detection
+- Histórico auditável
+- **Atenção:** arquivo existe mas foi removido das rotas do App.tsx — precisa ser re-integrado ou decidido se fica
+
+### 4. Sistema de Autenticação JWT — IMPLEMENTADO ✅
+- **Backend:** `routes/auth.ts` com POST /register, POST /login, GET /me
+- **Backend:** `middleware/auth.ts` com `requireAuth` (valida JWT em todas rotas protegidas)
+- **Frontend:** `lib/api.ts` com interceptor JWT (inclui `Authorization: Bearer <token>` em toda requisição, redireciona para /login em 401)
+- **Banco:** tabela `users` com `password_hash` (bcrypt rounds=12)
+
+### 5. Banco de Dados PostgreSQL (Neon) — CÓDIGO PRONTO ✅
+- `backend/src/db/index.ts` — cliente `postgres` conectando via `DATABASE_URL`
+- Migrations automáticas no startup do servidor (`runMigrations()` em `server.ts`)
+- Tabelas criadas automaticamente:
+  - `users` (id, email, password_hash, name, timestamps)
+  - `campaigns` (id, user_id FK, name, platform, objective, status, budget, dates)
+  - `metrics` (id, campaign_id FK, date, spend, leads, conversions, impressions, clicks, cpc, cpa, roas, ctr)
+  - `user_integrations` (id, user_id FK, platform, app_id, app_secret, access_token, account_id, last_sync)
+- **Falta:** configurar `DATABASE_URL` no Railway para ativar
+
+### 6. API Client Frontend — IMPLEMENTADO ✅
+Arquivo: `frontend/src/lib/api.ts`
+
 ```
-GET /api/insights              → análise de todas campanhas
-GET /api/insights/:id          → uma campanha
-GET /api/insights/:id/metric/:name  → uma métrica específica
-GET /api/insights/actions/prioritized  → ações prioritárias
-GET /api/insights/health/check  → saúde geral
+authApi      → POST /auth/login, POST /auth/register, GET /auth/me
+campaignsApi → GET/POST /campaigns, GET/PATCH/DELETE /campaigns/:id
+metricsApi   → GET /metrics/dashboard, GET /metrics/:id
+syncApi      → GET /sync/status, POST /sync/meta, POST /sync/google
+analyzeApi   → GET /analyze/dashboard, GET /analyze/:id
+integrationsApi → GET/POST /integrations, DELETE /integrations/:platform
 ```
 
-### 3. Command Center (commit `85959d8`)
-**Localização:** `frontend/src/pages/CommandCenter.tsx`
+### 7. Identidade visual — PARCIALMENTE APLICADA ⚠️
+- `Logo.tsx` criado e sendo usado no header ✅
+- `Layout.tsx` usa a cor correta `#3DB8E8` ✅
+- `App.tsx` usa `#6B9AE8` (azul similar mas não é a cor oficial — pendente padronizar)
 
-Sistema autônomo com:
-- **6 agentes especializados:**
-  - Strategy Agent (analisa padrões)
-  - Media Buyer Agent (realoca budget)
-  - Content Agent (gera variações de criativo)
-  - Analytics Agent (detecta anomalias)
-  - Compliance Agent (valida criativos)
-  - Decision Agent (toma decisões)
-- **Simulador de cenários** com slider de budget
-- **Marketing Mix Modeling** (alocação ótima de canais)
-- **Anomaly detection** em tempo real
-- **Histórico auditável** de decisões autônomas
-- **Recomendações prescritivas** com confidence score
-
-### 4. Iterações de design (commits `a462be4`, `fb40377`, `039b620`)
-- v1: Dark mode com cores vibrantes (estourou os olhos)
-- v2: Editorial estilo revista financeira (paper cream + Fraunces)
-- v3: Dark suavizado com cores pasteladas
-- v4: **Estilo RD Station — sidebar lateral, cards brancos, turquesa como primária** (ATUAL)
+### 8. Segurança
+- `helmet()` ativo no backend
+- CORS configurado (só aceita frontend URL ou `*.vercel.app`)
+- JWT com expiração de 24h
+- `express-validator` validando inputs no auth
 
 ---
 
-## 🎨 IDENTIDADE VISUAL (IMPORTANTE!)
+## 🎨 IDENTIDADE VISUAL
 
-**Marca real do Lucas (revelada pela foto):**
+**Marca real do Lucas:**
 - Nome: **ÊXODOS system conversion**
-- Cor primária: **Azul ciano vibrante** (~`#3DB8E8`)
-- Logo: mandala/símbolo geométrico azul à esquerda
-- Tagline em azul mais transparente
+- Cor primária: **Azul ciano** `#3DB8E8`
+- Logo: mandala/símbolo geométrico (implementado em `Logo.tsx`)
 
-⚠️ **PENDENTE:** Aplicar a identidade real no app. As versões atuais usam dourado (`#C9A84C`) ou turquesa que não bate com a marca real.
-
-**Quando atualizar no Claude Code:**
-1. Pegar logo oficial em PNG/SVG
-2. Trocar todos `#C9A84C` por `#3DB8E8` (cor real Êxodos)
-3. Adicionar logo no header da plataforma
+**Status de aplicação:**
+- `Logo.tsx` ✅ criado e no header
+- `Layout.tsx` ✅ usa `#3DB8E8`
+- `App.tsx` ⚠️ usa `#6B9AE8` — precisa trocar por `#3DB8E8`
+- Paleta dourada `#C9A84C` ✅ removida
 
 ---
 
 ## ⏳ PRÓXIMOS PASSOS (em ordem de prioridade)
 
-### 1. Aplicar identidade visual real
-- [ ] Subir logo oficial Êxodos no `/frontend/public/`
-- [ ] Trocar paleta dourada por azul ciano `#3DB8E8`
-- [ ] Atualizar `App.tsx` com logo no header
+### 1. Padronizar cor primária no App.tsx
+- [ ] Trocar `#6B9AE8` por `#3DB8E8` em `App.tsx` (sidebar ativa e nav)
 
-### 2. Deploy do Backend
+### 2. Decidir sobre CommandCenter
+- [ ] Opção A: re-adicionar rota `/command-center` no `App.tsx`
+- [ ] Opção B: remover o arquivo se não for usar
+
+### 3. Deploy do Backend (Railway)
 - [ ] Criar conta Neon (https://neon.tech)
-- [ ] Criar projeto + copiar DATABASE_URL
+- [ ] Copiar `DATABASE_URL` do Neon
 - [ ] Railway: settings → root directory = `backend`
 - [ ] Adicionar env vars no Railway:
   ```
   DATABASE_URL=postgresql://...
+  JWT_SECRET=<string-aleatória-longa>
+  JWT_EXPIRES_IN=24h
   PORT=3001
   NODE_ENV=production
   FRONTEND_URL=https://exodos-pro-9d9i.vercel.app
@@ -198,28 +243,59 @@ Sistema autônomo com:
   ```
 - [ ] Redeploy no Railway
 
-### 3. Conectar Frontend ↔️ Backend
-- [ ] Criar `frontend/src/services/api.ts` com axios
-- [ ] Trocar dados mock do Command Center por chamadas reais
-- [ ] Trocar dados mock do Professor por chamadas reais
-- [ ] Adicionar variável `VITE_API_URL` no Vercel
+### 4. Conectar Frontend ↔ Backend
+- [ ] Adicionar variável `VITE_API_URL=https://<backend-railway-url>/api` no Vercel
+- [ ] Testar login/register real
+- [ ] Trocar dados mock das páginas (Dashboard, Analytics, Professor) por chamadas reais via `api.ts`
 
-### 4. Vincular Meta Ads + Google Ads
-- [ ] Settings page: form pra inserir API keys
-- [ ] Backend: implementar `/api/sync/meta`
-- [ ] Backend: implementar `/api/sync/google`
+### 5. Vincular Meta Ads + Google Ads
+- [ ] Settings page: salvar credenciais via `integrationsApi.save()`
+- [ ] Backend `sync.ts`: implementar `/api/sync/meta` real
+- [ ] Backend `sync.ts`: implementar `/api/sync/google` real
 - [ ] Cron job a cada 1 hora
 
-### 5. Sistema de autenticação
-- [ ] JWT no backend
-- [ ] Login/Register funcional
-- [ ] Multi-tenancy (cada user vê só suas campanhas)
+### 6. Redis (dependência instalada, não configurado)
+- [ ] Adicionar `REDIS_URL` no Railway
+- [ ] Usar para cache de métricas (TTL 5min)
+- [ ] Usar para sessões/rate limiting
 
-### 6. n8n integrações (depois de tudo funcionando)
+### 7. n8n integrações (depois de tudo funcionando)
 - [ ] Webhook recebe leads
 - [ ] Validação + scoring
 - [ ] Notifica Slack/WhatsApp
 - [ ] Distribui pra CRM
+
+---
+
+## 🛠️ ROTAS DA API (ESTADO ATUAL)
+
+```
+GET  /health                        → status do servidor
+
+POST /api/auth/register             → cadastro
+POST /api/auth/login                → login
+GET  /api/auth/me                   → dados do usuário logado [auth]
+
+GET  /api/campaigns                 → listar campanhas [auth]
+GET  /api/campaigns/:id             → uma campanha [auth]
+POST /api/campaigns                 → criar campanha [auth]
+PATCH /api/campaigns/:id            → atualizar campanha [auth]
+DELETE /api/campaigns/:id           → remover campanha [auth]
+
+GET  /api/metrics/dashboard         → métricas gerais [auth]
+GET  /api/metrics/:id               → métricas de campanha [auth]
+
+GET  /api/sync/status               → status das sincronizações [auth]
+POST /api/sync/meta                 → sincronizar Meta Ads [auth]
+POST /api/sync/google               → sincronizar Google Ads [auth]
+
+GET  /api/analyze/dashboard         → análise geral (Professor) [auth]
+GET  /api/analyze/:id               → análise de campanha [auth]
+
+GET  /api/integrations              → listar integrações [auth]
+POST /api/integrations              → salvar credenciais [auth]
+DELETE /api/integrations/:platform  → remover integração [auth]
+```
 
 ---
 
@@ -239,12 +315,12 @@ Sistema autônomo com:
 ```typescript
 score = 100;
 if (roas < 1.5) score -= 30;
-if (cpa > 80) score -= 20;
-if (ctr < 1.5) score -= 15;
-if (roi < 100) score -= 10;
-if (roas > 3) score += 10;
-if (cpa < 40) score += 10;
-if (ctr > 2.5) score += 10;
+if (cpa > 80)   score -= 20;
+if (ctr < 1.5)  score -= 15;
+if (roi < 100)  score -= 10;
+if (roas > 3)   score += 10;
+if (cpa < 40)   score += 10;
+if (ctr > 2.5)  score += 10;
 ```
 
 ---
@@ -253,7 +329,6 @@ if (ctr > 2.5) score += 10;
 
 **Atualizar local com GitHub:**
 ```bash
-cd C:\Users\lucas\exodos-pro
 git pull origin main
 ```
 
@@ -346,14 +421,7 @@ git push origin main
 Repositório: https://github.com/lgvieira30/exodos-pro
 Status atual: documentado em STATUS_PROJETO.md
 
-Próximas prioridades:
-1. Aplicar identidade visual real (azul ciano #3DB8E8)
-2. Adicionar logo Êxodos system conversion
-3. Deploy do backend no Railway
-4. Conectar frontend ao backend
-5. Integrar Meta Ads API real
-
-Lê o STATUS_PROJETO.md e me ajuda a executar o item 1.
+Lê o STATUS_PROJETO.md e me ajuda a executar o próximo passo.
 ```
 
 ---
