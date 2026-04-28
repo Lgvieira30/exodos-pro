@@ -140,7 +140,7 @@ export default function Dashboard() {
         <button
           onClick={() => navigate('/wizard')}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #3b82f6, #6d28d9)', boxShadow: '0 0 24px rgba(59,130,246,0.3)' }}
+          style={{ background: 'linear-gradient(135deg, #3DB8E8, #1a8ab8)', boxShadow: '0 0 24px rgba(61,184,232,0.3)' }}
         >
           <Plus className="w-4 h-4" /> Nova Campanha
         </button>

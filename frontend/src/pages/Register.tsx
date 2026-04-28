@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../lib/api';
-import { Zap } from 'lucide-react';
+import { Logo } from '../components/Logo';
+
+const CYAN = '#3DB8E8';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -12,8 +14,7 @@ export default function Register() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (form.password.length < 8) { setError('Senha deve ter no mínimo 8 caracteres'); return; }
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       const res = await authApi.register(form.name, form.email, form.password);
       localStorage.setItem('token', res.data.token);
@@ -27,29 +28,28 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{
-      background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.08) 0%, #080c14 60%)',
+      background: 'radial-gradient(ellipse at 50% 0%, rgba(61,184,232,0.06) 0%, #070b12 60%)',
     }}>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-20 pointer-events-none" style={{
-        background: 'radial-gradient(circle, #8b5cf6 0%, transparent 70%)',
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 pointer-events-none" style={{
+        background: `radial-gradient(circle, ${CYAN}15 0%, transparent 70%)`,
         filter: 'blur(60px)',
       }} />
 
       <div className="w-full max-w-sm relative">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            boxShadow: '0 0 30px rgba(139,92,246,0.4)',
-          }}>
-            <Zap className="w-7 h-7 text-white" />
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div style={{ filter: `drop-shadow(0 0 16px ${CYAN}80)` }}>
+              <Logo size={48} />
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-white">ÊXODOS PRO</h1>
-          <p className="text-slate-500 text-sm mt-1">Gestão de Campanhas</p>
+          <p className="font-bold text-white text-xl tracking-wide">êxodos</p>
+          <p className="text-sm" style={{ color: CYAN, opacity: 0.8 }}>system conversion</p>
         </div>
 
         <div className="rounded-2xl p-8" style={{
-          background: 'rgba(15,23,42,0.8)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+          background: 'rgba(11,20,34,0.9)',
+          border: `1px solid rgba(61,184,232,0.12)`,
+          boxShadow: `0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(61,184,232,0.05)`,
           backdropFilter: 'blur(20px)',
         }}>
           <h2 className="text-lg font-semibold text-white mb-6">Criar sua conta</h2>
@@ -61,14 +61,14 @@ export default function Register() {
               { label: 'Senha', key: 'password', type: 'password', placeholder: 'Mínimo 8 caracteres' },
             ].map(({ label, key, type, placeholder }) => (
               <div key={key}>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">{label}</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wider">{label}</label>
                 <input
                   type={type}
                   required
-                  className="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-slate-600 focus:outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.5)'}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                  className="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-slate-700 focus:outline-none transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  onFocus={(e) => e.target.style.borderColor = `${CYAN}50`}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.07)'}
                   placeholder={placeholder}
                   value={form[key as keyof typeof form]}
                   onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
@@ -78,20 +78,17 @@ export default function Register() {
 
             {error && (
               <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.2)',
-              }}>
-                {error}
-              </div>
+                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+              }}>{error}</div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-all disabled:opacity-60"
+              className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-all disabled:opacity-60 mt-2"
               style={{
-                background: loading ? '#4c1d95' : 'linear-gradient(135deg, #6d28d9, #3b82f6)',
-                boxShadow: loading ? 'none' : '0 0 20px rgba(139,92,246,0.3)',
+                background: `linear-gradient(135deg, ${CYAN}, #1a8ab8)`,
+                boxShadow: loading ? 'none' : `0 0 24px ${CYAN}40`,
               }}
             >
               {loading ? 'Criando conta...' : 'Criar conta'}
@@ -100,7 +97,7 @@ export default function Register() {
 
           <p className="text-center text-slate-600 text-sm mt-6">
             Já tem conta?{' '}
-            <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+            <Link to="/login" className="font-medium transition-colors" style={{ color: CYAN }}>
               Entrar
             </Link>
           </p>
