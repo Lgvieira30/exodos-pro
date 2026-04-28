@@ -1,380 +1,341 @@
-import React, { useState } from 'react';
-import { AlertCircle, CheckCircle, TrendingUp, TrendingDown, Info, Zap } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import {
+  GraduationCap, TrendingUp, TrendingDown, AlertTriangle,
+  CheckCircle, Info, ChevronRight, Zap, Target, DollarSign,
+  BarChart3, Activity,
+} from 'lucide-react';
+import { metricsApi } from '../lib/api';
 
-interface Insight {
-  category: string;
-  severity: 'critical' | 'warning' | 'info' | 'success';
-  metric: string;
-  currentValue: number;
-  expectedValue: number;
+const TEAL = '#00B7B7';
+
+interface Metric {
+  key: string;
+  label: string;
+  value: string;
+  raw: number;
+  status: 'excellent' | 'good' | 'warning' | 'critical';
   explanation: string;
-  whatItMeans: string;
-  whyItMatters: string;
-  whatToDo: string[];
-  estimatedImpact: string;
+  recommendation: string;
+  impact: string;
+  icon: React.ElementType;
+  benchmark: string;
 }
 
-interface Campaign {
-  id: string;
-  name: string;
-  spend: number;
-  leads: number;
-  conversions: number;
-  impressions: number;
-  clicks: number;
-  cpc: number;
-  ctr: number;
-  cpa: number;
-  roas: number;
-  roi: number;
-  healthScore: number;
-  status: 'Excelente' | 'Bom' | 'Atenção' | 'Crítico';
+function getStatus(key: string, value: number): 'excellent' | 'good' | 'warning' | 'critical' {
+  if (key === 'cpa') {
+    if (value <= 30) return 'excellent';
+    if (value <= 50) return 'good';
+    if (value <= 80) return 'warning';
+    return 'critical';
+  }
+  if (key === 'roas') {
+    if (value >= 5) return 'excellent';
+    if (value >= 3) return 'good';
+    if (value >= 2) return 'warning';
+    return 'critical';
+  }
+  if (key === 'ctr') {
+    if (value >= 3) return 'excellent';
+    if (value >= 1.5) return 'good';
+    if (value >= 0.8) return 'warning';
+    return 'critical';
+  }
+  if (key === 'cpc') {
+    if (value <= 1) return 'excellent';
+    if (value <= 2.5) return 'good';
+    if (value <= 5) return 'warning';
+    return 'critical';
+  }
+  if (key === 'roi') {
+    if (value >= 300) return 'excellent';
+    if (value >= 150) return 'good';
+    if (value >= 50) return 'warning';
+    return 'critical';
+  }
+  return 'good';
 }
 
-const mockCampaigns: Campaign[] = [
-  {
-    id: '1',
-    name: 'Clínica - Lipoaspiração',
-    spend: 2000,
-    leads: 50,
-    conversions: 10,
-    impressions: 100000,
-    clicks: 2100,
-    cpc: 0.95,
-    ctr: 2.1,
-    cpa: 40,
-    roas: 3.2,
-    roi: 220,
-    healthScore: 95,
-    status: 'Excelente',
-  },
-  {
-    id: '2',
-    name: 'Advocacia - Divórcio',
-    spend: 1320,
-    leads: 20,
-    conversions: 2,
-    impressions: 88000,
-    clicks: 1320,
-    cpc: 1.0,
-    ctr: 1.5,
-    cpa: 66,
-    roas: 1.8,
-    roi: 80,
-    healthScore: 45,
-    status: 'Atenção',
-  },
-  {
-    id: '3',
-    name: 'Imobiliária - Bairro X',
-    spend: 1000,
-    leads: 177,
-    conversions: 8,
-    impressions: 63214,
-    clicks: 1768,
-    cpc: 0.57,
-    ctr: 2.8,
-    cpa: 5.65,
-    roas: 2.5,
-    roi: 150,
-    healthScore: 88,
-    status: 'Excelente',
-  },
-];
-
-const generateInsights = (campaign: Campaign): Insight[] => {
-  const insights: Insight[] = [];
-
-  // CPA Insight
-  const cpaBad = campaign.cpa > 60;
-  insights.push({
-    category: 'CPA (Custo por Aquisição)',
-    severity: cpaBad ? 'critical' : 'success',
-    metric: `R$ ${campaign.cpa.toFixed(2)}`,
-    currentValue: campaign.cpa,
-    expectedValue: 40,
-    explanation: `Você gastou R$ ${campaign.spend.toLocaleString('pt-BR')} e conseguiu ${campaign.leads} leads. Logo: R$ ${campaign.spend} ÷ ${campaign.leads} = R$ ${campaign.cpa.toFixed(2)} por lead`,
-    whatItMeans: `Cada lead está custando R$ ${campaign.cpa.toFixed(2)}. Se seu alvo é R$ 40, você está ${cpaBad ? 'ACIMA' : 'ABAIXO'} do esperado.`,
-    whyItMatters: `Se seu CPA é R$ ${campaign.cpa.toFixed(2)} e você vende por R$ 200: Margem = R$ ${(200 - campaign.cpa).toFixed(2)} (${cpaBad ? 'aperto demais' : 'lucro bom'})`,
-    whatToDo: cpaBad
-      ? [
-          `❌ PROBLEMA: CPA de R$ ${campaign.cpa} > alvo de R$ 40`,
-          `1️⃣ Verifique a QUALIDADE DOS LEADS: são realmente interessados?`,
-          `2️⃣ Teste NOVO AUDIENCE: talvez seu público está errado`,
-          `3️⃣ Mude o CRIATIVO: talvez ad não tá atraindo certo`,
-        ]
-      : [
-          `✅ EXCELENTE: CPA de R$ ${campaign.cpa} ≤ alvo de R$ 40`,
-          `📈 Próximo passo: AUMENTE O BUDGET para conseguir mais leads`,
-        ],
-    estimatedImpact: cpaBad
-      ? `Reduzindo CPA de R$ ${campaign.cpa} para R$ 40: ${Math.round((campaign.cpa - 40) / campaign.cpa * 100)}% de melhoria`
-      : `CPA ótimo. Aumento de 20% no budget = +${Math.round(campaign.leads * 0.2)} leads`,
+function calcHealthScore(metrics: Metric[]): number {
+  const weights: Record<string, number> = { roas: 30, cpa: 25, ctr: 20, cpc: 15, roi: 10 };
+  const scores: Record<string, number> = { excellent: 100, good: 75, warning: 40, critical: 10 };
+  let total = 0;
+  let weightSum = 0;
+  metrics.forEach((m) => {
+    const w = weights[m.key] || 10;
+    total += (scores[m.status] || 50) * w;
+    weightSum += w;
   });
+  return Math.round(total / weightSum);
+}
 
-  // ROAS Insight
-  const roasBad = campaign.roas < 2.5;
-  insights.push({
-    category: 'ROAS (Retorno do Investimento em Anúncios)',
-    severity: roasBad ? 'critical' : 'success',
-    metric: `${campaign.roas.toFixed(2)}x`,
-    currentValue: campaign.roas,
-    expectedValue: 2.5,
-    explanation: `Você investiu R$ ${campaign.spend.toLocaleString('pt-BR')} e faturou R$ ${(campaign.spend * campaign.roas).toLocaleString('pt-BR')} em vendas`,
-    whatItMeans: `Para cada R$ 1,00 que você gastou, você faturou R$ ${campaign.roas.toFixed(2)}. ${roasBad ? 'Está PERDENDO DINHEIRO' : 'Está LUCRANDO!'}`,
-    whyItMatters: `ROAS é a MÉTRICA MAIS IMPORTANTE! Se ROAS = 2.5x: R$ 100 gasto = R$ 250 recebido = R$ 150 lucro`,
-    whatToDo: roasBad
-      ? [
-          `🚨 CRÍTICO: ROAS ${campaign.roas.toFixed(2)}x < alvo 2.5x`,
-          `⚠️ Você está recebendo menos do que gastou!`,
-          `1️⃣ Aumente LANDING PAGE conversion`,
-          `2️⃣ Melhore o PRODUTO/OFERTA`,
-          `3️⃣ PAUSE em 3 dias se não melhorar`,
-        ]
-      : [
-          `✅ EXCELENTE: ROAS ${campaign.roas.toFixed(2)}x > alvo 2.5x`,
-          `💰 RECOMENDAÇÃO: AUMENTE O BUDGET em 30-50%`,
-          `🎯 Essa campanha é uma MÁQUINA DE DINHEIRO!`,
-        ],
-    estimatedImpact: roasBad
-      ? `Se melhorar ROAS de ${campaign.roas}x para 2.5x: +R$ ${(campaign.spend * (2.5 - campaign.roas)).toFixed(2)} ganho`
-      : `Se aumentar budget em 30%: +R$ ${(campaign.spend * 0.3 * (campaign.roas - 1)).toFixed(2)} lucro`,
-  });
-
-  // CTR Insight
-  const ctrBad = campaign.ctr < 1.5;
-  insights.push({
-    category: 'CTR (Taxa de Clique)',
-    severity: ctrBad ? 'warning' : 'success',
-    metric: `${campaign.ctr.toFixed(2)}%`,
-    currentValue: campaign.ctr,
-    expectedValue: 2.0,
-    explanation: `Seu anúncio foi mostrado ${campaign.impressions.toLocaleString('pt-BR')} vezes. Pessoas clicaram ${campaign.clicks.toLocaleString('pt-BR')} vezes.`,
-    whatItMeans: `De 100 pessoas que viram seu anúncio, ${campaign.ctr.toFixed(2)} clicaram. ${ctrBad ? 'Muito baixo!' : 'Legal!'}`,
-    whatToDo: ctrBad
-      ? [
-          `⚠️ AVISO: CTR de ${campaign.ctr.toFixed(2)}% é baixo`,
-          `1️⃣ TESTE HEADLINES: "Clique aqui", "Veja como"`,
-          `2️⃣ MUDE A IMAGEM: cores vibrantes, pessoas`,
-          `3️⃣ TESTE CALL-TO-ACTION diferentes`,
-        ]
-      : [
-          `✅ BOM: CTR de ${campaign.ctr.toFixed(2)}% está acima da média`,
-          `📈 Seu anúncio está atraindo bem!`,
-        ],
-    whyItMatters: `CTR baixo = anúncio não é atrativo. CTR alto = pessoas querem clicar.`,
-    estimatedImpact: ctrBad
-      ? `Se melhorar CTR de ${campaign.ctr}% para 2%: ${Math.round((2 - campaign.ctr) / campaign.ctr * 100)}% mais clicks`
-      : `CTR ótimo. Foco agora em converter cliques`,
-  });
-
-  return insights;
-};
-
-export default function Professor() {
-  const [selectedCampaignId, setSelectedCampaignId] = useState(mockCampaigns[0].id);
-  const [expandedMetric, setExpandedMetric] = useState<string | null>(null);
-
-  const selectedCampaign = mockCampaigns.find(c => c.id === selectedCampaignId)!;
-  const insights = generateInsights(selectedCampaign);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Excelente':
-        return 'bg-green-900/30 border-green-700 text-green-400';
-      case 'Bom':
-        return 'bg-blue-900/30 border-blue-700 text-blue-400';
-      case 'Atenção':
-        return 'bg-yellow-900/30 border-yellow-700 text-yellow-400';
-      case 'Crítico':
-        return 'bg-red-900/30 border-red-700 text-red-400';
-      default:
-        return 'bg-slate-900/30';
-    }
-  };
-
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return <AlertCircle className="w-5 h-5 text-red-400" />;
-      case 'warning':
-        return <TrendingDown className="w-5 h-5 text-yellow-400" />;
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
-      default:
-        return <Info className="w-5 h-5 text-blue-400" />;
-    }
-  };
+function HealthGauge({ score }: { score: number }) {
+  const color = score >= 75 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+  const label = score >= 75 ? 'Excelente' : score >= 50 ? 'Atenção' : 'Crítico';
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-950 p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Zap className="w-8 h-8 text-blue-400" />
-            <h1 className="text-4xl font-bold text-white">🧠 Professor de Marketing</h1>
-          </div>
-          <p className="text-slate-400">Sistema inteligente que explica métricas e recomenda ações</p>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+      <div style={{ position: 'relative', width: '130px', height: '130px' }}>
+        <svg width="130" height="130" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="65" cy="65" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+          <circle
+            cx="65" cy="65" r="52" fill="none"
+            stroke={color} strokeWidth="10"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{ transition: 'stroke-dashoffset 1s ease' }}
+          />
+        </svg>
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ fontSize: '28px', fontWeight: 800, color: '#fff' }}>{score}</span>
+          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '-2px' }}>/ 100</span>
         </div>
+      </div>
+      <span style={{ fontSize: '13px', fontWeight: 600, color }}>{label}</span>
+    </div>
+  );
+}
 
-        {/* Campaign Selector */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {mockCampaigns.map(campaign => (
-            <button
-              key={campaign.id}
-              onClick={() => setSelectedCampaignId(campaign.id)}
-              className={`p-4 rounded-lg border-2 transition ${
-                selectedCampaignId === campaign.id
-                  ? 'border-blue-500 bg-blue-900/20'
-                  : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-              }`}
-            >
-              <div className="text-left">
-                <h3 className="font-semibold text-white mb-2">{campaign.name}</h3>
-                <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(campaign.status)}`}>
-                  {campaign.status} ({campaign.healthScore}%)
-                </div>
-              </div>
-            </button>
+const STATUS_CONFIG = {
+  excellent: { color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)', label: 'Excelente', icon: CheckCircle },
+  good: { color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.2)', label: 'Bom', icon: TrendingUp },
+  warning: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)', label: 'Atenção', icon: AlertTriangle },
+  critical: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', label: 'Crítico', icon: TrendingDown },
+};
+
+function MetricCard({ metric, expanded, onToggle }: { metric: Metric; expanded: boolean; onToggle: () => void }) {
+  const cfg = STATUS_CONFIG[metric.status];
+  const Icon = metric.icon;
+
+  return (
+    <div
+      onClick={onToggle}
+      style={{
+        background: 'rgba(15,23,42,0.8)',
+        border: `1px solid ${expanded ? TEAL + '40' : 'rgba(255,255,255,0.06)'}`,
+        borderRadius: '16px',
+        padding: '20px',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: expanded ? '16px' : 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '10px',
+            background: cfg.bg, border: `1px solid ${cfg.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Icon size={18} color={cfg.color} />
+          </div>
+          <div>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '2px' }}>{metric.label}</p>
+            <p style={{ fontSize: '22px', fontWeight: 700, color: '#fff' }}>{metric.value}</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{
+            fontSize: '11px', fontWeight: 600, padding: '4px 10px',
+            borderRadius: '20px', background: cfg.bg, color: cfg.color,
+          }}>
+            {cfg.label}
+          </span>
+          <ChevronRight size={16} color="rgba(255,255,255,0.3)" style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+        </div>
+      </div>
+
+      {expanded && (
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)' }}>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Info size={12} /> O QUE SIGNIFICA
+            </p>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>{metric.explanation}</p>
+          </div>
+          <div style={{ padding: '12px', borderRadius: '10px', background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+            <p style={{ fontSize: '11px', color: cfg.color, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Zap size={12} /> RECOMENDAÇÃO
+            </p>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>{metric.recommendation}</p>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>Benchmark do setor</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{metric.benchmark}</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>Impacto estimado</p>
+              <p style={{ fontSize: '12px', color: cfg.color, fontWeight: 600 }}>{metric.impact}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Professor() {
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [healthScore, setHealthScore] = useState(0);
+  const [usingMock, setUsingMock] = useState(false);
+
+  useEffect(() => {
+    metricsApi.dashboard()
+      .then((res) => {
+        const s = res.data.summary;
+        if (!s) throw new Error('no data');
+        buildMetrics(s.cpa || 47, s.roas || 3.4, 1.8, 2.1, ((s.roas || 3.4) - 1) * 100);
+      })
+      .catch(() => {
+        buildMetrics(47, 3.4, 1.8, 2.1, 240);
+        setUsingMock(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  function buildMetrics(cpa: number, roas: number, ctr: number, cpc: number, roi: number) {
+    const raw: Metric[] = [
+      {
+        key: 'roas', label: 'ROAS', value: `${roas.toFixed(1)}x`, raw: roas,
+        status: getStatus('roas', roas), icon: TrendingUp,
+        explanation: `Para cada R$1 investido, você recuperou R$${roas.toFixed(2)} em receita. ROAS ${roas.toFixed(1)}x significa retorno ${roas > 1 ? 'positivo' : 'negativo'} sobre o investimento.`,
+        recommendation: roas >= 3 ? 'Ótimo ROAS! Escale o orçamento 20-30% nos conjuntos com melhor desempenho.' : 'Revise criativos e público-alvo. Segmentações mais específicas melhoram a qualidade do tráfego.',
+        impact: roas >= 3 ? '+15-25% ao escalar' : 'Pode dobrar com ajustes',
+        benchmark: 'Bom: 3x+ | Excelente: 5x+',
+      },
+      {
+        key: 'cpa', label: 'CPA (Custo por Aquisição)', value: `R$ ${cpa.toFixed(2)}`, raw: cpa,
+        status: getStatus('cpa', cpa), icon: Target,
+        explanation: `Você paga R$${cpa.toFixed(2)} por cada conversão. Inclui todo o investimento dividido pelo número de conversões geradas no período.`,
+        recommendation: cpa <= 50 ? 'CPA sob controle. Mantenha anúncios bons e pause os que ultrapassam 1.5x esse valor.' : 'CPA elevado. Revise sua landing page, CTAs e sequência de funil para melhorar a taxa de conversão.',
+        impact: cpa <= 50 ? 'Otimize para -10%' : 'Redução de até 40%',
+        benchmark: 'Bom: < R$50 | Excelente: < R$30',
+      },
+      {
+        key: 'ctr', label: 'CTR (Taxa de Cliques)', value: `${ctr.toFixed(1)}%`, raw: ctr,
+        status: getStatus('ctr', ctr), icon: Activity,
+        explanation: `${ctr.toFixed(1)}% das impressões geraram cliques. CTR alto indica que seu criativo gera interesse genuíno no público-alvo.`,
+        recommendation: ctr >= 1.5 ? 'CTR saudável. Teste variações do criativo vencedor para melhorar ainda mais.' : 'CTR baixo: o anúncio não ressoa com o público. Teste novos criativos e títulos mais diretos.',
+        impact: ctr >= 1.5 ? 'Manter padrão' : '-20% no CPC se melhorar',
+        benchmark: 'Bom: 1.5%+ | Excelente: 3%+',
+      },
+      {
+        key: 'cpc', label: 'CPC (Custo por Clique)', value: `R$ ${cpc.toFixed(2)}`, raw: cpc,
+        status: getStatus('cpc', cpc), icon: DollarSign,
+        explanation: `Cada clique custa R$${cpc.toFixed(2)}. Influenciado pela concorrência no leilão, qualidade do anúncio e público escolhido.`,
+        recommendation: cpc <= 2.5 ? 'CPC competitivo. Melhore o Quality Score com extensões e relevância de landing page.' : 'CPC elevado: alta concorrência ou anúncio de baixa qualidade. Melhore a relevância do criativo.',
+        impact: cpc <= 2.5 ? 'Estável' : 'Até -30% com otimização',
+        benchmark: 'Bom: < R$2.50 | Excelente: < R$1',
+      },
+      {
+        key: 'roi', label: 'ROI (Retorno sobre Investimento)', value: `${roi.toFixed(0)}%`, raw: roi,
+        status: getStatus('roi', roi), icon: BarChart3,
+        explanation: `Retorno líquido de ${roi.toFixed(0)}% sobre o investido. Para cada R$100 gastos, você obteve R$${(100 + roi).toFixed(0)} de retorno bruto.`,
+        recommendation: roi >= 150 ? 'ROI excelente! Documente a estratégia e replique em novos mercados ou produtos.' : 'ROI abaixo do ideal. Analise o funil completo e identifique onde os leads se perdem.',
+        impact: roi >= 150 ? 'Replique a estratégia' : 'Pode triplicar com funil certo',
+        benchmark: 'Bom: 150%+ | Excelente: 300%+',
+      },
+    ];
+    setMetrics(raw);
+    setHealthScore(calcHealthScore(raw));
+    setExpandedKey(raw[0].key);
+  }
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#000' }}>
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: `2px solid ${TEAL}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+
+  const criticalCount = metrics.filter((m) => m.status === 'critical').length;
+  const warningCount = metrics.filter((m) => m.status === 'warning').length;
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#000', padding: '32px' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${TEAL}20`, border: `1px solid ${TEAL}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <GraduationCap size={20} color={TEAL} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fff' }}>Professor IA</h1>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Análise inteligente das suas métricas de tráfego pago</p>
+          </div>
+        </div>
+        {usingMock && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#f59e0b', padding: '6px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', marginTop: '8px' }}>
+            <AlertTriangle size={13} />
+            Exibindo análise com dados de demonstração — adicione métricas reais para ver sua análise personalizada.
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {metrics.map((metric) => (
+            <MetricCard key={metric.key} metric={metric} expanded={expandedKey === metric.key} onToggle={() => setExpandedKey(expandedKey === metric.key ? null : metric.key)} />
           ))}
         </div>
 
-        {/* Health Score */}
-        <div className="mb-8 bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-lg p-6 border border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white">📊 Saúde da Campanha</h2>
-            <div className={`text-5xl font-bold ${
-              selectedCampaign.healthScore >= 80 ? 'text-green-400'
-              : selectedCampaign.healthScore >= 60 ? 'text-blue-400'
-              : selectedCampaign.healthScore >= 40 ? 'text-yellow-400'
-              : 'text-red-400'
-            }`}>
-              {selectedCampaign.healthScore}%
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>Score de Saúde</p>
+            <HealthGauge score={healthScore} />
+            <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Métricas críticas</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: criticalCount > 0 ? '#ef4444' : '#10b981' }}>{criticalCount}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Precisam atenção</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: warningCount > 0 ? '#f59e0b' : '#10b981' }}>{warningCount}</span>
+              </div>
             </div>
           </div>
-          <p className="text-slate-300">
-            {selectedCampaign.healthScore >= 80 && '🟢 Tudo certo! Continue assim.'}
-            {selectedCampaign.healthScore >= 60 && selectedCampaign.healthScore < 80 && '🟡 Alguns ajustes necessários'}
-            {selectedCampaign.healthScore >= 40 && selectedCampaign.healthScore < 60 && '🟠 Problemas identificados, revise'}
-            {selectedCampaign.healthScore < 40 && '🔴 Crítico! Ação imediata necessária'}
-          </p>
-        </div>
 
-        {/* Main Metrics Grid */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm mb-2">Spend</p>
-            <p className="text-2xl font-bold text-white">R$ {selectedCampaign.spend.toLocaleString('pt-BR')}</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm mb-2">Leads</p>
-            <p className="text-2xl font-bold text-green-400">{selectedCampaign.leads}</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm mb-2">CPA</p>
-            <p className="text-2xl font-bold text-blue-400">R$ {selectedCampaign.cpa.toFixed(2)}</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm mb-2">ROAS</p>
-            <p className="text-2xl font-bold text-purple-400">{selectedCampaign.roas.toFixed(2)}x</p>
-          </div>
-        </div>
-
-        {/* Insights */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-white mb-4">📚 Análise Detalhada</h2>
-          
-          {insights.map((insight, index) => (
-            <div
-              key={index}
-              className={`rounded-lg border-2 overflow-hidden transition ${
-                insight.severity === 'critical'
-                  ? 'border-red-700 bg-red-900/10'
-                  : insight.severity === 'warning'
-                  ? 'border-yellow-700 bg-yellow-900/10'
-                  : insight.severity === 'success'
-                  ? 'border-green-700 bg-green-900/10'
-                  : 'border-blue-700 bg-blue-900/10'
-              }`}
-            >
-              {/* Header */}
-              <button
-                onClick={() =>
-                  setExpandedMetric(expandedMetric === insight.category ? null : insight.category)
-                }
-                className="w-full p-4 flex items-center justify-between hover:bg-black/20 transition"
-              >
-                <div className="flex items-center gap-4 flex-1 text-left">
-                  {getSeverityIcon(insight.severity)}
-                  <div>
-                    <h3 className="text-lg font-bold text-white">{insight.category}</h3>
-                    <p className="text-sm text-slate-400">
-                      {insight.metric} {insight.metric !== insight.expectedValue.toString() && `(alvo: ${insight.expectedValue})`}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-slate-400">{expandedMetric === insight.category ? '▼' : '▶'}</div>
-              </button>
-
-              {/* Expanded Content */}
-              {expandedMetric === insight.category && (
-                <div className="border-t border-slate-700/50 p-4 space-y-4 bg-black/10">
-                  {/* Explanation */}
-                  <div>
-                    <h4 className="font-semibold text-white mb-2">📖 O que significa?</h4>
-                    <p className="text-slate-300 text-sm whitespace-pre-wrap">{insight.whatItMeans}</p>
-                  </div>
-
-                  {/* Why it Matters */}
-                  <div>
-                    <h4 className="font-semibold text-white mb-2">⚡ Por que importa?</h4>
-                    <p className="text-slate-300 text-sm whitespace-pre-wrap">{insight.whyItMatters}</p>
-                  </div>
-
-                  {/* Actions */}
-                  <div>
-                    <h4 className="font-semibold text-white mb-2">✅ O que fazer?</h4>
-                    <div className="space-y-2">
-                      {insight.whatToDo.map((action, i) => (
-                        <p key={i} className="text-slate-300 text-sm">{action}</p>
-                      ))}
+          <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>Diagnóstico Rápido</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {metrics.map((m) => {
+                const cfg = STATUS_CONFIG[m.status];
+                return (
+                  <div key={m.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{m.label.split(' ')[0]}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: cfg.color }} />
+                      <span style={{ fontSize: '11px', color: cfg.color, fontWeight: 600 }}>{cfg.label}</span>
                     </div>
                   </div>
-
-                  {/* Impact */}
-                  <div>
-                    <h4 className="font-semibold text-white mb-2">💰 Impacto Estimado</h4>
-                    <p className="text-slate-300 text-sm">{insight.estimatedImpact}</p>
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Priority Actions */}
-        <div className="mt-8 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg p-6 border border-blue-700/50">
-          <h2 className="text-2xl font-bold text-white mb-4">🎯 Ações Prioritárias</h2>
-          <div className="space-y-2">
-            {selectedCampaign.roas > 3 && (
-              <p className="text-green-400">💰 ESCALE: ROAS ${selectedCampaign.roas.toFixed(2)}x excelente! Aumente budget 30%</p>
-            )}
-            {selectedCampaign.roas < 1 && (
-              <p className="text-red-400">🚨 PAUSE: ROAS ${selectedCampaign.roas.toFixed(2)}x está perdendo dinheiro!</p>
-            )}
-            {selectedCampaign.cpa > 60 && (
-              <p className="text-yellow-400">⚠️ REVISAR: CPA R$ ${selectedCampaign.cpa.toFixed(2)} acima do alvo</p>
-            )}
-            {selectedCampaign.ctr < 1.5 && (
-              <p className="text-yellow-400">📝 TESTE: CTR ${selectedCampaign.ctr.toFixed(2)}% baixo, mude criativo</p>
-            )}
-            {!selectedCampaign.roas || selectedCampaign.roas >= 1 && selectedCampaign.roas <= 3 && selectedCampaign.cpa <= 60 && selectedCampaign.ctr >= 1.5 && (
-              <p className="text-blue-400">✅ MONITOR: Campanha estável, continue acompanhando</p>
-            )}
+          <div style={{ background: `${TEAL}10`, border: `1px solid ${TEAL}30`, borderRadius: '16px', padding: '20px' }}>
+            <p style={{ fontSize: '12px', color: TEAL, fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Zap size={13} /> PRÓXIMO PASSO
+            </p>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>
+              {criticalCount > 0
+                ? `Foque nas ${criticalCount} métrica(s) crítica(s) primeiro. Clique em cada cartão para ver a recomendação.`
+                : warningCount > 0
+                ? `Suas campanhas estão razoáveis. Otimize as ${warningCount} métrica(s) em atenção para chegar ao próximo nível.`
+                : 'Excelente! Métricas saudáveis. Agora escale — aumente o orçamento 20% nos melhores conjuntos.'
+              }
+            </p>
           </div>
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
