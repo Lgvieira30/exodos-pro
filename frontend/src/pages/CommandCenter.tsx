@@ -1,46 +1,45 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Brain,
-  Target,
-  ShoppingCart,
-  PenTool,
-  BarChart3,
-  ShieldCheck,
-  Zap,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  CheckCircle2,
-  XCircle,
-  Info,
-} from 'lucide-react';
 
-interface Agent {
-  id: string;
-  name: string;
-  initials: string;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-  action: string;
-  status: 'active' | 'thinking' | 'acting';
-}
+/* ============================================================
+   ÊXODOS COMMAND CENTER — Editorial Performance
+   Visual inspirado em relatório financeiro + revista de design.
+   Sem cards coloridos. Hierarquia por tipografia, não cor.
+   ============================================================ */
+
+const COLORS = {
+  paper: '#FBF8F1',
+  paperDeep: '#F5F1E6',
+  ink: '#0A0A0A',
+  inkSoft: '#3A3A35',
+  inkMuted: '#6B6B63',
+  rule: 'rgba(10,10,10,0.18)',
+  ruleStrong: '#0A0A0A',
+  gold: '#8B6F2D',
+  green: '#1F3A2D',
+  red: '#8B1A1A',
+};
+
+const SERIF = "'Fraunces', Georgia, 'Times New Roman', serif";
+const SANS = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+const MONO = "'JetBrains Mono', 'SF Mono', Menlo, monospace";
 
 interface Recommendation {
   id: string;
-  severity: 'success' | 'critical' | 'warning';
-  action: string;
-  detail: string;
-  impact: string;
+  type: 'success' | 'critical' | 'watch';
+  tag: string;
+  headline: string;
+  deck: string;
+  agent: string;
   confidence: number;
+  impact: { value: string; label: string };
 }
 
 interface Anomaly {
   id: string;
-  type: 'critical' | 'warning' | 'info';
+  level: 'critical' | 'warning' | 'info';
   title: string;
   detail: string;
+  time: string;
 }
 
 interface Decision {
@@ -49,406 +48,746 @@ interface Decision {
   confidence: number;
 }
 
-interface ChannelMix {
+interface Channel {
   name: string;
-  allocation: number;
+  alloc: number;
   roas: number;
-  color: string;
 }
 
-const AGENTS: Agent[] = [
-  {
-    id: 'strategy',
-    name: 'Strategy Agent',
-    initials: 'SA',
-    icon: <Brain className="w-4 h-4" />,
-    color: 'text-purple-300',
-    bgColor: 'bg-purple-900/40',
-    action: 'Analisando padrões de 47 campanhas históricas',
-    status: 'thinking',
-  },
-  {
-    id: 'media-buyer',
-    name: 'Media Buyer Agent',
-    initials: 'MB',
-    icon: <ShoppingCart className="w-4 h-4" />,
-    color: 'text-blue-300',
-    bgColor: 'bg-blue-900/40',
-    action: 'Realocando R$ 600 de LinkedIn → Google Search',
-    status: 'acting',
-  },
-  {
-    id: 'content',
-    name: 'Content Agent',
-    initials: 'CA',
-    icon: <PenTool className="w-4 h-4" />,
-    color: 'text-orange-300',
-    bgColor: 'bg-orange-900/40',
-    action: 'Gerou 8 variações de headline para teste A/B',
-    status: 'active',
-  },
-  {
-    id: 'analytics',
-    name: 'Analytics Agent',
-    initials: 'AA',
-    icon: <BarChart3 className="w-4 h-4" />,
-    color: 'text-emerald-300',
-    bgColor: 'bg-emerald-900/40',
-    action: '3 anomalias detectadas · padrão sazonal identificado',
-    status: 'active',
-  },
-  {
-    id: 'compliance',
-    name: 'Compliance Agent',
-    initials: 'CP',
-    icon: <ShieldCheck className="w-4 h-4" />,
-    color: 'text-pink-300',
-    bgColor: 'bg-pink-900/40',
-    action: 'Validou 12 criativos · bloqueou 1 por política',
-    status: 'active',
-  },
-  {
-    id: 'decision',
-    name: 'Decision Agent',
-    initials: 'DA',
-    icon: <Zap className="w-4 h-4" />,
-    color: 'text-amber-300',
-    bgColor: 'bg-amber-900/40',
-    action: 'Aguardando aprovação para escalar 2 campanhas',
-    status: 'thinking',
-  },
-];
+interface Agent {
+  initials: string;
+  name: string;
+  role: string;
+  status: 'ativo' | 'pensando' | 'agindo';
+}
 
 const RECOMMENDATIONS: Recommendation[] = [
   {
     id: '1',
-    severity: 'success',
-    action: 'Escale Lipoaspiração em 35%',
-    detail:
-      'ROAS 3.2x sustentado por 14 dias. CPA R$ 40 estável. Audience saturação em 31% — espaço para crescer.',
-    impact: '+R$ 2.400/mês lucro',
+    type: 'success',
+    tag: 'Escalar',
+    headline: 'Aumentar Lipoaspiração em 35%',
+    deck: 'ROAS de 3,2× sustentado por quatorze dias consecutivos. CPA estável em R$ 40. Audience com saturação de apenas 31% — espaço amplo para crescimento.',
+    agent: 'Decision Agent',
     confidence: 94,
+    impact: { value: '+ R$ 2.400', label: 'lucro/mês' },
   },
   {
     id: '2',
-    severity: 'critical',
-    action: 'Pause Divórcio em 48h',
-    detail:
-      'ROAS 1.8x abaixo do break-even (2.0x). 3 testes de criativo falharam. Audience exausto.',
-    impact: 'Economia: R$ 1.320/semana',
+    type: 'critical',
+    tag: 'Pausar',
+    headline: 'Encerrar Divórcio em 48 horas',
+    deck: 'ROAS de 1,8× abaixo do ponto de equilíbrio (2,0×). Três rotações de criativo falharam consecutivamente. Audience exausto.',
+    agent: 'Strategy Agent',
     confidence: 87,
+    impact: { value: '– R$ 1.320', label: 'economia/sem.' },
   },
   {
     id: '3',
-    severity: 'warning',
-    action: 'Teste novo headline em Imobiliária',
-    detail:
-      'CTR 2.8% bom mas plateau detectado. Variações geradas pelo Content Agent prontas.',
-    impact: 'Potencial: +12% CTR',
+    type: 'watch',
+    tag: 'Observar',
+    headline: 'Testar novas variações em Imobiliária',
+    deck: 'CTR de 2,8% bom, porém plateau detectado. Content Agent gerou oito variações de headline prontas para teste A/B controlado.',
+    agent: 'Content Agent',
     confidence: 71,
+    impact: { value: '+ 12%', label: 'CTR potencial' },
   },
 ];
 
 const ANOMALIES: Anomaly[] = [
-  {
-    id: '1',
-    type: 'critical',
-    title: 'Spike de CPA em Divórcio',
-    detail:
-      'CPA subiu 47% nas últimas 6h. Causa provável: aumento de bid competitor. Ação: pausar e reavaliar.',
-  },
-  {
-    id: '2',
-    type: 'warning',
-    title: 'Queda de impressions em Lipoaspiração',
-    detail:
-      '23% menos impressions nas últimas 12h. Audience pode estar saturando. Recomendação: expandir lookalike de 1% para 3%.',
-  },
-  {
-    id: '3',
-    type: 'info',
-    title: 'Padrão sazonal detectado',
-    detail:
-      'Conversões aumentam 34% nas terças entre 14h-17h. Sistema realocou 22% do budget para esse horário automaticamente.',
-  },
+  { id: '1', level: 'critical', title: 'Spike de CPA em Divórcio', detail: 'CPA subiu 47% nas últimas 6h. Causa provável: aumento de bid de competidor identificado.', time: '14:08' },
+  { id: '2', level: 'warning', title: 'Queda de impressions em Lipoaspiração', detail: '23% menos impressions nas últimas 12h. Audience em saturação. Recomenda-se expandir lookalike de 1% para 3%.', time: '11:42' },
+  { id: '3', level: 'info', title: 'Padrão sazonal detectado', detail: 'Conversões aumentam 34% nas terças entre 14h–17h. Sistema realocou 22% do budget para esse horário.', time: '09:15' },
 ];
 
 const DECISIONS: Decision[] = [
-  { time: '14:32', text: 'Realocou R$ 200 de YouTube → Google Search (CPA 3.4x melhor)', confidence: 96 },
-  { time: '13:18', text: 'Pausou criativo "Headline 4" em Lipoaspiração (CTR 0.8% após 1.200 impressions)', confidence: 91 },
+  { time: '14:32', text: 'Realocou R$ 200 de YouTube para Google Search (CPA 3,4× melhor)', confidence: 96 },
+  { time: '13:18', text: 'Pausou criativo "Headline 4" em Lipoaspiração (CTR 0,8% após 1.200 impressions)', confidence: 91 },
   { time: '12:45', text: 'Aumentou bid em palavras-chave de alta conversão (+18% impressions previsto)', confidence: 88 },
-  { time: '11:22', text: 'Detectou audience overlap entre 2 ad sets — mesclou para reduzir custo', confidence: 93 },
-  { time: '10:07', text: 'Ativou variação de criativo gerada pelo Content Agent (CTR previsto 3.1%)', confidence: 79 },
-  { time: '09:33', text: 'Bloqueou anúncio por violação de política (Compliance Agent flag)', confidence: 100 },
+  { time: '11:22', text: 'Mesclou ad sets com audience overlap detectado para reduzir custo', confidence: 93 },
+  { time: '10:07', text: 'Ativou variação de criativo gerada pelo Content Agent (CTR previsto 3,1%)', confidence: 79 },
+  { time: '09:33', text: 'Bloqueou anúncio por violação de política', confidence: 100 },
   { time: '08:15', text: 'Expandiu lookalike audience de 1% para 2% (saturação detectada)', confidence: 85 },
 ];
 
-const CHANNEL_MIX: ChannelMix[] = [
-  { name: 'Meta Ads', allocation: 42, roas: 3.1, color: 'bg-blue-500' },
-  { name: 'Google Search', allocation: 35, roas: 3.4, color: 'bg-emerald-500' },
-  { name: 'LinkedIn', allocation: 18, roas: 2.4, color: 'bg-purple-500' },
-  { name: 'YouTube', allocation: 5, roas: 1.9, color: 'bg-orange-500' },
+const CHANNELS: Channel[] = [
+  { name: 'Meta Ads', alloc: 42, roas: 3.1 },
+  { name: 'Google Search', alloc: 35, roas: 3.4 },
+  { name: 'LinkedIn', alloc: 18, roas: 2.4 },
+  { name: 'YouTube', alloc: 5, roas: 1.9 },
 ];
 
-const StatusBadge: React.FC<{ status: Agent['status'] }> = ({ status }) => {
-  const config = {
-    active: { label: 'ativo', className: 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' },
-    thinking: { label: 'pensando', className: 'bg-purple-900/40 text-purple-300 border-purple-700/50' },
-    acting: { label: 'agindo', className: 'bg-amber-900/40 text-amber-300 border-amber-700/50' },
-  }[status];
+const AGENTS: Agent[] = [
+  { initials: 'SA', name: 'Strategy Agent', role: 'Analisa padrões de 47 campanhas históricas', status: 'pensando' },
+  { initials: 'MB', name: 'Media Buyer Agent', role: 'Realocando R$ 600 entre canais', status: 'agindo' },
+  { initials: 'CA', name: 'Content Agent', role: 'Oito variações de headline geradas', status: 'ativo' },
+  { initials: 'AA', name: 'Analytics Agent', role: 'Três anomalias detectadas hoje', status: 'ativo' },
+  { initials: 'CP', name: 'Compliance Agent', role: 'Doze criativos validados, um bloqueado', status: 'ativo' },
+  { initials: 'DA', name: 'Decision Agent', role: 'Aguarda aprovação para escalar duas campanhas', status: 'pensando' },
+];
+
+/* ---------- Helpers ---------- */
+
+function Tag({ type, children }: { type: 'success' | 'critical' | 'watch'; children: React.ReactNode }) {
+  const color =
+    type === 'success' ? COLORS.green
+    : type === 'critical' ? COLORS.red
+    : COLORS.gold;
 
   return (
-    <span className={`text-[10px] px-2 py-0.5 rounded font-medium border ${config.className}`}>
-      {config.label}
+    <span style={{
+      display: 'inline-block',
+      fontSize: '9px',
+      textTransform: 'uppercase',
+      letterSpacing: '1.8px',
+      padding: '3px 9px',
+      border: `0.5px solid ${color}`,
+      color,
+      fontWeight: 500,
+      fontFamily: SANS,
+      marginBottom: '10px',
+    }}>
+      {children}
     </span>
   );
-};
+}
 
-const RecommendationCard: React.FC<{ rec: Recommendation }> = ({ rec }) => {
-  const styles = {
-    success: 'bg-emerald-950/40 border-l-emerald-500',
-    critical: 'bg-red-950/40 border-l-red-500',
-    warning: 'bg-amber-950/40 border-l-amber-500',
-  }[rec.severity];
-
+function SectionLabel({ children, num }: { children: React.ReactNode; num?: string }) {
   return (
-    <div className={`p-3 rounded-lg border-l-4 mb-2 ${styles}`}>
-      <p className="text-sm font-medium text-white mb-1">{rec.action}</p>
-      <p className="text-xs text-slate-400 leading-relaxed mb-2">{rec.detail}</p>
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="px-2 py-1 bg-black/30 rounded text-slate-300">{rec.impact}</span>
-        <span className="text-slate-500">confiança {rec.confidence}%</span>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '20px' }}>
+      {num && (
+        <span style={{
+          fontFamily: SERIF,
+          fontSize: '13px',
+          fontStyle: 'italic',
+          color: COLORS.gold,
+          fontWeight: 400,
+        }}>
+          §{num}
+        </span>
+      )}
+      <p style={{
+        fontFamily: SANS,
+        fontSize: '10px',
+        textTransform: 'uppercase',
+        letterSpacing: '2.5px',
+        color: COLORS.inkMuted,
+        fontWeight: 500,
+        margin: 0,
+      }}>
+        {children}
+      </p>
     </div>
   );
-};
+}
 
-const AnomalyRow: React.FC<{ anomaly: Anomaly }> = ({ anomaly }) => {
-  const config = {
-    critical: { bg: 'bg-red-900/40', color: 'text-red-300', icon: <XCircle className="w-3.5 h-3.5" /> },
-    warning: { bg: 'bg-amber-900/40', color: 'text-amber-300', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
-    info: { bg: 'bg-blue-900/40', color: 'text-blue-300', icon: <Info className="w-3.5 h-3.5" /> },
-  }[anomaly.type];
-
-  return (
-    <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg mb-2">
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${config.bg} ${config.color}`}>
-        {config.icon}
-      </div>
-      <div className="flex-1 text-xs leading-relaxed">
-        <p className="font-medium text-white mb-1">{anomaly.title}</p>
-        <p className="text-slate-400">{anomaly.detail}</p>
-      </div>
-    </div>
-  );
-};
+/* ---------- Main ---------- */
 
 export default function CommandCenter() {
   const [budget, setBudget] = useState(450);
 
   const scenario = useMemo(() => {
     const leads = budget / 40;
-    const conversions = leads * 0.24;
-    const revenue = conversions * 500;
-    const profit = revenue - budget;
+    const conv = leads * 0.24;
+    const rev = conv * 500;
+    const profit = rev - budget;
     return {
       leads: leads.toFixed(1).replace('.', ','),
-      conversions: conversions.toFixed(1).replace('.', ','),
-      revenue: Math.round(revenue),
-      profit: Math.round(profit),
+      conv: conv.toFixed(1).replace('.', ','),
+      rev: Math.round(rev).toLocaleString('pt-BR'),
+      profit: Math.round(profit).toLocaleString('pt-BR'),
+      profitPositive: profit > 0,
     };
   }, [budget]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
-          <div>
-            <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
-              <Activity className="w-6 h-6 text-emerald-400" />
-              ÊXODOS Command Center
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">Sistema autônomo de gestão de campanhas</p>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            6 agentes ativos · análise contínua
-          </div>
-        </div>
+    <div style={{
+      minHeight: '100vh',
+      background: COLORS.paper,
+      color: COLORS.ink,
+      fontFamily: SANS,
+      lineHeight: 1.5,
+      padding: '40px 24px 80px',
+    }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
 
-        {/* Métricas */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-            <p className="text-xs text-slate-400 mb-1">Budget total</p>
-            <p className="text-2xl font-semibold text-white">R$ 4.320</p>
-            <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> +R$ 600 realocado hoje
-            </p>
+        {/* MASTHEAD */}
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          paddingBottom: '14px',
+          borderBottom: `1.5px solid ${COLORS.ruleStrong}`,
+          marginBottom: '36px',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}>
+          <div style={{
+            fontFamily: SERIF,
+            fontSize: '32px',
+            fontWeight: 500,
+            letterSpacing: '-0.8px',
+            lineHeight: 1,
+          }}>
+            <span style={{ color: COLORS.gold }}>Ê</span>xodos
+            <span style={{ fontStyle: 'italic', fontWeight: 400, color: COLORS.inkSoft, fontSize: '24px', marginLeft: '8px' }}>
+              · command
+            </span>
           </div>
-          <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-            <p className="text-xs text-slate-400 mb-1">ROAS médio</p>
-            <p className="text-2xl font-semibold text-white">2.83x</p>
-            <p className="text-xs text-emerald-400 mt-1">↑ 0.4x vs ontem</p>
+          <div style={{
+            fontSize: '11px',
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            color: COLORS.inkMuted,
+            fontWeight: 500,
+          }}>
+            28 abr 2026 · ed. matinal · <span style={{ color: COLORS.green }}>● 6 agentes ativos</span>
           </div>
-          <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-            <p className="text-xs text-slate-400 mb-1">Decisões hoje</p>
-            <p className="text-2xl font-semibold text-white">17</p>
-            <p className="text-xs text-slate-400 mt-1">14 autônomas · 3 revisão</p>
-          </div>
-          <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-            <p className="text-xs text-slate-400 mb-1">Lucro projetado</p>
-            <p className="text-2xl font-semibold text-white">R$ 8.890</p>
-            <p className="text-xs text-emerald-400 mt-1">+18% via IA</p>
-          </div>
-        </div>
+        </header>
 
-        {/* Agentes */}
-        <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-3">
-            Agentes especializados em ação
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {AGENTS.map((agent) => (
-              <div
-                key={agent.id}
-                className="flex items-center gap-3 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50"
-              >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${agent.bgColor} ${agent.color}`}>
-                  {agent.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">{agent.name}</p>
-                  <p className="text-xs text-slate-400 truncate">{agent.action}</p>
-                </div>
-                <StatusBadge status={agent.status} />
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* LEDE */}
+        <p style={{
+          fontFamily: SERIF,
+          fontSize: '21px',
+          lineHeight: 1.55,
+          fontWeight: 400,
+          maxWidth: '640px',
+          margin: '0 0 48px',
+          color: COLORS.inkSoft,
+          letterSpacing: '-0.2px',
+        }}>
+          Seis agentes operam suas campanhas neste momento. Dezessete decisões foram tomadas hoje, quatorze de forma autônoma.{' '}
+          <span style={{ color: COLORS.gold, fontStyle: 'italic' }}>
+            Lucro projetado para o mês: R$ 8.890
+          </span>{' '}
+          — dezoito por cento acima da operação manual.
+        </p>
 
-        {/* Recomendações + Simulador */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-          <div>
-            <h2 className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-3">
-              Recomendações prescritivas
-            </h2>
-            {RECOMMENDATIONS.map((rec) => (
-              <RecommendationCard key={rec.id} rec={rec} />
-            ))}
-          </div>
-          <div>
-            <h2 className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-3">
-              Simulador de cenários
-            </h2>
-            <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-              <p className="text-xs text-slate-400 mb-4">Ajuste o budget e veja a previsão</p>
-
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-xs text-slate-400 min-w-[100px]">Budget diário</span>
-                <input
-                  type="range"
-                  min={100}
-                  max={1000}
-                  step={50}
-                  value={budget}
-                  onChange={(e) => setBudget(Number(e.target.value))}
-                  className="flex-1 accent-blue-500"
-                />
-                <span className="text-sm font-medium text-white min-w-[80px] text-right">
-                  R$ {budget.toLocaleString('pt-BR')}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-900/60 rounded">
-                  <span className="text-xs text-slate-400">Leads previstos</span>
-                  <span className="text-sm font-medium text-white">{scenario.leads}</span>
-                </div>
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-900/60 rounded">
-                  <span className="text-xs text-slate-400">Conversões esperadas</span>
-                  <span className="text-sm font-medium text-white">{scenario.conversions}</span>
-                </div>
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-900/60 rounded">
-                  <span className="text-xs text-slate-400">Receita estimada</span>
-                  <span className="text-sm font-medium text-white">
-                    R$ {scenario.revenue.toLocaleString('pt-BR')}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center px-3 py-2 bg-emerald-900/40 rounded border border-emerald-700/50">
-                  <span className="text-xs text-emerald-300">Lucro líquido</span>
-                  <span className="text-sm font-semibold text-emerald-300">
-                    R$ {scenario.profit.toLocaleString('pt-BR')}
-                  </span>
-                </div>
-              </div>
+        {/* INDICADORES */}
+        <SectionLabel num="01">Indicadores em tempo real</SectionLabel>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '1px',
+          background: COLORS.ruleStrong,
+          marginBottom: '56px',
+          border: `0.5px solid ${COLORS.ruleStrong}`,
+        }}>
+          {[
+            { label: 'Budget total', value: '4.320', delta: '+ 600 realocados', up: true },
+            { label: 'ROAS médio', value: '2,83×', delta: '+ 0,4 vs ontem', up: true },
+            { label: 'Decisões hoje', value: '17', delta: '14 autônomas', up: null },
+            { label: 'Lucro projetado', value: '8.890', delta: '+ 18% via IA', up: true },
+          ].map((m, i) => (
+            <div key={i} style={{ background: COLORS.paper, padding: '20px 18px 18px' }}>
+              <p style={{
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.8px',
+                color: COLORS.inkMuted,
+                margin: '0 0 10px',
+                fontWeight: 500,
+              }}>
+                {m.label}
+              </p>
+              <p style={{
+                fontFamily: SERIF,
+                fontSize: '36px',
+                fontWeight: 500,
+                letterSpacing: '-1.2px',
+                lineHeight: 1,
+                margin: 0,
+                color: COLORS.ink,
+              }}>
+                {m.value}
+              </p>
+              <p style={{
+                fontSize: '11px',
+                color: m.up === true ? COLORS.green : m.up === false ? COLORS.red : COLORS.inkMuted,
+                margin: '8px 0 0',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {m.delta}
+              </p>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Marketing Mix */}
-        <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-3">
-            Marketing Mix Modeling — alocação ótima de canal
-          </h2>
-          <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-            {CHANNEL_MIX.map((channel) => (
-              <div key={channel.name} className="flex items-center gap-3 py-2.5 border-b border-slate-700/40 last:border-b-0">
-                <span className="text-sm font-medium text-white min-w-[100px]">{channel.name}</span>
-                <div className="flex-1 h-6 bg-slate-900 rounded overflow-hidden">
-                  <div
-                    className={`h-full ${channel.color} flex items-center px-2 text-[11px] font-medium text-white`}
-                    style={{ width: `${channel.allocation}%` }}
-                  >
-                    {channel.allocation}%
+        {/* RECOMENDAÇÕES */}
+        <SectionLabel num="02">Recomendações prescritivas</SectionLabel>
+        <div style={{ marginBottom: '56px' }}>
+          {RECOMMENDATIONS.map((rec, i) => (
+            <article key={rec.id} style={{
+              padding: '24px 0',
+              borderTop: i === 0 ? `1.5px solid ${COLORS.ruleStrong}` : `0.5px solid ${COLORS.rule}`,
+              borderBottom: i === RECOMMENDATIONS.length - 1 ? `1.5px solid ${COLORS.ruleStrong}` : 'none',
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '60px 1fr auto',
+                gap: '20px',
+                alignItems: 'baseline',
+              }}>
+                <div style={{
+                  fontFamily: SERIF,
+                  fontSize: '38px',
+                  fontWeight: 400,
+                  color: '#C7C2B5',
+                  lineHeight: 1,
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {String(i + 1).padStart(2, '0')}
+                </div>
+
+                <div>
+                  <Tag type={rec.type}>{rec.tag}</Tag>
+                  <h3 style={{
+                    fontFamily: SERIF,
+                    fontSize: '23px',
+                    fontWeight: 500,
+                    letterSpacing: '-0.5px',
+                    lineHeight: 1.25,
+                    margin: '0 0 8px',
+                    color: COLORS.ink,
+                  }}>
+                    {rec.headline}
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: COLORS.inkSoft,
+                    lineHeight: 1.6,
+                    margin: '0 0 10px',
+                    maxWidth: '560px',
+                  }}>
+                    {rec.deck}
+                  </p>
+                  <p style={{
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    color: COLORS.gold,
+                    fontWeight: 500,
+                    margin: 0,
+                  }}>
+                    {rec.agent} · confiança {rec.confidence}%
+                  </p>
+                </div>
+
+                <div style={{
+                  textAlign: 'right',
+                  fontVariantNumeric: 'tabular-nums',
+                  whiteSpace: 'nowrap',
+                }}>
+                  <div style={{
+                    fontFamily: SERIF,
+                    fontSize: '18px',
+                    fontWeight: 500,
+                    color: COLORS.ink,
+                    lineHeight: 1.1,
+                  }}>
+                    {rec.impact.value}
+                  </div>
+                  <div style={{
+                    fontSize: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    color: COLORS.inkMuted,
+                    marginTop: '4px',
+                  }}>
+                    {rec.impact.label}
                   </div>
                 </div>
-                <span className="text-xs text-slate-400 min-w-[80px] text-right">ROAS {channel.roas}x</span>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* SIMULADOR */}
+        <SectionLabel num="03">Simulador de cenário</SectionLabel>
+        <div style={{
+          padding: '28px 0',
+          borderTop: `1.5px solid ${COLORS.ruleStrong}`,
+          borderBottom: `1.5px solid ${COLORS.ruleStrong}`,
+          marginBottom: '56px',
+        }}>
+          <p style={{
+            fontFamily: SERIF,
+            fontSize: '17px',
+            fontStyle: 'italic',
+            color: COLORS.inkSoft,
+            margin: '0 0 24px',
+            maxWidth: '500px',
+            lineHeight: 1.5,
+          }}>
+            Ajuste o orçamento diário e observe a projeção em tempo real.
+          </p>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '20px',
+            marginBottom: '32px',
+            paddingBottom: '20px',
+            borderBottom: `0.5px solid ${COLORS.rule}`,
+          }}>
+            <span style={{
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '1.8px',
+              color: COLORS.inkMuted,
+              minWidth: '110px',
+              fontWeight: 500,
+            }}>
+              Budget diário
+            </span>
+            <input
+              type="range"
+              min={100}
+              max={1000}
+              step={50}
+              value={budget}
+              onChange={(e) => setBudget(Number(e.target.value))}
+              style={{
+                flex: 1,
+                accentColor: COLORS.gold,
+                height: '4px',
+              }}
+            />
+            <span style={{
+              fontFamily: SERIF,
+              fontSize: '24px',
+              fontWeight: 500,
+              minWidth: '120px',
+              textAlign: 'right',
+              fontVariantNumeric: 'tabular-nums',
+              letterSpacing: '-0.5px',
+            }}>
+              R$ {budget.toLocaleString('pt-BR')}
+            </span>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '24px',
+          }}>
+            {[
+              { label: 'Leads previstos', value: scenario.leads, accent: false },
+              { label: 'Conversões esperadas', value: scenario.conv, accent: false },
+              { label: 'Receita estimada', value: 'R$ ' + scenario.rev, accent: false },
+              { label: 'Lucro líquido', value: 'R$ ' + scenario.profit, accent: true },
+            ].map((m, i) => (
+              <div key={i}>
+                <p style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1.8px',
+                  color: COLORS.inkMuted,
+                  margin: '0 0 8px',
+                  fontWeight: 500,
+                }}>
+                  {m.label}
+                </p>
+                <p style={{
+                  fontFamily: SERIF,
+                  fontSize: '24px',
+                  fontWeight: 500,
+                  letterSpacing: '-0.5px',
+                  margin: 0,
+                  fontVariantNumeric: 'tabular-nums',
+                  color: m.accent ? (scenario.profitPositive ? COLORS.green : COLORS.red) : COLORS.ink,
+                }}>
+                  {m.value}
+                </p>
               </div>
             ))}
-            <p className="text-xs text-slate-300 mt-3 p-3 bg-slate-900/60 rounded leading-relaxed">
-              <span className="text-blue-400 font-medium">Recomendação do Media Buyer Agent: </span>
-              aumentar Google Search para 45%, reduzir YouTube para 0%. Lucro projetado: +R$ 720/semana.
-            </p>
           </div>
         </div>
 
-        {/* Anomalias */}
-        <div className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-3">
-            Anomalias detectadas em tempo real
-          </h2>
-          <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-            {ANOMALIES.map((anomaly) => (
-              <AnomalyRow key={anomaly.id} anomaly={anomaly} />
+        {/* MIX DE CANAIS */}
+        <SectionLabel num="04">Composição do mix de canais</SectionLabel>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          marginBottom: '56px',
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          <thead>
+            <tr style={{ borderTop: `1.5px solid ${COLORS.ruleStrong}`, borderBottom: `0.5px solid ${COLORS.rule}` }}>
+              <th style={{
+                textAlign: 'left',
+                padding: '12px 0',
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.8px',
+                color: COLORS.inkMuted,
+                fontWeight: 500,
+              }}>Canal</th>
+              <th style={{
+                textAlign: 'right',
+                padding: '12px 0',
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.8px',
+                color: COLORS.inkMuted,
+                fontWeight: 500,
+              }}>Alocação</th>
+              <th style={{
+                textAlign: 'right',
+                padding: '12px 0',
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.8px',
+                color: COLORS.inkMuted,
+                fontWeight: 500,
+              }}>ROAS</th>
+              <th style={{
+                textAlign: 'right',
+                padding: '12px 0',
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.8px',
+                color: COLORS.inkMuted,
+                fontWeight: 500,
+              }}>Performance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CHANNELS.map((ch, i) => (
+              <tr key={ch.name} style={{
+                borderBottom: i === CHANNELS.length - 1 ? `1.5px solid ${COLORS.ruleStrong}` : `0.5px solid ${COLORS.rule}`,
+              }}>
+                <td style={{
+                  padding: '16px 0',
+                  fontFamily: SERIF,
+                  fontSize: '17px',
+                  fontWeight: 500,
+                }}>
+                  {ch.name}
+                </td>
+                <td style={{
+                  textAlign: 'right',
+                  padding: '16px 0',
+                  fontSize: '14px',
+                }}>
+                  {ch.alloc}%
+                </td>
+                <td style={{
+                  textAlign: 'right',
+                  padding: '16px 0',
+                  fontFamily: SERIF,
+                  fontSize: '17px',
+                  fontWeight: 500,
+                  color: ch.roas >= 3 ? COLORS.green : ch.roas >= 2 ? COLORS.ink : COLORS.red,
+                }}>
+                  {ch.roas.toFixed(1).replace('.', ',')}×
+                </td>
+                <td style={{ textAlign: 'right', padding: '16px 0' }}>
+                  <span style={{
+                    display: 'inline-block',
+                    width: `${ch.alloc * 1.5}px`,
+                    height: '2px',
+                    background: COLORS.ink,
+                    verticalAlign: 'middle',
+                  }} />
+                </td>
+              </tr>
             ))}
-          </div>
-        </div>
+          </tbody>
+        </table>
+        <p style={{
+          fontFamily: SERIF,
+          fontSize: '15px',
+          fontStyle: 'italic',
+          color: COLORS.inkSoft,
+          margin: '-32px 0 56px',
+          paddingLeft: '20px',
+          borderLeft: `1.5px solid ${COLORS.gold}`,
+          maxWidth: '600px',
+          lineHeight: 1.6,
+        }}>
+          O Media Buyer Agent recomenda aumentar Google Search para 45% e zerar YouTube. Lucro projetado adicional: <span style={{ color: COLORS.gold, fontWeight: 500 }}>+ R$ 720 por semana</span>.
+        </p>
 
-        {/* Histórico */}
-        <div>
-          <h2 className="text-xs uppercase tracking-wider text-slate-400 font-medium mb-3">
-            Histórico de decisões autônomas
-          </h2>
-          <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50">
-            <div className="max-h-64 overflow-y-auto">
-              {DECISIONS.map((decision, i) => (
-                <div
-                  key={i}
-                  className="flex gap-3 py-2.5 text-xs border-b border-slate-700/40 last:border-b-0"
-                >
-                  <span className="text-slate-500 font-mono min-w-[50px]">{decision.time}</span>
-                  <span className="flex-1 text-slate-300 leading-relaxed">
-                    {decision.text}
-                    <span className="ml-2 inline-block px-1.5 py-0.5 bg-blue-900/40 text-blue-300 text-[10px] rounded font-medium">
-                      {decision.confidence}%
-                    </span>
+        {/* AGENTES */}
+        <SectionLabel num="05">Equipe de agentes</SectionLabel>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '0',
+          marginBottom: '56px',
+          borderTop: `1.5px solid ${COLORS.ruleStrong}`,
+          borderBottom: `1.5px solid ${COLORS.ruleStrong}`,
+        }}>
+          {AGENTS.map((agent, i) => (
+            <div key={agent.initials} style={{
+              padding: '18px 20px 18px 0',
+              paddingLeft: i % 2 === 1 ? '24px' : 0,
+              borderTop: i >= 2 ? `0.5px solid ${COLORS.rule}` : 'none',
+              borderLeft: i % 2 === 1 ? `0.5px solid ${COLORS.rule}` : 'none',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+            }}>
+              <div style={{
+                fontFamily: SERIF,
+                fontSize: '20px',
+                fontWeight: 500,
+                color: COLORS.gold,
+                fontStyle: 'italic',
+                minWidth: '32px',
+                lineHeight: 1.2,
+              }}>
+                {agent.initials}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+                  <p style={{
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    margin: 0,
+                    color: COLORS.ink,
+                  }}>
+                    {agent.name}
+                  </p>
+                  <span style={{
+                    fontSize: '9px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    color: agent.status === 'agindo' ? COLORS.gold : agent.status === 'pensando' ? COLORS.inkMuted : COLORS.green,
+                    fontWeight: 500,
+                  }}>
+                    {agent.status === 'agindo' ? '● agindo' : agent.status === 'pensando' ? '○ pensando' : '● ativo'}
                   </span>
                 </div>
-              ))}
+                <p style={{
+                  fontSize: '13px',
+                  color: COLORS.inkSoft,
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}>
+                  {agent.role}
+                </p>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
+
+        {/* ANOMALIAS */}
+        <SectionLabel num="06">Anomalias detectadas</SectionLabel>
+        <div style={{ marginBottom: '56px' }}>
+          {ANOMALIES.map((a, i) => (
+            <div key={a.id} style={{
+              padding: '18px 0',
+              borderTop: i === 0 ? `1.5px solid ${COLORS.ruleStrong}` : `0.5px solid ${COLORS.rule}`,
+              borderBottom: i === ANOMALIES.length - 1 ? `1.5px solid ${COLORS.ruleStrong}` : 'none',
+              display: 'grid',
+              gridTemplateColumns: '60px 1fr auto',
+              gap: '20px',
+              alignItems: 'baseline',
+            }}>
+              <span style={{
+                fontFamily: MONO,
+                fontSize: '12px',
+                color: COLORS.inkMuted,
+              }}>
+                {a.time}
+              </span>
+              <div>
+                <p style={{
+                  fontFamily: SERIF,
+                  fontSize: '17px',
+                  fontWeight: 500,
+                  margin: '0 0 4px',
+                  color: a.level === 'critical' ? COLORS.red : a.level === 'warning' ? COLORS.gold : COLORS.ink,
+                }}>
+                  {a.title}
+                </p>
+                <p style={{
+                  fontSize: '13px',
+                  color: COLORS.inkSoft,
+                  margin: 0,
+                  lineHeight: 1.55,
+                }}>
+                  {a.detail}
+                </p>
+              </div>
+              <span style={{
+                fontSize: '9px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.8px',
+                color: a.level === 'critical' ? COLORS.red : a.level === 'warning' ? COLORS.gold : COLORS.inkMuted,
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+              }}>
+                {a.level === 'critical' ? '— crítico' : a.level === 'warning' ? '— atenção' : '— info'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* HISTÓRICO */}
+        <SectionLabel num="07">Histórico de decisões autônomas</SectionLabel>
+        <div style={{
+          borderTop: `1.5px solid ${COLORS.ruleStrong}`,
+          borderBottom: `1.5px solid ${COLORS.ruleStrong}`,
+          maxHeight: '320px',
+          overflowY: 'auto',
+        }}>
+          {DECISIONS.map((d, i) => (
+            <div key={i} style={{
+              padding: '14px 0',
+              borderTop: i === 0 ? 'none' : `0.5px solid ${COLORS.rule}`,
+              display: 'grid',
+              gridTemplateColumns: '60px 1fr auto',
+              gap: '20px',
+              alignItems: 'baseline',
+            }}>
+              <span style={{
+                fontFamily: MONO,
+                fontSize: '12px',
+                color: COLORS.inkMuted,
+              }}>
+                {d.time}
+              </span>
+              <p style={{
+                fontSize: '13px',
+                color: COLORS.inkSoft,
+                margin: 0,
+                lineHeight: 1.55,
+              }}>
+                {d.text}
+              </p>
+              <span style={{
+                fontFamily: SERIF,
+                fontSize: '14px',
+                fontWeight: 500,
+                color: d.confidence >= 90 ? COLORS.green : d.confidence >= 80 ? COLORS.ink : COLORS.gold,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {d.confidence}%
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* COLOFON */}
+        <footer style={{
+          marginTop: '64px',
+          paddingTop: '20px',
+          borderTop: `0.5px solid ${COLORS.rule}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: '10px',
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          color: COLORS.inkMuted,
+          fontWeight: 500,
+        }}>
+          <span>Êxodos · sistema autônomo de tráfego pago</span>
+          <span style={{ color: COLORS.gold }}>versão editorial · 2026</span>
+        </footer>
+
       </div>
     </div>
   );
