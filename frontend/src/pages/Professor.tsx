@@ -260,7 +260,7 @@ export default function Professor() {
   const warningCount = metrics.filter((m) => m.status === 'warning').length;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', padding: '32px' }}>
+    <div className="page-pad" style={{ minHeight: '100vh', background: '#000', padding: '32px' }}>
       <div style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${TEAL}20`, border: `1px solid ${TEAL}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -279,7 +279,7 @@ export default function Professor() {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
+      <div className="grid-professor" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {metrics.map((metric) => (
             <MetricCard key={metric.key} metric={metric} expanded={expandedKey === metric.key} onToggle={() => setExpandedKey(expandedKey === metric.key ? null : metric.key)} />

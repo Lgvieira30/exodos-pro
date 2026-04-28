@@ -95,10 +95,10 @@ export default function Dashboard() {
   const scoreColor = !analysis ? '#64748b' : analysis.score >= 75 ? '#10b981' : analysis.score >= 50 ? '#f59e0b' : '#ef4444';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', padding: '32px' }}>
+    <div className="page-pad" style={{ minHeight: '100vh', background: '#000', padding: '32px' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Dashboard</h1>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Visao geral das suas campanhas</p>
@@ -139,7 +139,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      <div className="grid-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {kpis.map(({ label, value, icon: Icon, color }) => (
           <div key={label} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
@@ -151,7 +151,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px' }}>
+      <div className="grid-main" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px' }}>
 
         {/* Coluna principal */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

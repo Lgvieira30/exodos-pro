@@ -66,3 +66,60 @@
 .spinner {
   animation: spin 0.8s linear infinite;
 }
+
+/* ── MOBILE (max 768px) ─────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Sidebar escondida por padrão, desliza ao abrir */
+  .app-sidebar {
+    transform: translateX(-100%) !important;
+  }
+  .app-sidebar.sidebar-open {
+    transform: translateX(0) !important;
+  }
+
+  /* Overlay aparece quando sidebar aberta */
+  .app-sidebar.sidebar-open ~ * .sidebar-overlay,
+  .sidebar-overlay {
+    display: block !important;
+  }
+
+  /* Conteúdo principal: sem margem lateral */
+  .app-main {
+    margin-left: 0 !important;
+  }
+
+  /* Botão hamburguer aparece */
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
+  /* Padding das páginas menor */
+  .page-pad {
+    padding: 16px !important;
+    padding-top: 60px !important;
+  }
+
+  /* Grids: 4 colunas → 2 */
+  .grid-kpi {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Layouts 2 colunas → coluna única */
+  .grid-main,
+  .grid-charts,
+  .grid-professor {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Cabeçalhos de página */
+  .page-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: flex-start !important;
+  }
+  .page-header button {
+    width: 100%;
+    justify-content: center;
+  }
+}
