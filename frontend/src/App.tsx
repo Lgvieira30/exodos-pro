@@ -10,86 +10,47 @@ import './styles/globals.css';
 
 type Page = 'command' | 'professor' | 'dashboard' | 'analytics' | 'wizard' | 'creative';
 
-const NAV_ITEMS: { id: Page; label: string }[] = [
-  { id: 'command', label: 'Command' },
-  { id: 'professor', label: 'Professor' },
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'wizard', label: 'Campanha' },
-  { id: 'creative', label: 'Studio' },
+const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
+  { id: 'command', label: 'Command Center', icon: '⚡' },
+  { id: 'professor', label: 'Professor', icon: '🧠' },
+  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'analytics', label: 'Analytics', icon: '📈' },
+  { id: 'wizard', label: 'Campanha', icon: '🚀' },
+  { id: 'creative', label: 'Studio', icon: '🎨' },
 ];
-
-const PAPER = '#FBF8F1';
-const INK = '#0A0A0A';
-const INK_MUTED = '#6B6B63';
-const RULE = 'rgba(10,10,10,0.18)';
-const GOLD = '#8B6F2D';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('command');
 
   return (
-    <div style={{ minHeight: '100vh', background: PAPER, color: INK, fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <nav style={{
-        background: PAPER,
-        borderBottom: `0.5px solid ${RULE}`,
-        padding: '14px 24px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-      }}>
-        <div style={{
-          maxWidth: '900px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '24px',
-          flexWrap: 'wrap',
-        }}>
-          <span style={{
-            fontFamily: "'Fraunces', Georgia, serif",
-            fontSize: '20px',
-            fontWeight: 500,
-            letterSpacing: '-0.4px',
-          }}>
-            <span style={{ color: GOLD }}>Ê</span>xodos
-          </span>
-          <div style={{ display: 'flex', gap: '4px', flex: 1, overflowX: 'auto' }}>
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setCurrentPage(item.id)}
-                style={{
-                  padding: '6px 12px',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1.5px',
-                  color: currentPage === item.id ? INK : INK_MUTED,
-                  fontWeight: currentPage === item.id ? 600 : 500,
-                  borderBottom: currentPage === item.id ? `1.5px solid ${GOLD}` : '1.5px solid transparent',
-                  transition: 'all 0.15s',
-                  fontFamily: "'Inter', sans-serif",
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+    <div className="min-h-screen bg-slate-950">
+      <div className="bg-slate-950/80 border-b border-slate-800/60 px-4 py-3 sticky top-0 z-10 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex gap-2 overflow-x-auto">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setCurrentPage(item.id)}
+              className={`px-4 py-2 rounded-lg transition whitespace-nowrap text-sm font-medium ${
+                currentPage === item.id
+                  ? 'bg-slate-100/10 text-slate-100 border border-slate-700/50'
+                  : 'bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-900/40 border border-transparent'
+              }`}
+            >
+              <span className="mr-2">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
         </div>
-      </nav>
+      </div>
 
-      <main>
+      <div>
         {currentPage === 'command' && <CommandCenter />}
         {currentPage === 'professor' && <Professor />}
         {currentPage === 'dashboard' && <Dashboard />}
         {currentPage === 'analytics' && <Analytics />}
         {currentPage === 'wizard' && <Wizard />}
         {currentPage === 'creative' && <CreativeStudio />}
-      </main>
+      </div>
     </div>
   );
 }
