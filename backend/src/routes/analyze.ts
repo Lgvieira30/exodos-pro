@@ -86,7 +86,7 @@ analyzeRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
       COALESCE(SUM(m.leads), 0) AS total_leads
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
-    WHERE c.user_id = ${req.userId!} AND c.status = 'active'
+    WHERE c.user_id = ${req.userId!} AND c.status IN ('active', 'paused')
       AND m.date >= NOW() - INTERVAL '7 days'
   `;
 
@@ -97,6 +97,62 @@ analyzeRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
   );
 
   res.json({ success: true, data: result });
+});
+
+analyzeRouter.get('/paused', async (req: AuthRequest, res: Response) => {
+  const rows = await sql`
+    SELECT c.id, c.name, c.platform, c.updated_at AS paused_at,
+      COALESCE(AVG(m.cpa) FILTER (WHERE m.cpa > 0), 0) AS avg_cpa,
+      COALESCE(AVG(m.ctr) FILTER (WHERE m.ctr > 0), 0) AS avg_ctr,
+      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
+      COALESCE(AVG(m.cpc) FILTER (WHERE m.cpc > 0), 0) AS avg_cpc,
+      COALESCE(SUM(m.spend), 0) AS total_spend,
+      COALESCE(SUM(m.leads), 0) AS total_leads
+    FROM campaigns c
+    LEFT JOIN metrics m ON m.campaign_id = c.id
+    WHERE c.user_id = ${req.userId!} AND c.status = 'paused'
+    GROUP BY c.id
+    ORDER BY c.updated_at DESC
+  `;
+
+  const SCORE_REATIVAR = 65;
+  const SCORE_CAUTELA = 40;
+
+  const paused = rows.map((c: Record<string, unknown>) => {
+    const avg_cpa = Number(c.avg_cpa);
+    const avg_ctr = Number(c.avg_ctr);
+    const avg_roas = Number(c.avg_roas);
+    const avg_cpc = Number(c.avg_cpc);
+    const total_spend = Number(c.total_spend);
+    const total_leads = Number(c.total_leads);
+
+    const analysis = diagnose(avg_cpa, avg_ctr, avg_roas, avg_cpc, total_spend, total_leads);
+
+    let verdict: 'reativar' | 'reativar_com_cautela' | 'manter_pausada';
+    let verdict_reason: string;
+
+    if (total_spend === 0) {
+      verdict = 'reativar_com_cautela';
+      verdict_reason = 'Sem metricas suficientes para avaliar. Teste com orcamento reduzido e monitore por 3 dias.';
+    } else if (analysis.score >= SCORE_REATIVAR) {
+      verdict = 'reativar';
+      verdict_reason = 'Metricas historicas saudaveis. Reative e monitore nos primeiros 3 dias.';
+    } else if (analysis.score >= SCORE_CAUTELA) {
+      verdict = 'reativar_com_cautela';
+      verdict_reason = `Corrija antes de reativar: ${analysis.issues[0] || 'otimize os criativos'}. Reative com orcamento 30% menor.`;
+    } else {
+      verdict = 'manter_pausada';
+      verdict_reason = `${analysis.issues[0] || 'Multiplos problemas criticos detectados'}. Reformule a estrategia antes de reativar.`;
+    }
+
+    return {
+      id: c.id, name: c.name, platform: c.platform, paused_at: c.paused_at,
+      avg_cpa, avg_roas, avg_ctr, total_spend, total_leads,
+      ...analysis, verdict, verdict_reason,
+    };
+  });
+
+  res.json({ success: true, data: { paused } });
 });
 
 analyzeRouter.get('/:campaignId', async (req: AuthRequest, res: Response) => {

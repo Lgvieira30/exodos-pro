@@ -2,9 +2,9 @@
 import {
   GraduationCap, TrendingUp, TrendingDown, AlertTriangle,
   CheckCircle, Info, ChevronRight, Zap, Target, DollarSign,
-  BarChart3, Activity,
+  BarChart3, Activity, PauseCircle,
 } from 'lucide-react';
-import { metricsApi } from '../lib/api';
+import { metricsApi, analyzeApi } from '../lib/api';
 
 const TEAL = '#00B7B7';
 
@@ -180,25 +180,48 @@ function MetricCard({ metric, expanded, onToggle }: { metric: Metric; expanded: 
   );
 }
 
+interface PausedCampaign {
+  id: string; name: string; platform: string;
+  avg_cpa: number; avg_roas: number; avg_ctr: number;
+  total_spend: number; total_leads: number; score: number;
+  issues: string[];
+  verdict: 'reativar' | 'reativar_com_cautela' | 'manter_pausada';
+  verdict_reason: string;
+}
+
+const VERDICT_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  reativar:             { label: 'Reativar',            color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)' },
+  reativar_com_cautela: { label: 'Revisar e Reativar',  color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' },
+  manter_pausada:       { label: 'Manter Pausada',      color: '#ef4444', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)' },
+};
+
+const PLATFORM_LABEL: Record<string, string> = {
+  meta: 'Meta Ads', google: 'Google Ads', linkedin: 'LinkedIn',
+};
+
 export default function Professor() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [healthScore, setHealthScore] = useState(0);
   const [usingMock, setUsingMock] = useState(false);
+  const [activeTab, setActiveTab] = useState<'geral' | 'pausadas'>('geral');
+  const [pausedCampaigns, setPausedCampaigns] = useState<PausedCampaign[]>([]);
 
   useEffect(() => {
-    metricsApi.dashboard()
-      .then((res) => {
-        const s = res.data.summary;
-        if (!s) throw new Error('no data');
+    Promise.all([
+      metricsApi.dashboard().catch(() => null),
+      analyzeApi.paused().catch(() => null),
+    ]).then(([metricsRes, pausedRes]) => {
+      const s = metricsRes?.data?.summary;
+      if (s) {
         buildMetrics(s.cpa || 47, s.roas || 3.4, 1.8, 2.1, ((s.roas || 3.4) - 1) * 100);
-      })
-      .catch(() => {
+      } else {
         buildMetrics(47, 3.4, 1.8, 2.1, 240);
         setUsingMock(true);
-      })
-      .finally(() => setLoading(false));
+      }
+      if (pausedRes?.data?.paused) setPausedCampaigns(pausedRes.data.paused);
+    }).finally(() => setLoading(false));
   }, []);
 
   function buildMetrics(cpa: number, roas: number, ctr: number, cpc: number, roi: number) {
@@ -277,9 +300,97 @@ export default function Professor() {
             Exibindo análise com dados de demonstração — adicione métricas reais para ver sua análise personalizada.
           </div>
         )}
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '4px', marginTop: '20px', background: 'rgba(255,255,255,0.04)', padding: '4px', borderRadius: '10px', width: 'fit-content' }}>
+          {(['geral', 'pausadas'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '7px 16px', borderRadius: '7px', border: 'none', cursor: 'pointer',
+                fontSize: '13px', fontWeight: 600, fontFamily: 'inherit',
+                background: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
+                color: activeTab === tab ? '#fff' : 'rgba(255,255,255,0.4)',
+                display: 'flex', alignItems: 'center', gap: '6px',
+              }}
+            >
+              {tab === 'pausadas' && <PauseCircle size={13} />}
+              {tab === 'geral' ? 'Visao Geral' : `Pausadas${pausedCampaigns.length > 0 ? ` (${pausedCampaigns.length})` : ''}`}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid-professor" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
+      {activeTab === 'pausadas' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {pausedCampaigns.length === 0 ? (
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '40px', textAlign: 'center' }}>
+              <PauseCircle size={32} color="rgba(255,255,255,0.15)" style={{ margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>Nenhuma campanha pausada.</p>
+            </div>
+          ) : pausedCampaigns.map((c) => {
+            const vc = VERDICT_CONFIG[c.verdict];
+            return (
+              <div key={c.id} style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${vc.border}`, borderRadius: '16px', padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <div>
+                    <p style={{ fontSize: '15px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{c.name}</p>
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{PLATFORM_LABEL[c.platform] || c.platform}</p>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '12px', color: vc.color, background: vc.bg }}>
+                      {vc.label}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>Score: {c.score}/100</span>
+                  </div>
+                </div>
+
+                {c.total_spend > 0 && (
+                  <div style={{ display: 'flex', gap: '20px', padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', marginBottom: '12px' }}>
+                    <div>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '2px' }}>CPA</p>
+                      <p style={{ fontSize: '16px', fontWeight: 700, color: c.avg_cpa > 60 ? '#ef4444' : '#10b981' }}>R$ {c.avg_cpa.toFixed(0)}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '2px' }}>ROAS</p>
+                      <p style={{ fontSize: '16px', fontWeight: 700, color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas >= 2 ? '#f59e0b' : '#ef4444' }}>{c.avg_roas.toFixed(1)}x</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '2px' }}>CTR</p>
+                      <p style={{ fontSize: '16px', fontWeight: 700, color: c.avg_ctr >= 1.5 ? '#10b981' : '#f59e0b' }}>{c.avg_ctr.toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '2px' }}>Leads</p>
+                      <p style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>{c.total_leads}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ padding: '12px', borderRadius: '10px', background: vc.bg, border: `1px solid ${vc.border}` }}>
+                  <p style={{ fontSize: '11px', color: vc.color, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Zap size={12} /> RECOMENDACAO DA IA
+                  </p>
+                  <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>{c.verdict_reason}</p>
+                </div>
+
+                {c.issues.length > 0 && (
+                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {c.issues.map((issue, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ef4444', flexShrink: 0, marginTop: '6px' }} />
+                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{issue}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="grid-professor" style={{ display: activeTab === 'pausadas' ? 'none' : 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {metrics.map((metric) => (
             <MetricCard key={metric.key} metric={metric} expanded={expandedKey === metric.key} onToggle={() => setExpandedKey(expandedKey === metric.key ? null : metric.key)} />

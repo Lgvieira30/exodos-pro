@@ -54,6 +54,7 @@ export const syncApi = {
 export const analyzeApi = {
   dashboard: () => api.get('/analyze/dashboard').then((r) => r.data),
   campaign: (id: string) => api.get(`/analyze/${id}`).then((r) => r.data),
+  paused: () => api.get('/analyze/paused').then((r) => r.data),
 };
 
 export const integrationsApi = {

@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Users, DollarSign, Zap, Plus, Target, RefreshCw, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Zap, Plus, Target, RefreshCw, AlertTriangle, CheckCircle, ArrowRight, PauseCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { campaignsApi, metricsApi, syncApi, analyzeApi } from '../lib/api';
 
@@ -18,6 +18,21 @@ interface Analysis {
   issues: string[];
   actions: { priority: 'alta' | 'media' | 'baixa'; acao: string; motivo: string }[];
 }
+
+interface PausedCampaign {
+  id: string; name: string; platform: string;
+  avg_cpa: number; avg_roas: number; avg_ctr: number;
+  total_spend: number; total_leads: number;
+  score: number;
+  verdict: 'reativar' | 'reativar_com_cautela' | 'manter_pausada';
+  verdict_reason: string;
+}
+
+const VERDICT_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  reativar:            { label: 'Reativar',            color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+  reativar_com_cautela: { label: 'Revisar e Reativar', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  manter_pausada:      { label: 'Manter Pausada',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+};
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   active:    { label: 'Ativa',     color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
@@ -41,6 +56,7 @@ export default function Dashboard() {
   const [weekly, setWeekly] = useState<any[]>([]);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pausedCampaigns, setPausedCampaigns] = useState<PausedCampaign[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
 
@@ -54,8 +70,12 @@ export default function Dashboard() {
       setWeekly(metricsRes?.data?.weekly || []);
       setCampaigns(campaignsRes?.data?.campaigns || []);
 
-      const analysisRes = await analyzeApi.dashboard().catch(() => null);
+      const [analysisRes, pausedRes] = await Promise.all([
+        analyzeApi.dashboard().catch(() => null),
+        analyzeApi.paused().catch(() => null),
+      ]);
       if (analysisRes?.data) setAnalysis(analysisRes.data);
+      if (pausedRes?.data?.paused) setPausedCampaigns(pausedRes.data.paused);
     } finally {
       setLoading(false);
     }
@@ -252,6 +272,52 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+          {/* Campanhas Pausadas */}
+          {pausedCampaigns.length > 0 && (
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '16px', overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <PauseCircle size={15} color="#f59e0b" />
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>Campanhas Pausadas</p>
+                </div>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                  {pausedCampaigns.length} pausada{pausedCampaigns.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              {pausedCampaigns.map((c) => {
+                const vc = VERDICT_CONFIG[c.verdict];
+                return (
+                  <div key={c.id} style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div>
+                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{c.name}</p>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>{PLATFORM_LABEL[c.platform] || c.platform}</p>
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', color: vc.color, background: vc.bg, flexShrink: 0 }}>
+                        {vc.label}
+                      </span>
+                    </div>
+                    {c.total_spend > 0 ? (
+                      <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                          CPA: <strong style={{ color: c.avg_cpa > 60 ? '#ef4444' : '#10b981' }}>R$ {c.avg_cpa.toFixed(0)}</strong>
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                          ROAS: <strong style={{ color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas >= 2 ? '#f59e0b' : '#ef4444' }}>{c.avg_roas.toFixed(1)}x</strong>
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                          Leads: <strong style={{ color: '#fff' }}>{c.total_leads}</strong>
+                        </span>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>Sem metricas registradas</p>
+                    )}
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.5' }}>{c.verdict_reason}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Coluna lateral */}
