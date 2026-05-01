@@ -10,11 +10,13 @@ metricsRouter.use(requireAuth);
 metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
   const [summary] = await sql`
     SELECT
-      COALESCE(SUM(m.spend), 0)       AS total_spend,
-      COALESCE(SUM(m.leads), 0)       AS total_leads,
-      COALESCE(AVG(m.cpa) FILTER (WHERE m.cpa > 0), 0) AS avg_cpa,
-      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
-      COUNT(DISTINCT c.id)             AS total_campaigns
+      COALESCE(SUM(m.spend), 0)                            AS total_spend,
+      COALESCE(SUM(m.leads), 0)                            AS total_leads,
+      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)  AS avg_cpa,
+      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)  AS avg_roas,
+      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0)  AS avg_ctr,
+      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0)  AS avg_cpc,
+      COUNT(DISTINCT c.id)                                  AS total_campaigns
     FROM campaigns c
     LEFT JOIN metrics m ON m.campaign_id = c.id
     WHERE c.user_id = ${req.userId!}
@@ -43,6 +45,8 @@ metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
         leads: Number(summary.total_leads),
         cpa: Number(summary.avg_cpa),
         roas: Number(summary.avg_roas),
+        ctr: Number(summary.avg_ctr),
+        cpc: Number(summary.avg_cpc),
         campaigns: Number(summary.total_campaigns),
       },
       weekly,

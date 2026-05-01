@@ -214,8 +214,9 @@ export default function Professor() {
       analyzeApi.paused().catch(() => null),
     ]).then(([metricsRes, pausedRes]) => {
       const s = metricsRes?.data?.summary;
-      if (s) {
-        buildMetrics(s.cpa || 47, s.roas || 3.4, 1.8, 2.1, ((s.roas || 3.4) - 1) * 100);
+      if (s && (s.spend > 0 || s.leads > 0)) {
+        const roi = s.roas > 0 ? (s.roas - 1) * 100 : 0;
+        buildMetrics(s.cpa || 0, s.roas || 0, s.ctr || 0, s.cpc || 0, roi);
       } else {
         buildMetrics(47, 3.4, 1.8, 2.1, 240);
         setUsingMock(true);
@@ -227,44 +228,86 @@ export default function Professor() {
   function buildMetrics(cpa: number, roas: number, ctr: number, cpc: number, roi: number) {
     const raw: Metric[] = [
       {
-        key: 'roas', label: 'ROAS', value: `${roas.toFixed(1)}x`, raw: roas,
+        key: 'roas', label: 'ROAS', value: roas > 0 ? `${roas.toFixed(1)}x` : '--', raw: roas,
         status: getStatus('roas', roas), icon: TrendingUp,
-        explanation: `Para cada R$1 investido, você recuperou R$${roas.toFixed(2)} em receita. ROAS ${roas.toFixed(1)}x significa retorno ${roas > 1 ? 'positivo' : 'negativo'} sobre o investimento.`,
-        recommendation: roas >= 3 ? 'Ótimo ROAS! Escale o orçamento 20-30% nos conjuntos com melhor desempenho.' : 'Revise criativos e público-alvo. Segmentações mais específicas melhoram a qualidade do tráfego.',
-        impact: roas >= 3 ? '+15-25% ao escalar' : 'Pode dobrar com ajustes',
-        benchmark: 'Bom: 3x+ | Excelente: 5x+',
+        explanation: roas > 0
+          ? `Seu ROAS de ${roas.toFixed(1)}x significa que para cada R$1 investido em anúncios, você está recuperando R$${roas.toFixed(2)} em receita. ${roas >= 3 ? 'Isso indica que a campanha está gerando retorno real acima do custo.' : roas >= 1 ? 'O retorno cobre o investimento, mas ainda há espaço para otimizar.' : 'Atenção: o retorno está abaixo do investido, o que representa prejuízo líquido.'} O algoritmo do Meta usa o ROAS como principal sinal para aprender com quem converte — campanha com ROAS alto recebe distribuição maior automaticamente.`
+          : 'Sem dados de ROAS ainda. O valor aparece após a primeira conversão registrada nas métricas.',
+        recommendation: roas >= 5
+          ? `ROAS excepcional! Escale agressivamente — aumente o orçamento 30-50% por semana sem mexer na segmentação. Documente tudo: criativo, copy, público e oferta.`
+          : roas >= 3
+          ? `Bom ROAS. Escale com cautela: aumente o orçamento 20% a cada 3-4 dias. Duplique os conjuntos de anúncio que puxam mais resultado e pause os de menor performance.`
+          : roas >= 2
+          ? `ROAS abaixo do ideal para escalar. Revise sua oferta e a página de destino. Teste criativos novos com ângulos diferentes. Não aumente orçamento antes de melhorar o ROAS.`
+          : roas > 0
+          ? `ROAS crítico — cada R$1 investido retorna menos de R$2. Pause conjuntos com pior desempenho, revise o público-alvo e mude o criativo. Considere revisar a oferta ou o preço do produto.`
+          : `Configure o pixel de conversão e aguarde os primeiros dados de ROAS para análise.`,
+        impact: roas >= 3 ? 'Escalar 20% → +20% de resultado proporcional' : 'Dobrar o ROAS é possível revisando criativo e funil',
+        benchmark: 'Bom: 3x+ | Excelente: 5x+ | Escalar com segurança: 4x+',
       },
       {
-        key: 'cpa', label: 'CPA (Custo por Aquisição)', value: `R$ ${cpa.toFixed(2)}`, raw: cpa,
+        key: 'cpa', label: 'CPA (Custo por Aquisição)', value: cpa > 0 ? `R$ ${cpa.toFixed(2)}` : '--', raw: cpa,
         status: getStatus('cpa', cpa), icon: Target,
-        explanation: `Você paga R$${cpa.toFixed(2)} por cada conversão. Inclui todo o investimento dividido pelo número de conversões geradas no período.`,
-        recommendation: cpa <= 50 ? 'CPA sob controle. Mantenha anúncios bons e pause os que ultrapassam 1.5x esse valor.' : 'CPA elevado. Revise sua landing page, CTAs e sequência de funil para melhorar a taxa de conversão.',
-        impact: cpa <= 50 ? 'Otimize para -10%' : 'Redução de até 40%',
-        benchmark: 'Bom: < R$50 | Excelente: < R$30',
+        explanation: cpa > 0
+          ? `Você está pagando R$${cpa.toFixed(2)} para adquirir cada lead ou cliente. Esse valor é calculado dividindo todo o investimento pelo número de conversões no período. ${cpa <= 50 ? `Com R$1.000 de orçamento, você consegue aproximadamente ${Math.round(1000 / cpa)} conversões.` : `Com R$1.000 de orçamento, você consegue apenas ${Math.round(1000 / cpa)} conversões — revise o funil para aumentar esse volume.`} O CPA ideal depende do valor que cada cliente gera para o seu negócio.`
+          : 'Sem conversões registradas ainda. Configure o pixel e aguarde os primeiros dados.',
+        recommendation: cpa <= 30
+          ? `CPA excelente! Escale o orçamento com confiança. Mantenha o mesmo criativo, público e landing page — qualquer mudança pode prejudicar o resultado.`
+          : cpa <= 50
+          ? `CPA sob controle. Pause anúncios que ultrapassam R$${(cpa * 1.5).toFixed(0)} (1.5x o atual) e redirecione o budget para os melhores performers.`
+          : cpa <= 80
+          ? `CPA elevado. Revise sua landing page: headline, prova social, CTA e velocidade de carregamento. Um formulário mais simples pode reduzir o CPA em até 30%.`
+          : `CPA crítico. Pause a campanha e revise toda a estrutura: segmentação, criativo, landing page e oferta. O problema pode estar em qualquer etapa do funil.`,
+        impact: cpa <= 50 ? 'Reduzir 10% no CPA = 10% mais leads com mesmo orçamento' : `Reduzir para R$50 = ${cpa > 0 ? Math.round((cpa / 50 - 1) * 100) : 0}% mais leads`,
+        benchmark: 'Excelente: < R$30 | Bom: R$30-50 | Atenção: R$50-80 | Crítico: > R$80',
       },
       {
-        key: 'ctr', label: 'CTR (Taxa de Cliques)', value: `${ctr.toFixed(1)}%`, raw: ctr,
+        key: 'ctr', label: 'CTR (Taxa de Cliques)', value: ctr > 0 ? `${ctr.toFixed(2)}%` : '--', raw: ctr,
         status: getStatus('ctr', ctr), icon: Activity,
-        explanation: `${ctr.toFixed(1)}% das impressões geraram cliques. CTR alto indica que seu criativo gera interesse genuíno no público-alvo.`,
-        recommendation: ctr >= 1.5 ? 'CTR saudável. Teste variações do criativo vencedor para melhorar ainda mais.' : 'CTR baixo: o anúncio não ressoa com o público. Teste novos criativos e títulos mais diretos.',
-        impact: ctr >= 1.5 ? 'Manter padrão' : '-20% no CPC se melhorar',
-        benchmark: 'Bom: 1.5%+ | Excelente: 3%+',
+        explanation: ctr > 0
+          ? `De cada 1.000 pessoas que viram seu anúncio, ${Math.round(ctr * 10)} clicaram (CTR de ${ctr.toFixed(2)}%). O CTR mede a força do seu criativo e a relevância da mensagem para o público. ${ctr >= 2 ? 'Um CTR acima de 2% indica que o anúncio ressoa bem com a audiência.' : ctr >= 1 ? 'CTR razoável, mas há espaço para melhorar o criativo e aumentar os cliques sem aumentar o custo.' : 'CTR baixo significa que o criativo não está gerando interesse suficiente — isso também encarece o CPC, pois o algoritmo penaliza anúncios pouco clicados.'}`
+          : 'Sem dados de CTR ainda. Aparece após as primeiras impressões registradas.',
+        recommendation: ctr >= 3
+          ? `CTR excelente! O criativo está funcionando muito bem. Salve esse criativo como referência e teste variações pequenas (headline, cor do botão) para melhorar ainda mais.`
+          : ctr >= 1.5
+          ? `CTR saudável. Teste 2-3 variações do criativo atual mudando só um elemento por vez: headline, imagem ou CTA. Qual versão gera mais cliques com mesmo orçamento?`
+          : ctr >= 0.8
+          ? `CTR abaixo do ideal. O anúncio não está gerando curiosidade suficiente. Teste: (1) criativo em vídeo vs imagem, (2) headline com pergunta ou número, (3) público mais específico.`
+          : `CTR crítico — menos de 1 em cada 125 pessoas clica. Mude completamente o criativo: formato, ângulo de comunicação e CTA. Teste com um público menor e mais qualificado.`,
+        impact: ctr < 1.5 ? `Dobrar o CTR pode reduzir o CPC em até 40%` : 'CTR alto = algoritmo favorece seu anúncio no leilão',
+        benchmark: 'Bom: 1.5%+ | Excelente: 3%+ | Crítico: < 0.8%',
       },
       {
-        key: 'cpc', label: 'CPC (Custo por Clique)', value: `R$ ${cpc.toFixed(2)}`, raw: cpc,
+        key: 'cpc', label: 'CPC (Custo por Clique)', value: cpc > 0 ? `R$ ${cpc.toFixed(2)}` : '--', raw: cpc,
         status: getStatus('cpc', cpc), icon: DollarSign,
-        explanation: `Cada clique custa R$${cpc.toFixed(2)}. Influenciado pela concorrência no leilão, qualidade do anúncio e público escolhido.`,
-        recommendation: cpc <= 2.5 ? 'CPC competitivo. Melhore o Quality Score com extensões e relevância de landing page.' : 'CPC elevado: alta concorrência ou anúncio de baixa qualidade. Melhore a relevância do criativo.',
-        impact: cpc <= 2.5 ? 'Estável' : 'Até -30% com otimização',
-        benchmark: 'Bom: < R$2.50 | Excelente: < R$1',
+        explanation: cpc > 0
+          ? `Cada clique no seu anúncio está custando R$${cpc.toFixed(2)}. Esse valor é determinado pelo leilão do Meta: quanto mais anunciantes disputam o mesmo público, mais caro fica. ${cpc <= 2.5 ? 'CPC competitivo para o mercado brasileiro.' : 'CPC acima do ideal — pode indicar alta concorrência no seu segmento ou anúncio com baixo score de relevância.'} O CPC está diretamente ligado ao CTR: criativo mais clicado = CPC menor, pois o algoritmo premia anúncios com alta taxa de engajamento.`
+          : 'Sem dados de CPC ainda.',
+        recommendation: cpc <= 1
+          ? `CPC excelente! Seu anúncio está sendo premiado pelo algoritmo. Escale o orçamento — o CPC tende a subir pouco quando a campanha está otimizada.`
+          : cpc <= 2.5
+          ? `CPC competitivo. Para reduzir ainda mais: melhore o CTR com criativos mais atrativos e segmente para públicos com maior intenção de compra (remarketing, LAL de compradores).`
+          : cpc <= 5
+          ? `CPC elevado. Revise: (1) o público está amplo demais? (2) o criativo tem CTR baixo? (3) há muita sobreposição de audiências entre conjuntos? Menos competição interna reduz o CPC.`
+          : `CPC muito alto. Pause e restructure a campanha. Considere segmentos menos disputados ou formatos diferentes (Stories, Reels) que costumam ter CPC menor.`,
+        impact: cpc > 2.5 ? `Reduzir o CPC para R$2 = ${cpc > 0 ? Math.round((cpc / 2 - 1) * 100) : 0}% mais cliques com mesmo orçamento` : 'CPC baixo = mais cliques pelo mesmo investimento',
+        benchmark: 'Excelente: < R$1 | Bom: R$1-2.50 | Atenção: R$2.50-5 | Crítico: > R$5',
       },
       {
-        key: 'roi', label: 'ROI (Retorno sobre Investimento)', value: `${roi.toFixed(0)}%`, raw: roi,
+        key: 'roi', label: 'ROI (Retorno sobre Investimento)', value: roi > 0 ? `${roi.toFixed(0)}%` : '--', raw: roi,
         status: getStatus('roi', roi), icon: BarChart3,
-        explanation: `Retorno líquido de ${roi.toFixed(0)}% sobre o investido. Para cada R$100 gastos, você obteve R$${(100 + roi).toFixed(0)} de retorno bruto.`,
-        recommendation: roi >= 150 ? 'ROI excelente! Documente a estratégia e replique em novos mercados ou produtos.' : 'ROI abaixo do ideal. Analise o funil completo e identifique onde os leads se perdem.',
-        impact: roi >= 150 ? 'Replique a estratégia' : 'Pode triplicar com funil certo',
-        benchmark: 'Bom: 150%+ | Excelente: 300%+',
+        explanation: roi > 0
+          ? `Seu ROI de ${roi.toFixed(0)}% significa que para cada R$100 investidos em anúncios, você obteve R$${(100 + roi).toFixed(0)} de retorno bruto — ou seja, R$${roi.toFixed(0)} de lucro antes de descontar outros custos operacionais. ${roi >= 150 ? 'Um ROI acima de 150% indica que a operação está gerando valor real.' : roi >= 50 ? 'ROI positivo, mas ainda há espaço para escalar com mais eficiência.' : 'ROI baixo — o retorno mal cobre o investimento. Revise a estrutura de custos e o funil de conversão.'} Lembre que o ROI considera apenas o retorno direto dos anúncios; o LTV (valor do cliente ao longo do tempo) pode tornar um ROI aparentemente baixo muito mais lucrativo.`
+          : 'ROI aparece após os primeiros dados de receita e conversão.',
+        recommendation: roi >= 300
+          ? `ROI excepcional! Escale com tudo. Documente a estratégia completa (criativo, público, oferta, landing page) e replique em outros produtos ou segmentos.`
+          : roi >= 150
+          ? `ROI saudável. Foco em aumentar o volume de leads mantendo o custo: escale o orçamento 20% por semana e monitore se o CPA se mantém estável.`
+          : roi >= 50
+          ? `ROI positivo mas pode melhorar. Analise qual etapa do funil perde mais leads: do clique para o lead, ou do lead para a venda? Cada 10% de melhoria na conversão pode dobrar o ROI.`
+          : `ROI abaixo do esperado. Revise: (1) o ticket médio do produto vs o CPA, (2) a taxa de fechamento dos leads, (3) se os leads gerados têm o perfil certo do seu cliente ideal.`,
+        impact: roi >= 150 ? 'Replique a estratégia em novos mercados ou produtos' : 'Cada 10% de melhoria na taxa de conversão aumenta o ROI proporcionalmente',
+        benchmark: 'Positivo: > 0% | Bom: 150%+ | Excelente: 300%+',
       },
     ];
     setMetrics(raw);
