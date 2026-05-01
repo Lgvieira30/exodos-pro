@@ -16,8 +16,8 @@ syncRouter.get('/status', async (req: AuthRequest, res: Response) => {
 
 syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
   const [integration] = await sql`
-    SELECT access_token, account_id FROM user_integrations
-    WHERE user_id = ${req.userId!} AND platform = 'meta'
+    SELECT id, access_token, account_id FROM user_integrations
+    WHERE user_id = ${req.userId!} AND platform = 'meta' AND is_active = true
   `;
   if (!integration) {
     res.status(400).json({ success: false, error: { message: 'Meta Ads nao conectado. Configure em Configuracoes.' } });
@@ -98,14 +98,14 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
 
     await sql`
       UPDATE user_integrations SET last_sync_at = NOW(), last_sync_status = 'success'
-      WHERE user_id = ${req.userId!} AND platform = 'meta'
+      WHERE id = ${integration.id}
     `;
 
     res.json({ success: true, data: { synced, message: `${synced} campanha(s) sincronizada(s) do Meta Ads.` } });
   } catch (err: any) {
     await sql`
       UPDATE user_integrations SET last_sync_at = NOW(), last_sync_status = 'error'
-      WHERE user_id = ${req.userId!} AND platform = 'meta'
+      WHERE id = ${integration.id}
     `.catch(() => {});
     const msg = err.response?.data?.error?.message || err.message || 'Erro ao sincronizar com Meta Ads';
     res.status(500).json({ success: false, error: { message: msg } });
