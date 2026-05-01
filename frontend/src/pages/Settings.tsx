@@ -74,7 +74,7 @@ export default function Settings() {
       await integrationsApi.remove(id);
       setIntegrations((prev) => prev.filter((i) => i.id !== id));
       flash('Conta removida', true);
-    } catch { flash('Erro ao remover', false); }
+    } catch (err: any) { flash(err.response?.data?.error?.message || 'Erro ao remover conta', false); }
   }
 
   async function handleSync() {
