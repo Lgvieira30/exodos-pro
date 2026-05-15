@@ -6,6 +6,7 @@ import Analytics from './pages/Analytics';
 import Wizard from './pages/Wizard';
 import SettingsPage from './pages/Settings';
 import Professor from './pages/Professor';
+import CampaignDetail from './pages/CampaignDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { Logo } from './components/Logo';
@@ -133,6 +134,7 @@ function ProtectedLayout() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="wizard" element={<Wizard />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="campaigns/:id" element={<CampaignDetail />} />
         </Routes>
       </main>
     </div>
