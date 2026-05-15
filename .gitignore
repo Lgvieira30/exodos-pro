@@ -37,3 +37,6 @@ coverage/
 
 # Cache
 .cache/
+
+# Claude Code
+.claude/
