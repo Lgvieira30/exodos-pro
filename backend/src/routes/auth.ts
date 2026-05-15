@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import { sql } from '../db/index.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
@@ -36,10 +36,12 @@ authRouter.post(
       RETURNING id, email, name, created_at
     `;
 
+    // @ts-ignore - jsonwebtoken types don't properly handle string expiresIn
+    const signOptions: SignOptions = { expiresIn: process.env.JWT_EXPIRES_IN || '24h' };
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      process.env.JWT_SECRET as string,
+      signOptions
     );
 
     res.status(201).json({ success: true, data: { token, user: { id: user.id, email: user.email, name: user.name } } });
@@ -73,10 +75,12 @@ authRouter.post(
       return;
     }
 
+    // @ts-ignore - jsonwebtoken types don't properly handle string expiresIn
+    const signOptions: SignOptions = { expiresIn: process.env.JWT_EXPIRES_IN || '24h' };
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      process.env.JWT_SECRET as string,
+      signOptions
     );
 
     res.json({ success: true, data: { token, user: { id: user.id, email: user.email, name: user.name } } });
