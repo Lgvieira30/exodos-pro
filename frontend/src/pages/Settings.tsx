@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Eye, EyeOff, RefreshCw, CheckCircle, Unlink, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Eye, EyeOff, RefreshCw, Unlink, Plus, ChevronUp } from 'lucide-react';
 import { integrationsApi, syncApi } from '../lib/api';
 
 const CYAN = '#3DB8E8';

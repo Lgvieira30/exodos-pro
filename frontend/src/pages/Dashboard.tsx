@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, DollarSign, Zap, Plus, Target, RefreshCw, AlertTriangle, CheckCircle, ArrowRight, PauseCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

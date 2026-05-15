@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
