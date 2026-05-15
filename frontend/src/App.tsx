@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Megaphone } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Wizard from './pages/Wizard';
@@ -8,6 +8,10 @@ import SettingsPage from './pages/Settings';
 import Professor from './pages/Professor';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import CampaignsPage from './pages/CampaignsPage';
+import CampaignDetail from './pages/CampaignDetail';
+import AdSetDetail from './pages/AdSetDetail';
+import AdDetail from './pages/AdDetail';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
@@ -17,6 +21,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { to: '/professor', label: 'Professor IA', icon: GraduationCap },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/campaigns', label: 'Campanhas', icon: Megaphone },
   { to: '/wizard', label: 'Nova Campanha', icon: Rocket },
   { to: '/settings', label: 'Configuracoes', icon: Settings },
 ];
@@ -131,6 +136,10 @@ function ProtectedLayout() {
           <Route index element={<Dashboard />} />
           <Route path="professor" element={<Professor />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="campaigns" element={<CampaignsPage />} />
+          <Route path="campaigns/:campaignId" element={<CampaignDetail />} />
+          <Route path="campaigns/:campaignId/adsets/:adSetId" element={<AdSetDetail />} />
+          <Route path="campaigns/:campaignId/adsets/:adSetId/ads/:adId" element={<AdDetail />} />
           <Route path="wizard" element={<Wizard />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
