@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, DollarSign, Zap, Plus, Target, RefreshCw, AlertTriangle, CheckCircle, ArrowRight, PauseCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -59,6 +59,7 @@ export default function Dashboard() {
   const [pausedCampaigns, setPausedCampaigns] = useState<PausedCampaign[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
+  const [hoveredCampaignId, setHoveredCampaignId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -251,13 +252,27 @@ export default function Dashboard() {
               <div>
                 {campaigns.map((c) => {
                   const badge = STATUS_BADGE[c.status];
+                  const isHovered = hoveredCampaignId === c.id;
                   return (
-                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div
+                      key={c.id}
+                      onClick={() => navigate(`/campaigns/${c.id}`)}
+                      onMouseEnter={() => setHoveredCampaignId(c.id)}
+                      onMouseLeave={() => setHoveredCampaignId(null)}
+                      style={{
+                        display: 'flex', alignItems: 'center', padding: '14px 20px',
+                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        cursor: 'pointer',
+                        background: isHovered ? 'rgba(255,255,255,0.03)' : 'transparent',
+                        transition: 'background 0.15s',
+                      }}
+                    >
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', marginBottom: '3px' }}>{c.name}</p>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '12px', color: badge.color, background: badge.bg }}>{badge.label}</span>
                           <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>{PLATFORM_LABEL[c.platform] || c.platform}</span>
+                          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>Leads: {c.total_leads}</span>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right', marginLeft: '16px' }}>
@@ -266,6 +281,7 @@ export default function Dashboard() {
                           {c.avg_cpa > 0 ? `CPA R$ ${Number(c.avg_cpa).toFixed(0)}` : 'Sem metricas'}
                         </p>
                       </div>
+                      <ArrowRight size={14} color="rgba(255,255,255,0.2)" style={{ marginLeft: '12px', flexShrink: 0 }} />
                     </div>
                   );
                 })}
@@ -286,8 +302,20 @@ export default function Dashboard() {
               </div>
               {pausedCampaigns.map((c) => {
                 const vc = VERDICT_CONFIG[c.verdict];
+                const isPausedHovered = hoveredCampaignId === `p-${c.id}`;
                 return (
-                  <div key={c.id} style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div
+                    key={c.id}
+                    onClick={() => navigate(`/campaigns/${c.id}`)}
+                    onMouseEnter={() => setHoveredCampaignId(`p-${c.id}`)}
+                    onMouseLeave={() => setHoveredCampaignId(null)}
+                    style={{
+                      padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      cursor: 'pointer',
+                      background: isPausedHovered ? 'rgba(255,255,255,0.03)' : 'transparent',
+                      transition: 'background 0.15s',
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <div>
                         <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{c.name}</p>
@@ -312,7 +340,10 @@ export default function Dashboard() {
                     ) : (
                       <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>Sem metricas registradas</p>
                     )}
-                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.5' }}>{c.verdict_reason}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.5', flex: 1 }}>{c.verdict_reason}</p>
+                      <ArrowRight size={14} color="rgba(255,255,255,0.2)" style={{ marginLeft: '12px', flexShrink: 0 }} />
+                    </div>
                   </div>
                 );
               })}

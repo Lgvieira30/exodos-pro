@@ -1,8 +1,8 @@
-﻿import React, { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Sparkles, Brain, ShoppingCart, Pen, BarChart3, Shield, Cpu,
-  ChevronRight, AlertTriangle, TrendingUp, CheckCircle, Clock,
-  Zap, Play, RotateCcw, Eye,
+  AlertTriangle, TrendingUp, CheckCircle, Clock,
+  Play, RotateCcw, Eye,
 } from 'lucide-react';
 
 const TEAL = '#00B7B7';
