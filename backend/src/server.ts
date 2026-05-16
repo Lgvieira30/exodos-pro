@@ -52,8 +52,8 @@ async function runMigrations() {
   }
 }
 
-app.listen(PORT, async () => {
-  console.log(`ðŸš€ ÃŠXODOS PRO backend rodando na porta ${PORT}`);
+app.listen(Number(PORT), '0.0.0.0', async () => {
+  console.log(`🚀 ÊXODOS PRO backend rodando na porta ${PORT}`);
   await runMigrations();
 });
 
