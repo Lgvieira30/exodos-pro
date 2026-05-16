@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(helmet());
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     const allowed = process.env.FRONTEND_URL || 'http://localhost:5173';
     if (!origin || origin === allowed || origin.endsWith('.vercel.app')) {
       callback(null, true);

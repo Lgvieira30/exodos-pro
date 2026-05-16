@@ -39,7 +39,7 @@ authRouter.post(
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as any }
     );
 
     res.status(201).json({ success: true, data: { token, user: { id: user.id, email: user.email, name: user.name } } });
@@ -76,7 +76,7 @@ authRouter.post(
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as any }
     );
 
     res.json({ success: true, data: { token, user: { id: user.id, email: user.email, name: user.name } } });
