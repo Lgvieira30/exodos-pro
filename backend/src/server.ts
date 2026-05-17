@@ -2,13 +2,17 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { router } from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     const allowed = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -29,6 +33,12 @@ app.get('/health', (_req, res) => {
 
 app.use('/api', router);
 app.use(errorHandler);
+
+const publicDir = path.join(__dirname, '../public');
+app.use(express.static(publicDir));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
 
 async function runMigrations() {
   if (!process.env.DATABASE_URL) return;
