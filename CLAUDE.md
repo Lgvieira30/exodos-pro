@@ -5,7 +5,9 @@ Plataforma de gestão autônoma de tráfego pago para o Lucas Vieira (Mônaco Ge
 Futuramente um SaaS para agências brasileiras (concorrentes: RD Station, Optmyzr).
 
 **Repositório:** https://github.com/lgvieira30/exodos-pro
-**Frontend (Vercel):** https://exodos-pro-9d9i.vercel.app ← URL permanente, não muda
+**Frontend (Vercel):** https://exodos-pro-9d9i.vercel.app ← URL curta (produção)
+**Frontend (git-main):** https://exodos-pro-9d9i-git-main-lgvieira30s-projects.vercel.app ← conectado ao VPS
+> VITE_API_URL deve estar em Settings → Env Vars apontando para o backend Easypanel
 
 ---
 
