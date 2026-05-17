@@ -5,34 +5,54 @@ Plataforma de gestão autônoma de tráfego pago para o Lucas Vieira (Mônaco Ge
 Futuramente um SaaS para agências brasileiras (concorrentes: RD Station, Optmyzr).
 
 **Repositório:** https://github.com/lgvieira30/exodos-pro
-**Frontend:** https://exodos-pro-9d9i.vercel.app
+**Frontend (Vercel):** https://exodos-pro-9d9i.vercel.app ← URL permanente, não muda
+
+---
+
+## Deploy atual
+
+| Serviço | Plataforma | Status | URL/Info |
+|---------|-----------|--------|----------|
+| Frontend | Vercel | Online | https://exodos-pro-9d9i.vercel.app |
+| Backend | Easypanel (VPS Hostinger) | Online | porta 3001 |
+| Banco de dados | Easypanel (PostgreSQL interno) | Online | serviço `exodos-pro_db` |
+| Meta Ads | Conectado | — | sync funcionando |
+| Google Ads | Pendente | — | rota não implementada |
+
+### Como o Easypanel funciona
+- O Easypanel roda no VPS da Hostinger
+- Ele lê o `backend/Dockerfile` e faz o build automaticamente a cada push no GitHub
+- O banco PostgreSQL roda como serviço separado dentro do Easypanel (`exodos-pro_db`)
+- O frontend fica no Vercel e se comunica com o backend via HTTPS
+
+### Variáveis de ambiente no Easypanel (backend)
+Configuradas diretamente no painel do Easypanel → serviço backend → Environment:
+```
+DATABASE_URL=postgres://postgres:atprr45gx8ilsbvm19tm@exodos-pro_db:5432/exodos-pro?sslmode=disable
+JWT_SECRET=exodos_jwt_secret_super_seguro_2024
+NODE_ENV=production
+PORT=3001
+FRONTEND_URL=https://exodos-pro-9d9i.vercel.app
+```
+
+> `exodos-pro_db` é o hostname interno do PostgreSQL dentro do Easypanel. Não usar `localhost`.
+> `FRONTEND_URL` é obrigatório para o CORS liberar requisições do Vercel.
 
 ---
 
 ## Stack
 
-### Frontend (`/frontend`)
+### Frontend (`/frontend`) — deploy no Vercel
 - React 18 + TypeScript + Vite 5
 - TailwindCSS 3, React Router 6, Recharts, ReactFlow, Lucide React
 - Cliente HTTP: `src/lib/api.ts` (axios + interceptor JWT automático)
+- Em produção usa `/api` como base URL (mesma origem não, mas configurado via VITE_API_URL)
 
-### Backend (`/backend`)
+### Backend (`/backend`) — deploy no Easypanel
 - Node.js + Express 4 + TypeScript (ESM)
-- PostgreSQL via Neon (`postgres` driver, sem ORM)
+- PostgreSQL via driver `postgres` (sem ORM)
 - JWT (`jsonwebtoken` + `bcryptjs`), Helmet, express-validator
-- Redis instalado mas ainda não em uso
-
----
-
-## Deploy — TUDO ONLINE
-
-| Serviço | Status | Plataforma |
-|---------|--------|------------|
-| Frontend | Online | Vercel |
-| Backend | Online | Railway |
-| Banco de dados | Online | Neon (PostgreSQL) |
-| Meta Ads | Conectado | — |
-| Google Ads | Pendente | — |
+- Dockerfile: `backend/Dockerfile` — build TypeScript, sem frontend
 
 ---
 
@@ -40,39 +60,43 @@ Futuramente um SaaS para agências brasileiras (concorrentes: RD Station, Optmyz
 
 ```
 exodos-pro/
+├── Dockerfile                  Build completo (frontend + backend) — usado localmente / docker-compose
+├── docker-compose.yml          Para rodar localmente com docker compose up
+├── .env.example                Modelo de variáveis de ambiente
+│
 ├── frontend/src/
-│   ├── App.tsx               Nav + roteamento + Sidebar integrada
-│   ├── lib/api.ts            Cliente HTTP (authApi, campaignsApi, metricsApi, syncApi, analyzeApi, integrationsApi)
+│   ├── App.tsx                 Nav + roteamento + Sidebar integrada
+│   ├── lib/api.ts              Cliente HTTP (authApi, campaignsApi, metricsApi, syncApi, analyzeApi, integrationsApi)
 │   ├── components/
-│   │   ├── Logo.tsx          Logo geométrica Êxodos (usada no header)
-│   │   ├── Layout.tsx        Layout alternativo (existe mas não usado pelo App.tsx)
+│   │   ├── Logo.tsx            Logo geométrica Êxodos (usada no header)
+│   │   ├── Layout.tsx          Layout alternativo (existe mas não usado pelo App.tsx)
 │   │   ├── ProtectedRoute.tsx
 │   │   └── Tooltip.tsx
 │   └── pages/
-│       ├── Dashboard.tsx
-│       ├── Professor.tsx     Análise de métricas com linguagem natural
+│       ├── Dashboard.tsx       ✅ usa API real (metricsApi, campaignsApi, analyzeApi)
+│       ├── Professor.tsx       Análise de métricas com linguagem natural
 │       ├── Analytics.tsx
-│       ├── Wizard.tsx        Criação de campanha (5 steps)
+│       ├── Wizard.tsx          Criação de campanha (5 steps)
 │       ├── CreativeStudio.tsx
-│       ├── CommandCenter.tsx (existe mas NAO esta roteado no App.tsx)
-│       ├── Settings.tsx      Credenciais API
+│       ├── CommandCenter.tsx   ⚠️ existe mas NÃO está roteado no App.tsx
+│       ├── Settings.tsx        Credenciais API
 │       ├── Login.tsx
 │       └── Register.tsx
 │
 ├── backend/src/
-│   ├── server.ts             Express + CORS + Helmet + migrations automáticas
-│   ├── db/index.ts           Conexão Neon
+│   ├── server.ts               Express + CORS + Helmet + migrations automáticas
+│   ├── db/index.ts             Conexão PostgreSQL
 │   ├── middleware/
-│   │   ├── auth.ts           requireAuth (JWT)
+│   │   ├── auth.ts             requireAuth (JWT)
 │   │   └── errorHandler.ts
 │   └── routes/
-│       ├── index.ts          Router central
-│       ├── auth.ts           POST /register, POST /login, GET /me
-│       ├── campaigns.ts      CRUD campanhas
-│       ├── metrics.ts        GET /metrics/dashboard, GET /metrics/:id
-│       ├── sync.ts           POST /sync/meta, POST /sync/google
-│       ├── analyze.ts        GET /analyze/dashboard, GET /analyze/:id
-│       └── integrations.ts   GET/POST /integrations, DELETE /integrations/:platform
+│       ├── index.ts            Router central
+│       ├── auth.ts             POST /register, POST /login, GET /me
+│       ├── campaigns.ts        CRUD campanhas
+│       ├── metrics.ts          GET /metrics/dashboard, GET /metrics/:id
+│       ├── sync.ts             POST /sync/meta (✅ real), POST /sync/google (⚠️ não implementado)
+│       ├── analyze.ts          GET /analyze/dashboard, GET /analyze/:id
+│       └── integrations.ts     GET/POST /integrations, DELETE /integrations/:platform
 │
 └── docs/architecture.md
 ```
@@ -85,8 +109,10 @@ exodos-pro/
 users             (id, email, password_hash, name, timestamps)
 campaigns         (id, user_id, name, platform, objective, status, budget, dates)
 metrics           (id, campaign_id, date, spend, leads, conversions, impressions, clicks, cpc, cpa, roas, ctr)
-user_integrations (id, user_id, platform, app_id, app_secret, access_token, account_id, last_sync)
+user_integrations (id, user_id, platform, app_id, app_secret, access_token, account_id, last_sync, is_active, nickname)
 ```
+
+Migrations rodam automaticamente no startup (`runMigrations()` em `server.ts`).
 
 ---
 
@@ -106,8 +132,8 @@ GET  /api/metrics/dashboard              [auth]
 GET  /api/metrics/:id                    [auth]
 
 GET  /api/sync/status                    [auth]
-POST /api/sync/meta                      [auth]
-POST /api/sync/google                    [auth]
+POST /api/sync/meta                      [auth]  ✅ implementado
+POST /api/sync/google                    [auth]  ⚠️ não implementado
 
 GET  /api/analyze/dashboard              [auth]
 GET  /api/analyze/:id                    [auth]
@@ -120,21 +146,24 @@ DELETE    /api/integrations/:platform    [auth]
 
 ## Identidade visual
 
-- Cor primária oficial: #3DB8E8 (azul ciano)
-- App.tsx ainda usa #6B9AE8 — pendente padronizar
-- Logo.tsx criado e ativo no header
-- Paleta dourada #C9A84C removida
+- Cor primária oficial: `#3DB8E8` (azul ciano)
+- `App.tsx` ainda usa `#6B9AE8` — pendente padronizar
+- `Logo.tsx` criado e ativo no header
+- Paleta dourada `#C9A84C` removida
 
 ---
 
-## Pendências principais
+## Pendências
 
-1. CommandCenter.tsx — decidir: re-integrar ao App.tsx ou deletar
-2. Análise de campanhas pausadas — exibir e analisar campanhas com status paused nas páginas Dashboard, Professor e Analytics
-3. Cor primária — trocar #6B9AE8 por #3DB8E8 no App.tsx
-4. Google Ads — implementar /api/sync/google real
-5. Dados mock — trocar por chamadas reais via api.ts nas páginas Dashboard, Analytics, Professor
-6. Redis — configurar no Railway para cache de métricas
+| # | Tarefa | Status |
+|---|--------|--------|
+| 1 | `CommandCenter.tsx` — re-integrar ao `App.tsx` ou deletar | ⚠️ Pendente |
+| 2 | Campanhas pausadas no Dashboard/Professor/Analytics | ✅ Feito |
+| 3 | Cor primária: trocar `#6B9AE8` por `#3DB8E8` no `App.tsx` | ⚠️ Pendente |
+| 4 | Google Ads — implementar `/api/sync/google` real | ⚠️ Pendente |
+| 5 | Dados mock → chamadas reais via `api.ts` | ✅ Feito (Dashboard usa API real) |
+| 6 | Redis — cache de métricas | ⚠️ Pendente |
+| 7 | `FRONTEND_URL` no Easypanel — liberar CORS do Vercel | ⚠️ Adicionar no painel |
 
 ---
 
@@ -149,6 +178,8 @@ DELETE    /api/integrations/:platform    [auth]
 { success: false, error: { code: string, message: string } }
 ```
 
-**Auth:** todas as rotas protegidas usam requireAuth middleware. O frontend inclui Authorization: Bearer automaticamente via interceptor no api.ts. Token fica no localStorage com chave token.
+**Auth:** todas as rotas protegidas usam `requireAuth` middleware. O frontend inclui `Authorization: Bearer` automaticamente via interceptor no `api.ts`. Token fica no `localStorage` com chave `token`.
 
-**Migrations:** rodam automaticamente no startup do servidor (runMigrations() em server.ts).
+**CORS:** configurado em `server.ts` para aceitar requisições de `FRONTEND_URL` e qualquer `*.vercel.app`.
+
+**Easypanel deploy:** a cada push na branch `main`, o Easypanel detecta a mudança e faz rebuild automático usando `backend/Dockerfile`.
