@@ -56,6 +56,44 @@ async function runMigrations() {
     await sql`ALTER TABLE user_integrations ADD COLUMN IF NOT EXISTS nickname TEXT`;
     await sql`UPDATE user_integrations SET is_active = true WHERE is_active = false AND id IN (SELECT DISTINCT ON (user_id, platform) id FROM user_integrations ORDER BY user_id, platform, created_at DESC)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_integrations_active ON user_integrations(user_id, platform) WHERE is_active = true`;
+    await sql`CREATE TABLE IF NOT EXISTS ad_sets (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      meta_id TEXT UNIQUE NOT NULL,
+      campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      daily_budget NUMERIC(12,2) DEFAULT 0,
+      spend NUMERIC(12,2) DEFAULT 0,
+      impressions INTEGER DEFAULT 0,
+      clicks INTEGER DEFAULT 0,
+      leads INTEGER DEFAULT 0,
+      ctr NUMERIC(8,4) DEFAULT 0,
+      cpc NUMERIC(8,4) DEFAULT 0,
+      cpa NUMERIC(8,4) DEFAULT 0,
+      roas NUMERIC(8,4) DEFAULT 0,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS ads (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      meta_id TEXT UNIQUE NOT NULL,
+      ad_set_id UUID NOT NULL REFERENCES ad_sets(id) ON DELETE CASCADE,
+      campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      spend NUMERIC(12,2) DEFAULT 0,
+      impressions INTEGER DEFAULT 0,
+      clicks INTEGER DEFAULT 0,
+      leads INTEGER DEFAULT 0,
+      ctr NUMERIC(8,4) DEFAULT 0,
+      cpc NUMERIC(8,4) DEFAULT 0,
+      cpa NUMERIC(8,4) DEFAULT 0,
+      roas NUMERIC(8,4) DEFAULT 0,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+    await sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS meta_id TEXT`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_campaigns_meta_id ON campaigns(meta_id) WHERE meta_id IS NOT NULL`;
     console.log('âœ… Banco de dados pronto');
   } catch (err) {
     console.error('âŒ Erro nas migrations:', err);
