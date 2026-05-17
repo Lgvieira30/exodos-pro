@@ -5,7 +5,7 @@ Plataforma de gestão autônoma de tráfego pago para o Lucas Vieira (Mônaco Ge
 Futuramente um SaaS para agências brasileiras (concorrentes: RD Station, Optmyzr).
 
 **Repositório:** https://github.com/lgvieira30/exodos-pro
-**Frontend (Vercel):** https://exodos-pro-9d9i.vercel.app ← URL permanente, não muda
+**Frontend (Vercel):** https://exodos-pro-9d9i-lgvieira30s-projects.vercel.app
 
 ---
 
@@ -13,7 +13,7 @@ Futuramente um SaaS para agências brasileiras (concorrentes: RD Station, Optmyz
 
 | Serviço | Plataforma | Status | URL/Info |
 |---------|-----------|--------|----------|
-| Frontend | Vercel | Online | https://exodos-pro-9d9i.vercel.app |
+| Frontend | Vercel | Online | https://exodos-pro-9d9i-lgvieira30s-projects.vercel.app |
 | Backend | Easypanel (VPS Hostinger) | Online | porta 3001 |
 | Banco de dados | Easypanel (PostgreSQL interno) | Online | serviço `exodos-pro_db` |
 | Meta Ads | Conectado | — | sync funcionando |
@@ -38,7 +38,7 @@ DATABASE_URL=postgres://postgres:atprr45gx8ilsbvm19tm@exodos-pro_db:5432/exodos-
 JWT_SECRET=exodos_jwt_secret_super_seguro_2024
 NODE_ENV=production
 PORT=3001
-FRONTEND_URL=https://exodos-pro-9d9i.vercel.app
+FRONTEND_URL=https://exodos-pro-9d9i-lgvieira30s-projects.vercel.app
 ```
 
 > `exodos-pro_db` é o hostname interno do PostgreSQL dentro do Easypanel. Não usar `localhost`.
