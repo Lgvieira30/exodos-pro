@@ -25,6 +25,12 @@ Futuramente um SaaS para agências brasileiras (concorrentes: RD Station, Optmyz
 - O banco PostgreSQL roda como serviço separado dentro do Easypanel (`exodos-pro_db`)
 - O frontend fica no Vercel e se comunica com o backend via HTTPS
 
+### Observações importantes sobre o banco
+- O banco local do Easypanel **não usa SSL** — o `DATABASE_URL` deve ter `sslmode=disable`
+- O `db/index.ts` detecta isso automaticamente: se `sslmode=disable` estiver na URL, conecta sem SSL; caso contrário (Neon/remoto) usa `ssl: 'require'`
+- As migrations rodam automaticamente no startup — se o log mostrar `✅ Banco de dados pronto`, está tudo certo
+- Se o log mostrar só `🚀 ÊXODOS PRO backend rodando na porta 3001` sem a linha do banco, o problema é SSL ou credenciais erradas
+
 ### Variáveis de ambiente no Easypanel (backend)
 Configuradas diretamente no painel do Easypanel → serviço backend → Environment:
 ```
