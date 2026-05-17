@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Wizard from './pages/Wizard';
@@ -8,6 +8,7 @@ import SettingsPage from './pages/Settings';
 import Professor from './pages/Professor';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Campaigns from './pages/Campaigns';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
@@ -15,6 +16,7 @@ const CYAN = '#6B9AE8';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { to: '/campanhas', label: 'Campanhas', icon: Layers },
   { to: '/professor', label: 'Professor IA', icon: GraduationCap },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/wizard', label: 'Nova Campanha', icon: Rocket },
@@ -129,6 +131,7 @@ function ProtectedLayout() {
       <main className="app-main" style={{ marginLeft: '220px', flex: 1, minWidth: 0 }}>
         <Routes>
           <Route index element={<Dashboard />} />
+          <Route path="campanhas" element={<Campaigns />} />
           <Route path="professor" element={<Professor />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="wizard" element={<Wizard />} />

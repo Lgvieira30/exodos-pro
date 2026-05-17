@@ -64,3 +64,10 @@ export const integrationsApi = {
   activate: (id: string) => api.patch(`/integrations/${id}/activate`).then((r) => r.data),
   remove: (id: string) => api.delete(`/integrations/${id}`).then((r) => r.data),
 };
+
+export const adSetsApi = {
+  list: (campaign_id?: string) =>
+    api.get('/ad-sets', { params: campaign_id ? { campaign_id } : {} }).then((r) => r.data),
+  ads: (adSetId: string) =>
+    api.get(`/ad-sets/${adSetId}/ads`).then((r) => r.data),
+};
