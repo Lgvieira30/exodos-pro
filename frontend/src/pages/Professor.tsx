@@ -176,6 +176,7 @@ export default function Professor() {
   const [loading, setLoading] = useState(true);
   const [deepData, setDeepData] = useState<DeepData | null>(null);
   const [deepLoading, setDeepLoading] = useState(false);
+  const [deepError, setDeepError] = useState<string | null>(null);
   const [pausedCampaigns, setPausedCampaigns] = useState<any[]>([]);
 
   // Load campaign list once
@@ -216,10 +217,17 @@ export default function Professor() {
     if (!campaignId) return;
     setDeepLoading(true);
     setDeepData(null);
+    setDeepError(null);
     try {
       const res = await analyzeApi.deep(campaignId, r.from, r.to);
-      setDeepData(res?.data || null);
-    } catch {
+      if (res?.data) {
+        setDeepData(res.data);
+      } else {
+        setDeepError('API retornou resposta vazia. Verifique o backend.');
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message || err?.message || 'Erro ao conectar com o backend';
+      setDeepError(msg);
       setDeepData(null);
     } finally {
       setDeepLoading(false);
@@ -228,8 +236,10 @@ export default function Professor() {
 
   useEffect(() => {
     if (tab === 'campanha' && selectedCampaignId) {
+      setDeepError(null);
       doLoadDeep(selectedCampaignId, range);
     }
+    if (tab !== 'campanha') { setDeepData(null); setDeepError(null); }
   }, [tab, selectedCampaignId, range]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function buildMetrics(cpa: number, roas: number, ctr: number, cpc: number, roi: number) {
@@ -418,11 +428,26 @@ export default function Professor() {
             </div>
           )}
 
-          {!deepLoading && !deepData && (
+          {!deepLoading && deepError && (
+            <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', marginBottom: '16px' }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <AlertTriangle size={14} /> Erro ao carregar análise
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px' }}>{deepError}</p>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
+                Possíveis causas: token Meta expirado, backend não atualizado, ou campanha sem dados no período.
+                <br />Atualize o token em <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Configurações → Meta Ads</strong> e execute uma sincronização.
+              </p>
+            </div>
+          )}
+
+          {!deepLoading && !deepData && !deepError && (
             <div style={{ textAlign: 'center', padding: '60px', color: 'rgba(255,255,255,0.3)' }}>
               <GraduationCap size={40} style={{ margin: '0 auto 16px', opacity: 0.2 }} />
-              <p style={{ fontSize: '14px', marginBottom: '8px' }}>Selecione uma campanha e clique em Analisar.</p>
-              <p style={{ fontSize: '12px' }}>Você verá funil, ranking de conjuntos e projeção mensal.</p>
+              {campaigns.length === 0
+                ? <><p style={{ fontSize: '14px', marginBottom: '8px' }}>Nenhuma campanha encontrada.</p><p style={{ fontSize: '12px' }}>Sincronize o Meta Ads em Configurações para importar suas campanhas.</p></>
+                : <><p style={{ fontSize: '14px', marginBottom: '8px' }}>Selecione uma campanha para analisar.</p><p style={{ fontSize: '12px' }}>Você verá funil, ranking de conjuntos e projeção mensal.</p></>
+              }
             </div>
           )}
 
