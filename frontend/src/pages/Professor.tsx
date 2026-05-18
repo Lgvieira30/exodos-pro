@@ -256,7 +256,7 @@ function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: numbe
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Professor() {
-  const [tab, setTab] = useState<'resumo' | 'geral' | 'campanha' | 'pausadas' | 'ia'>('ia');
+  const [tab, setTab] = useState<'resumo' | 'geral' | 'campanha' | 'pausadas' | 'ia' | 'apresentacao'>('ia');
   const [range, setRange] = useState<DateRange>(defaultRange());
 
   // Geral
@@ -444,13 +444,14 @@ export default function Professor() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '16px' }}>
           <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', padding: '4px', borderRadius: '10px', flexWrap: 'wrap' }}>
             {([
-              ['ia',       '✦ Análise IA'],
-              ['resumo',   'Resumo'],
-              ['geral',    'Geral'],
-              ['campanha', 'Por Campanha'],
-              ['pausadas', pausedCampaigns.length > 0 ? `Pausadas (${pausedCampaigns.length})` : 'Pausadas'],
+              ['ia',            '✦ Análise IA'],
+              ['apresentacao',  '📊 Apresentação'],
+              ['resumo',        'Resumo'],
+              ['geral',         'Geral'],
+              ['campanha',      'Por Campanha'],
+              ['pausadas',      pausedCampaigns.length > 0 ? `Pausadas (${pausedCampaigns.length})` : 'Pausadas'],
             ] as const).map(([t, lbl]) => (
-              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'ia' ? `${CYAN}25` : 'rgba(255,255,255,0.08)') : 'transparent', color: tab === t ? (t === 'ia' ? CYAN : '#fff') : 'rgba(255,255,255,0.4)' }}>
+              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'ia' ? `${CYAN}25` : t === 'apresentacao' ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.08)') : 'transparent', color: tab === t ? (t === 'ia' ? CYAN : t === 'apresentacao' ? '#a78bfa' : '#fff') : 'rgba(255,255,255,0.4)' }}>
                 {lbl}
               </button>
             ))}
@@ -497,8 +498,8 @@ export default function Professor() {
           {aiLoading && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '16px' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `3px solid ${CYAN}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>Claude está analisando suas campanhas...</p>
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>Isso leva 10-20 segundos</p>
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>Analisando suas campanhas...</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>Calculando benchmarks e recomendações</p>
             </div>
           )}
 
@@ -508,8 +509,8 @@ export default function Professor() {
                 <GraduationCap size={28} color={CYAN} />
               </div>
               <p style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>Professor IA pronto para analisar</p>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', maxWidth: '400px' }}>
-                Clique em "Analisar Agora" para receber diagnóstico completo: campanhas, conjuntos, tendências e ações prioritárias com o Claude.
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', maxWidth: '460px', lineHeight: '1.6' }}>
+                Clique em "Analisar Agora" para receber diagnóstico completo baseado nos benchmarks reais de tráfego B2B: nota de 0-100, ações prioritárias com passos numerados, análise por campanha e plano para a semana.
               </p>
             </div>
           )}
@@ -521,7 +522,7 @@ export default function Professor() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: '11px', color: CYAN, fontWeight: 700, letterSpacing: '0.5px', marginBottom: '8px' }}>DIAGNÓSTICO GERAL</p>
-                    <p style={{ fontSize: '15px', color: '#fff', lineHeight: '1.6', fontWeight: 500 }}>{aiData.analysis.diagnostico_geral}</p>
+                    <p style={{ fontSize: '14px', color: '#fff', lineHeight: '1.7', fontWeight: 400, whiteSpace: 'pre-line' }}>{aiData.analysis.diagnostico_geral}</p>
                   </div>
                   {aiData.analysis.nota_geral != null && (
                     <HealthGauge score={aiData.analysis.nota_geral} size={110} />
@@ -530,7 +531,7 @@ export default function Professor() {
                 {aiData.analysis.insight_oculto && (
                   <div style={{ marginTop: '16px', padding: '12px 16px', borderRadius: '10px', background: `${CYAN}08`, border: `1px solid ${CYAN}20` }}>
                     <p style={{ fontSize: '11px', color: CYAN, fontWeight: 700, marginBottom: '4px' }}>💡 INSIGHT OCULTO</p>
-                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>{aiData.analysis.insight_oculto}</p>
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.7', whiteSpace: 'pre-line' }}>{aiData.analysis.insight_oculto}</p>
                   </div>
                 )}
               </div>
@@ -584,7 +585,7 @@ export default function Professor() {
                         <span style={{ fontSize: '10px', fontWeight: 800, color: pc, background: `${pc}18`, padding: '3px 9px', borderRadius: '20px', flexShrink: 0, marginTop: '2px' }}>{a.prioridade}</span>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{a.titulo}</p>
-                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)', lineHeight: '1.6', marginBottom: '6px' }}>{a.descricao}</p>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.8', marginBottom: '6px', whiteSpace: 'pre-line' }}>{a.descricao}</p>
                           {a.impacto_esperado && (
                             <p style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>↑ {a.impacto_esperado}</p>
                           )}
@@ -651,7 +652,7 @@ export default function Professor() {
               {aiData.analysis.meta_proximo_periodo && (
                 <div style={{ background: `${CYAN}08`, border: `1px solid ${CYAN}25`, borderRadius: '14px', padding: '20px' }}>
                   <p style={{ fontSize: '12px', fontWeight: 700, color: CYAN, marginBottom: '8px' }}>🎯 FOCO PARA OS PRÓXIMOS 7 DIAS</p>
-                  <p style={{ fontSize: '14px', color: '#fff', lineHeight: '1.6' }}>{aiData.analysis.meta_proximo_periodo}</p>
+                  <p style={{ fontSize: '13px', color: '#fff', lineHeight: '1.8', whiteSpace: 'pre-line' }}>{aiData.analysis.meta_proximo_periodo}</p>
                 </div>
               )}
             </div>
@@ -1126,6 +1127,207 @@ export default function Professor() {
         </div>
       )}
 
+      {/* ─── TAB: APRESENTAÇÃO ─── */}
+      {tab === 'apresentacao' && (
+        <div id="apresentacao-report">
+          {!aiData?.analysis ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '20px', background: 'rgba(15,23,42,0.5)', borderRadius: '20px', border: '1px dashed rgba(167,139,250,0.2)' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                📊
+              </div>
+              <p style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>Gere a análise primeiro</p>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', maxWidth: '380px', lineHeight: '1.6' }}>
+                Vá para a aba "✦ Análise IA", clique em "Analisar Agora" e depois volte aqui para ver o relatório pronto para apresentar ao cliente.
+              </p>
+              <button
+                onClick={() => setTab('ia')}
+                style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: 'rgba(167,139,250,0.2)', color: '#a78bfa', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Ir para Análise IA →
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              {/* Botão imprimir */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', gap: '8px' }} className="no-print">
+                <button
+                  onClick={() => window.print()}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', borderRadius: '10px', border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.1)', color: '#a78bfa', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  🖨️ Imprimir / Salvar PDF
+                </button>
+              </div>
+
+              {/* CABEÇALHO DO RELATÓRIO */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(61,184,232,0.12), rgba(167,139,250,0.08))', border: '1px solid rgba(61,184,232,0.2)', borderRadius: '20px', padding: '32px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '6px' }}>Relatório de Performance</p>
+                    <h2 style={{ fontSize: '26px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Meta Ads</h2>
+                    <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>
+                      Período: {aiData.period?.from ? `${String(aiData.period.from).split('-').reverse().join('/')} até ${String(aiData.period.to).split('-').reverse().join('/')}` : range.from.split('-').reverse().join('/') + ' até ' + range.to.split('-').reverse().join('/')}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    {aiData.analysis.nota_geral != null && (
+                      <HealthGauge score={aiData.analysis.nota_geral} size={100} />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* RESUMO DE NÚMEROS */}
+              {aiData.input_summary && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }} className="grid-apres-kpis">
+                  {[
+                    { label: 'Total Investido', value: `R$ ${Number(aiData.input_summary.total_spend).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '💰', color: '#3b82f6', desc: 'Quanto foi gasto no período' },
+                    { label: 'Leads Gerados', value: String(aiData.input_summary.total_leads), icon: '🎯', color: '#10b981', desc: 'Pessoas que demonstraram interesse' },
+                    { label: 'Campanhas Ativas', value: String(aiData.input_summary.campaigns), icon: '📣', color: '#a78bfa', desc: 'Campanhas com investimento' },
+                    { label: 'Conjuntos', value: String(aiData.input_summary.ad_sets), icon: '🗂️', color: '#f59e0b', desc: 'Grupos de anúncios analisados' },
+                  ].map((item) => (
+                    <div key={item.label} style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${item.color}20`, borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '24px', marginBottom: '8px' }}>{item.icon}</div>
+                      <p style={{ fontSize: '22px', fontWeight: 800, color: item.color, marginBottom: '4px' }}>{item.value}</p>
+                      <p style={{ fontSize: '12px', fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{item.label}</p>
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ALERTA CRÍTICO */}
+              {aiData.analysis.alerta_critico && (
+                <div style={{ background: 'rgba(239,68,68,0.08)', border: '2px solid rgba(239,68,68,0.3)', borderRadius: '14px', padding: '18px 22px', marginBottom: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '22px', flexShrink: 0 }}>🚨</span>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 800, color: '#ef4444', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Atenção Imediata Necessária</p>
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{aiData.analysis.alerta_critico}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* O QUE ESTÁ FUNCIONANDO / MELHORAR */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }} className="grid-ai-2col">
+                {aiData.analysis.o_que_esta_funcionando?.length > 0 && (
+                  <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '16px', padding: '22px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      ✅ O QUE ESTÁ FUNCIONANDO
+                    </p>
+                    {aiData.analysis.o_que_esta_funcionando.map((item: string, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start' }}>
+                        <span style={{ color: '#10b981', flexShrink: 0, fontWeight: 700 }}>✓</span>
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.6' }}>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {aiData.analysis.o_que_nao_esta_funcionando?.length > 0 && (
+                  <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '16px', padding: '22px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🔧 O QUE PRECISA MELHORAR
+                    </p>
+                    {aiData.analysis.o_que_nao_esta_funcionando.map((item: string, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start' }}>
+                        <span style={{ color: '#ef4444', flexShrink: 0, fontWeight: 700 }}>!</span>
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.6' }}>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* AÇÕES PRIORITÁRIAS */}
+              {aiData.analysis.acoes_prioritarias?.length > 0 && (
+                <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <p style={{ fontSize: '15px', fontWeight: 700, color: '#fff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    ⚡ Próximas Ações — O Que Fazer Agora
+                  </p>
+                  {aiData.analysis.acoes_prioritarias.map((a: any, i: number) => {
+                    const pc = a.prioridade === 'URGENTE' ? '#ef4444' : a.prioridade === 'ALTA' ? '#f97316' : '#f59e0b';
+                    const num = ['①', '②', '③', '④', '⑤', '⑥'][i] || `${i+1}.`;
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '12px', background: `${pc}06`, border: `1px solid ${pc}25`, marginBottom: '12px', alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                          <span style={{ fontSize: '18px', fontWeight: 800, color: pc }}>{num}</span>
+                          <span style={{ fontSize: '9px', fontWeight: 700, color: pc, background: `${pc}18`, padding: '2px 6px', borderRadius: '10px', textAlign: 'center', whiteSpace: 'nowrap' }}>{a.prioridade}</span>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: '15px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>{a.titulo}</p>
+                          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', lineHeight: '1.8', marginBottom: '10px', whiteSpace: 'pre-line' }}>{a.descricao}</p>
+                          {a.impacto_esperado && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                              <span style={{ fontSize: '14px' }}>📈</span>
+                              <p style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>{a.impacto_esperado}</p>
+                            </div>
+                          )}
+                          {a.campanha_ou_conjunto && a.campanha_ou_conjunto !== 'Geral' && (
+                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '8px' }}>📌 {a.campanha_ou_conjunto}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ANÁLISE POR CAMPANHA */}
+              {aiData.analysis.analise_por_campanha?.length > 0 && (
+                <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <p style={{ fontSize: '15px', fontWeight: 700, color: '#fff', marginBottom: '18px' }}>📣 Análise por Campanha</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {aiData.analysis.analise_por_campanha.map((c: any, i: number) => {
+                      const rc = c.recomendacao === 'ESCALAR' ? '#10b981' : c.recomendacao === 'PAUSAR' ? '#ef4444' : c.recomendacao === 'OTIMIZAR' ? '#f59e0b' : '#3b82f6';
+                      const rcEmoji = c.recomendacao === 'ESCALAR' ? '🚀' : c.recomendacao === 'PAUSAR' ? '⏸️' : c.recomendacao === 'OTIMIZAR' ? '⚙️' : '👀';
+                      return (
+                        <div key={i} style={{ border: `1px solid ${rc}30`, borderRadius: '14px', overflow: 'hidden' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: `${rc}08`, borderBottom: `1px solid ${rc}20` }}>
+                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{c.nome}</p>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: rc, background: `${rc}18`, padding: '4px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              {rcEmoji} {c.recomendacao}
+                            </span>
+                          </div>
+                          <div style={{ padding: '14px 18px' }}>
+                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.6', marginBottom: '8px' }}>{c.diagnostico}</p>
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.6', marginBottom: c.proximos_passos?.length ? '10px' : '0' }}>{c.motivo}</p>
+                            {c.proximos_passos?.length > 0 && (
+                              <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Próximos passos</p>
+                                {c.proximos_passos.map((p: string, j: number) => (
+                                  <p key={j} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', display: 'flex', alignItems: 'flex-start', gap: '6px', lineHeight: '1.5' }}>
+                                    <span style={{ color: rc, flexShrink: 0, fontWeight: 700 }}>→</span> {p}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* FOCO DA SEMANA */}
+              {aiData.analysis.meta_proximo_periodo && (
+                <div style={{ background: 'linear-gradient(135deg, rgba(61,184,232,0.1), rgba(167,139,250,0.08))', border: '1px solid rgba(61,184,232,0.25)', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#3DB8E8', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🎯 PLANO DA PRÓXIMA SEMANA
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#fff', lineHeight: '1.9', whiteSpace: 'pre-line' }}>{aiData.analysis.meta_proximo_periodo}</p>
+                </div>
+              )}
+
+              {/* RODAPÉ */}
+              <div style={{ textAlign: 'center', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '8px' }}>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)' }}>
+                  Relatório gerado por Beemon • {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .grid-ai-2col { grid-template-columns: 1fr 1fr; }
@@ -1141,13 +1343,19 @@ export default function Professor() {
         @media (max-width: 600px) {
           .grid-resumo-kpis { grid-template-columns: 1fr !important; }
         }
+        .no-print { display: flex; }
         @media print {
           body { background: white !important; color: black !important; }
-          .app-sidebar, .mobile-menu-btn, button, .app-main > *:not(#ai-report) { display: none !important; }
-          .app-main { margin-left: 0 !important; }
-          #ai-report { display: block !important; color: black; }
-          #ai-report * { color: black !important; background: white !important; border-color: #ccc !important; }
-          #ai-report p, #ai-report span { color: #111 !important; }
+          .no-print { display: none !important; }
+          .app-sidebar, .mobile-menu-btn, .app-main > *:not(#apresentacao-report):not(#ai-report) { display: none !important; }
+          .app-main { margin-left: 0 !important; padding: 0 !important; }
+          #ai-report, #apresentacao-report { display: block !important; }
+          #ai-report *, #apresentacao-report * { color: #111 !important; background: #fff !important; border-color: #ddd !important; }
+          #apresentacao-report p, #apresentacao-report span { color: #111 !important; }
+        }
+        .grid-apres-kpis { grid-template-columns: repeat(4, 1fr); }
+        @media (max-width: 900px) {
+          .grid-apres-kpis { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </div>

@@ -176,7 +176,7 @@ function buildAnalysis(payload: any): AnalysisResult {
     funcionando.push(
       `Custo por lead de ${fmt(cpa)} — ÓTIMO. Você está pagando menos de ${fmt(BM.cpa.bom)} por cada ` +
       `pessoa interessada. No mercado B2B, isso é considerado excelente. ` +
-      `Se 20% dos leads virarem clientes, cada novo cliente está custando aproximadamente ${fmt(cpa * 5)} em mídia.`
+      `Quanto melhor trabalhados pelo comercial, maior a chance de converter esses leads em clientes.`
     );
   }
 
@@ -191,8 +191,7 @@ function buildAnalysis(payload: any): AnalysisResult {
   if (leads >= 5) {
     funcionando.push(
       `Volume de ${leads} leads no período — funil ativo e gerando resultados. ` +
-      `Com a taxa de conversão de 20% da Mônaco, isso representa potencial de ` +
-      `${Math.floor(leads * 0.2)} novos clientes se todos forem bem trabalhados pelo comercial.`
+      `Leads chegando significa que o anúncio está funcionando — agora o trabalho é convertê-los em clientes.`
     );
   } else if (leads > 0) {
     funcionando.push(
@@ -452,11 +451,11 @@ function buildAnalysis(payload: any): AnalysisResult {
         `2️⃣ Inclua no formulário uma pergunta: "Quantos veículos sua empresa possui?" com opções: ` +
         `Menos de 10 / 10 a 50 / 50 a 200 / Mais de 200.\n` +
         `3️⃣ No texto do anúncio, deixe claro que é um serviço B2B: "Gestão documental para frotas corporativas".\n` +
-        `4️⃣ Isso reduz o volume total de leads mas aumenta a qualidade — e como a Mônaco já converte 20%, ` +
-        `10 leads qualificados valem mais do que 30 leads ruins.`,
+        `4️⃣ Isso reduz o volume total de leads mas aumenta a qualidade — ` +
+        `10 leads qualificados valem muito mais do que 30 leads ruins para o comercial.`,
       impacto_esperado:
         `Leads mais qualificados = menos tempo perdido pelo comercial + maior taxa de fechamento. ` +
-        `Com 20% de conversão, 10 leads qualificados/mês = 2 novos clientes/mês.`,
+        `Menos volume, mais qualidade — o resultado final em clientes tende a ser melhor.`,
       campanha_ou_conjunto: 'Geral',
     });
   }
@@ -525,8 +524,8 @@ function buildAnalysis(payload: any): AnalysisResult {
         `CTR de ${c.ctr}${cCtr >= BM.ctr.medio ? ' (OK)' : ' (precisa melhorar)'}, CPC de ${c.cpc}.`;
       motivo =
         `CPL entre ${fmt(BM.cpa.bom)} e ${fmt(BM.cpa.medio)} é aceitável mas há espaço de melhoria. ` +
-        `Com a taxa de conversão de 20% da Mônaco, um lead está custando ${fmt(cCpa)} e representa ` +
-        `20% de chance de fechar negócio — se o ticket for alto, pode compensar.`;
+        `Cada lead gerado representa uma oportunidade real de fechar negócio — quanto menor o CPL, mais leads ` +
+        `cabem no orçamento e maior o volume de oportunidades para o comercial.`;
       proximos_passos.push('Revisar a landing page: título alinhado com o anúncio? Formulário com menos de 4 campos?');
       proximos_passos.push('Adicionar prova social na LP: "27 anos | 180.000 veículos gerenciados"');
       proximos_passos.push('Verificar se clientes atuais estão excluídos da segmentação');
@@ -660,18 +659,16 @@ function buildAnalysis(payload: any): AnalysisResult {
         `em até ${Math.round((ratio - 1) * 100)}% sem gastar um real a mais.`;
     } else {
       insight_oculto =
-        `Com ${leads} lead${leads !== 1 ? 's' : ''} gerado${leads !== 1 ? 's' : ''} e taxa de conversão de 20%, ` +
-        `cada lead qualificado representa potencial de receita. ` +
+        `Com ${leads} lead${leads !== 1 ? 's' : ''} gerado${leads !== 1 ? 's' : ''} no período, ` +
+        `cada lead qualificado representa uma oportunidade de negócio. ` +
         `O principal alavancador de crescimento agora é o VOLUME de entrada no funil — ` +
-        `mais leads qualificados = mais clientes, sem precisar mudar o processo comercial.`;
+        `mais leads qualificados = mais oportunidades para o comercial fechar, sem precisar mudar o processo.`;
     }
   } else {
     insight_oculto =
-      `Com taxa de conversão de 20% e ${leads} lead${leads !== 1 ? 's' : ''} no período, ` +
-      `a Mônaco tem potencial de fechar ${Math.round(leads * 0.2)} novo${Math.round(leads * 0.2) !== 1 ? 's' : ''} ` +
-      `cliente${Math.round(leads * 0.2) !== 1 ? 's' : ''} só com esses dados. ` +
-      `O principal alavancador não é a taxa de conversão — é o volume de entrada no funil. ` +
-      `Dobrar o volume de leads qualificados dobra o número de clientes.`;
+      `Com ${leads} lead${leads !== 1 ? 's' : ''} no período, cada oportunidade gerada vale o esforço. ` +
+      `O principal alavancador não é só a taxa de fechamento — é o volume de entrada no funil. ` +
+      `Dobrar o volume de leads qualificados dobra as oportunidades de negócio.`;
   }
 
   // ── Meta próximo período ─────────────────────────────────────────────────
@@ -738,9 +735,8 @@ function buildAnalysis(payload: any): AnalysisResult {
     diagnostico_geral =
       `${notaEmoji2} Nota ${nota_geral}/100 | Período: ${periodo}\n\n` +
       `Você investiu ${fmt(spend)} e gerou ${leads} lead${leads !== 1 ? 's' : ''} ` +
-      `(pessoa${leads !== 1 ? 's' : ''} que demonstrou interesse no serviço da Mônaco). ` +
-      `Com a taxa de conversão de 20%, isso representa potencial de ` +
-      `${Math.max(1, Math.round(leads * 0.2))} novo${Math.round(leads * 0.2) !== 1 ? 's' : ''} cliente${Math.round(leads * 0.2) !== 1 ? 's' : ''}.\n\n` +
+      `(pessoa${leads !== 1 ? 's' : ''} que demonstrou interesse no serviço e preencheu o formulário). ` +
+      `Cada lead é uma oportunidade real de fechar negócio.\n\n` +
       `📊 Seus números vs. benchmark do mercado:\n` +
       `• Custo por lead: ${fmt(cpa)} → ${cpa <= BM.cpa.bom ? `✅ Ótimo (abaixo de ${fmt(BM.cpa.bom)})` : cpa <= BM.cpa.medio ? `⚠️ Aceitável (abaixo de ${fmt(BM.cpa.medio)})` : `❌ Alto (acima de ${fmt(BM.cpa.medio)})`}\n` +
       `• CTR (% que clicou): ${vg.ctr_medio} → ${ctr >= BM.ctr.bom ? `✅ Excelente (acima de ${BM.ctr.bom}%)` : ctr >= BM.ctr.medio ? `⚠️ Aceitável (acima de ${BM.ctr.medio}%)` : `❌ Baixo (abaixo de ${BM.ctr.medio}%)`}\n` +
