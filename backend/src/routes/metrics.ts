@@ -25,10 +25,14 @@ metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
 
   const weekly = await sql`
     SELECT
-      TO_CHAR(m.date, 'Dy') AS day,
-      SUM(m.spend)           AS spend,
-      SUM(m.leads)           AS leads,
-      AVG(m.cpa)             AS cpa
+      TO_CHAR(m.date, 'Dy')  AS day,
+      SUM(m.spend)            AS spend,
+      SUM(m.leads)            AS leads,
+      SUM(m.clicks)           AS clicks,
+      SUM(m.impressions)      AS impressions,
+      AVG(m.cpa)              AS cpa,
+      AVG(m.ctr) FILTER (WHERE m.ctr > 0) AS ctr,
+      AVG(m.cpc) FILTER (WHERE m.cpc > 0) AS cpc
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!}

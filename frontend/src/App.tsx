@@ -12,7 +12,7 @@ import Campaigns from './pages/Campaigns';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
-const CYAN = '#6B9AE8';
+const CYAN = '#3DB8E8';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
