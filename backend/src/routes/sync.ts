@@ -26,8 +26,18 @@ syncRouter.get('/debug', async (req: AuthRequest, res: Response) => {
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!}
-    ORDER BY m.date DESC
-    LIMIT 60
+    ORDER BY m.date DESC, c.name
+    LIMIT 120
+  `;
+
+  // Show how many daily rows exist per campaign (should be up to 30, not 1)
+  const rowsPerCampaign = await sql`
+    SELECT c.name, COUNT(*) AS daily_rows, MIN(m.date) AS oldest, MAX(m.date) AS newest
+    FROM metrics m
+    JOIN campaigns c ON c.id = m.campaign_id
+    WHERE c.user_id = ${req.userId!}
+    GROUP BY c.name
+    ORDER BY c.name
   `;
 
   const [totals] = await sql`
@@ -48,6 +58,7 @@ syncRouter.get('/debug', async (req: AuthRequest, res: Response) => {
     data: {
       campaigns,
       recent_metrics: metrics,
+      rows_per_campaign: rowsPerCampaign,
       totals,
     },
   });
@@ -129,14 +140,25 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
     const { access_token, account_id } = integration;
     const BASE = `https://graph.facebook.com/v20.0`;
 
+    // Build explicit date ranges so time_increment=1 (daily breakout) is always respected.
+    // date_preset alone can cause the API to return a single aggregate row instead of daily rows.
+    const todayStr = new Date().toISOString().split('T')[0];
+    const d30 = new Date(); d30.setDate(d30.getDate() - 29);
+    const since30 = d30.toISOString().split('T')[0];
+    const d7 = new Date(); d7.setDate(d7.getDate() - 6);
+    const since7 = d7.toISOString().split('T')[0];
+
+    const timeRange30 = JSON.stringify({ since: since30, until: todayStr });
+    const timeRange7  = JSON.stringify({ since: since7,  until: todayStr });
+
     // Fetch all pages for each endpoint in parallel
     const [campaignDailyRows, adSetInfoRows, adSetInsightRows, adInfoRows, adInsightRows] = await Promise.all([
       fetchAllPages(`${BASE}/act_${account_id}/insights`, {
-        fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values',
-        date_preset: 'last_30d',
+        fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values,date_start,date_stop',
+        time_range: timeRange30,
         time_increment: 1,
         level: 'campaign',
-        // Match default Ads Manager attribution window (7-day click, 1-day view)
+        // Match Ads Manager default attribution window (7-day click, 1-day view)
         action_attribution_windows: ['7d_click', '1d_view'],
         access_token,
         limit: 500,
@@ -147,7 +169,7 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       }, 15000),
       fetchAllPages(`${BASE}/act_${account_id}/insights`, {
         fields: 'adset_id,adset_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values',
-        date_preset: 'last_7d', level: 'adset',
+        time_range: timeRange7, level: 'adset',
         action_attribution_windows: ['7d_click', '1d_view'],
         access_token, limit: 500,
       }, 15000),
@@ -157,7 +179,7 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       }, 15000),
       fetchAllPages(`${BASE}/act_${account_id}/insights`, {
         fields: 'ad_id,ad_name,adset_id,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values',
-        date_preset: 'last_7d', level: 'ad',
+        time_range: timeRange7, level: 'ad',
         action_attribution_windows: ['7d_click', '1d_view'],
         access_token, limit: 500,
       }, 15000),

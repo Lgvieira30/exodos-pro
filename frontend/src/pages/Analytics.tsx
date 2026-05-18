@@ -97,7 +97,7 @@ export default function Analytics() {
     if (initial) setLoading(true); else setFetching(true);
     Promise.all([
       metricsApi.dashboard(r.from, r.to).catch(() => null),
-      campaignsApi.list().catch(() => null),
+      campaignsApi.list(r.from, r.to).catch(() => null),
     ]).then(([metricsRes, campaignsRes]) => {
       if (metricsRes?.data?.summary) {
         setSummary(metricsRes.data.summary);

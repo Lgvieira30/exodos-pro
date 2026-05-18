@@ -10,6 +10,7 @@ interface DebugData {
     campaign_name: string; date: string; spend: number; leads: number;
     clicks: number; impressions: number; cpa: number; ctr: number; cpc: number; roas: number;
   }>;
+  rows_per_campaign: Array<{ name: string; daily_rows: number; oldest: string; newest: string }>;
   totals: {
     campaigns_with_data: number; total_spend: number; total_leads: number;
     total_clicks: number; oldest_date: string | null; newest_date: string | null;
@@ -136,8 +137,47 @@ export default function Diagnostico() {
             </div>
           </div>
 
+          {data.rows_per_campaign?.length > 0 && (
+            <div style={{ ...box, borderColor: data.rows_per_campaign.some(r => Number(r.daily_rows) < 5) ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)' }}>
+              <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Linhas diárias por campanha</p>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '12px' }}>
+                Deve ter ~30 linhas por campanha (1 por dia). Se mostrar 1 linha, o breakout diário não está funcionando — sincronize novamente.
+              </p>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr>
+                    <th style={th}>Campanha</th>
+                    <th style={th}>Linhas diárias</th>
+                    <th style={th}>Mais antiga</th>
+                    <th style={th}>Mais recente</th>
+                    <th style={th}>Status</th>
+                  </tr></thead>
+                  <tbody>
+                    {data.rows_per_campaign.map((r) => {
+                      const rows = Number(r.daily_rows);
+                      const ok = rows >= 5;
+                      return (
+                        <tr key={r.name}>
+                          <td style={td}>{r.name}</td>
+                          <td style={{ ...td, color: ok ? '#10b981' : '#ef4444', fontWeight: 700 }}>{rows}</td>
+                          <td style={td}>{String(r.oldest).split('T')[0]}</td>
+                          <td style={td}>{String(r.newest).split('T')[0]}</td>
+                          <td style={td}>
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: ok ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', color: ok ? '#10b981' : '#ef4444' }}>
+                              {ok ? '✓ OK' : '⚠ Aggregate — sincronize novamente'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div style={box}>
-            <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Métricas diárias (últimos 60 registros)</p>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Métricas diárias (últimos 120 registros)</p>
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '12px' }}>Cada linha = 1 campanha em 1 dia. Compare estes números com o Meta Ads Manager no mesmo dia.</p>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
