@@ -26,6 +26,12 @@ interface AdSet {
   ctr: number; cpc: number; cpa: number; roas: number; daily_budget: number;
   score: number; action: AdSetAction;
 }
+interface Ad {
+  id: string; meta_id: string; name: string; status: string; ad_set_name: string;
+  spend: number; impressions: number; clicks: number; leads: number;
+  ctr: number; cpc: number; cpa: number; roas: number;
+  score: number; action: AdSetAction;
+}
 interface DeepData {
   campaign: { id: string; name: string; platform: string };
   period: { from: string; to: string; days: number };
@@ -33,6 +39,7 @@ interface DeepData {
   funnel: { impressions: number; ctr: number; clicks: number; clickToLeadRate: number; leads: number; conversions: number; revenueEst: number };
   daily: { date: string; label: string; spend: number; leads: number; ctr: number; cpa: number }[];
   adSets: AdSet[];
+  ads: Ad[];
   analysis: { score: number; status: string; issues: string[]; actions: { priority: string; acao: string; motivo: string }[] };
   projection: { daysRemaining: number; projectedTotalSpend: number; projectedTotalLeads: number; projectedCpa: number };
 }
@@ -245,9 +252,11 @@ function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: numbe
         <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>R$ {c.total_spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{c.total_leads} leads</p>
       </div>
-      <div style={{ flex: '0 0 auto', textAlign: 'right', minWidth: '60px' }}>
-        <p style={{ fontSize: '11px', color: c.avg_cpa > 60 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{c.avg_cpa > 0 ? `R$${c.avg_cpa.toFixed(0)} CPA` : '—'}</p>
-        <p style={{ fontSize: '11px', color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas > 0 ? '#f59e0b' : 'rgba(255,255,255,0.3)' }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
+      <div style={{ flex: '0 0 auto', textAlign: 'right', minWidth: '70px' }}>
+        <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>CPL</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_cpa > 150 ? '#ef4444' : c.avg_cpa > 60 ? '#f59e0b' : c.avg_cpa > 0 ? '#10b981' : 'rgba(255,255,255,0.3)' }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
+        <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px', marginBottom: '1px' }}>ROAS</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas > 0 ? '#f59e0b' : 'rgba(255,255,255,0.3)' }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
       </div>
     </div>
   );
@@ -284,6 +293,11 @@ export default function Professor() {
 
   // Pausadas
   const [pausedCampaigns, setPausedCampaigns] = useState<any[]>([]);
+
+  // Expanded campaign detail (ad sets + ads) in Resumo tab
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
+  const [campaignDeepCache, setCampaignDeepCache] = useState<Record<string, DeepData>>({});
+  const [loadingDeepId, setLoadingDeepId] = useState<string | null>(null);
 
   // Load campaigns list once
   useEffect(() => {
@@ -330,6 +344,25 @@ export default function Professor() {
       setSummaryLoading(false);
     }
   }, []);
+
+  // Load deep data for a campaign card in Resumo tab (with cache)
+  const loadCampaignDeepForCard = useCallback(async (campaignId: string) => {
+    if (campaignDeepCache[campaignId]) {
+      setExpandedCampaignId(prev => prev === campaignId ? null : campaignId);
+      return;
+    }
+    if (expandedCampaignId === campaignId) { setExpandedCampaignId(null); return; }
+    setLoadingDeepId(campaignId);
+    try {
+      const res = await analyzeApi.deep(campaignId, range.from, range.to);
+      if (res?.data) {
+        setCampaignDeepCache(prev => ({ ...prev, [campaignId]: res.data }));
+        setExpandedCampaignId(campaignId);
+      }
+    } catch { /* silently ignore */ } finally {
+      setLoadingDeepId(null);
+    }
+  }, [campaignDeepCache, expandedCampaignId, range]);
 
   // Deep campaign analysis
   const doLoadDeep = useCallback(async (campaignId: string, r: DateRange) => {
@@ -693,25 +726,26 @@ export default function Professor() {
                   </p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }} className="grid-resumo-kpis">
-                  <SummaryKpi label="Investido" value={`R$ ${summaryData.overview.total_spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} change={summaryData.comparison.spend_change} sub="vs período anterior" />
-                  <SummaryKpi label="Leads" value={summaryData.overview.total_leads.toLocaleString('pt-BR')} change={summaryData.comparison.leads_change} sub="vs período anterior" />
-                  <SummaryKpi label="CPA Médio" value={summaryData.overview.avg_cpa > 0 ? `R$ ${summaryData.overview.avg_cpa.toFixed(0)}` : '—'} change={summaryData.comparison.cpa_change} inverted sub="menor = melhor" />
-                  <SummaryKpi label="ROAS" value={summaryData.overview.avg_roas > 0 ? `${summaryData.overview.avg_roas.toFixed(1)}x` : '—'} change={summaryData.comparison.roas_change} sub="retorno sobre gasto" />
+                  <SummaryKpi label="Total Investido" value={`R$ ${summaryData.overview.total_spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} change={summaryData.comparison.spend_change} sub="vs período anterior" />
+                  <SummaryKpi label="Leads Gerados" value={summaryData.overview.total_leads.toLocaleString('pt-BR')} change={summaryData.comparison.leads_change} sub="contatos qualificados" />
+                  <SummaryKpi label="Custo por Lead — CPL" value={summaryData.overview.avg_cpa > 0 ? `R$ ${summaryData.overview.avg_cpa.toFixed(0)}` : '—'} change={summaryData.comparison.cpa_change} inverted sub={summaryData.overview.avg_cpa > 0 ? (summaryData.overview.avg_cpa <= 60 ? '✅ Ótimo (< R$60)' : summaryData.overview.avg_cpa <= 150 ? '⚠️ Aceitável (< R$150)' : '❌ Alto (> R$150)') : 'quanto custa cada lead'} />
+                  <SummaryKpi label="Retorno sobre Gasto — ROAS" value={summaryData.overview.avg_roas > 0 ? `${summaryData.overview.avg_roas.toFixed(1)}x` : '—'} change={summaryData.comparison.roas_change} sub={summaryData.overview.avg_roas > 0 ? (summaryData.overview.avg_roas >= 3 ? '✅ Ótimo (≥ 3x)' : summaryData.overview.avg_roas >= 2 ? '⚠️ Aceitável (≥ 2x)' : '❌ Baixo (< 2x)') : 'R$ de retorno por R$ gasto'} />
                 </div>
               </div>
 
               {/* Row 2: Metrics row 2 */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }} className="grid-resumo-kpis">
                 {[
-                  { label: 'CTR Médio', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: 'taxa de cliques', color: summaryData.overview.avg_ctr >= 1.5 ? '#10b981' : summaryData.overview.avg_ctr >= 0.8 ? '#f59e0b' : '#ef4444' },
-                  { label: 'CPC Médio', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: 'custo por clique', color: summaryData.overview.avg_cpc <= 2.5 ? '#10b981' : summaryData.overview.avg_cpc <= 5 ? '#f59e0b' : '#ef4444' },
-                  { label: 'Cliques', value: summaryData.overview.total_clicks > 0 ? summaryData.overview.total_clicks.toLocaleString('pt-BR') : '—', sub: 'no período', color: CYAN },
-                  { label: 'Impressões', value: summaryData.overview.total_impressions > 1000 ? `${(summaryData.overview.total_impressions / 1000).toFixed(1)}k` : summaryData.overview.total_impressions.toLocaleString('pt-BR'), sub: 'alcance total', color: '#a78bfa' },
+                  { label: 'Taxa de Cliques — CTR', abbr: 'De cada 100 que viram, quantas clicaram', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: summaryData.overview.avg_ctr >= 2.5 ? '✅ Excelente (≥ 2,5%)' : summaryData.overview.avg_ctr >= 1 ? '⚠️ Aceitável (≥ 1%)' : summaryData.overview.avg_ctr > 0 ? '❌ Baixo (< 1%)' : 'cliques ÷ impressões', color: summaryData.overview.avg_ctr >= 2.5 ? '#10b981' : summaryData.overview.avg_ctr >= 1 ? '#f59e0b' : summaryData.overview.avg_ctr > 0 ? '#ef4444' : 'rgba(255,255,255,0.4)' },
+                  { label: 'Custo por Clique — CPC', abbr: 'Quanto custa cada visita ao site', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: summaryData.overview.avg_cpc <= 5 ? '✅ Bom (≤ R$5)' : summaryData.overview.avg_cpc <= 15 ? '⚠️ Médio (≤ R$15)' : summaryData.overview.avg_cpc > 0 ? '❌ Caro (> R$15)' : 'gasto ÷ cliques', color: summaryData.overview.avg_cpc <= 5 ? '#10b981' : summaryData.overview.avg_cpc <= 15 ? '#f59e0b' : summaryData.overview.avg_cpc > 0 ? '#ef4444' : 'rgba(255,255,255,0.4)' },
+                  { label: 'Total de Cliques', abbr: 'Pessoas que clicaram no anúncio', value: summaryData.overview.total_clicks > 0 ? summaryData.overview.total_clicks.toLocaleString('pt-BR') : '—', sub: 'no período selecionado', color: CYAN },
+                  { label: 'Impressões — Alcance', abbr: 'Vezes que o anúncio apareceu na tela', value: summaryData.overview.total_impressions > 1000 ? `${(summaryData.overview.total_impressions / 1000).toFixed(1)}k` : summaryData.overview.total_impressions.toLocaleString('pt-BR'), sub: 'total de exibições', color: '#a78bfa' },
                 ].map((item) => (
                   <div key={item.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '14px 16px' }}>
-                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</p>
-                    <p style={{ fontSize: '20px', fontWeight: 800, color: item.color, marginBottom: '4px' }}>{item.value}</p>
-                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>{item.sub}</p>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '2px', letterSpacing: '0.03em', fontWeight: 600 }}>{item.label}</p>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginBottom: '8px', lineHeight: 1.3 }}>{item.abbr}</p>
+                    <p style={{ fontSize: '22px', fontWeight: 800, color: item.color, marginBottom: '4px', lineHeight: 1 }}>{item.value}</p>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{item.sub}</p>
                   </div>
                 ))}
               </div>
@@ -787,6 +821,199 @@ export default function Professor() {
                   </div>
                 </div>
               </div>
+
+              {/* Row 5: Campanhas ativas — análise detalhada */}
+              {summaryData.campaigns.length > 0 && (
+                <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <Activity size={15} color={CYAN} />
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>Campanhas Ativas — Análise Completa</p>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>
+                    Cada campanha com saúde visual, métricas coloridas e diagnóstico em linguagem simples.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
+                    {summaryData.campaigns.map((c) => {
+                      const scoreColor = c.score >= 75 ? '#10b981' : c.score >= 50 ? '#f59e0b' : '#ef4444';
+                      const scoreEmoji = c.score >= 75 ? '🟢' : c.score >= 50 ? '🟡' : '🔴';
+                      const cplColor = c.avg_cpa <= 0 ? '#64748b' : c.avg_cpa <= 60 ? '#10b981' : c.avg_cpa <= 150 ? '#f59e0b' : '#ef4444';
+                      const cplLabel = c.avg_cpa <= 0 ? '—' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
+                      const ctrColor = c.avg_ctr <= 0 ? '#64748b' : c.avg_ctr >= 2.5 ? '#10b981' : c.avg_ctr >= 1 ? '#f59e0b' : '#ef4444';
+                      const ctrLabel = c.avg_ctr <= 0 ? '—' : c.avg_ctr >= 2.5 ? '✅ Excelente' : c.avg_ctr >= 1 ? '⚠️ Aceitável' : '❌ Baixo';
+                      const diag = c.total_leads === 0 && c.total_spend > 0
+                        ? 'Investimento sem leads — verifique o pixel e a landing page.'
+                        : c.avg_cpa <= 60 && c.avg_ctr >= 1
+                          ? 'Campanha eficiente — boa candidata para aumentar o orçamento gradualmente.'
+                          : c.avg_cpa > 150
+                            ? 'CPL alto — revise a landing page e o criativo antes de investir mais.'
+                            : c.avg_ctr < 1 && c.avg_ctr > 0
+                              ? 'CTR baixo — o criativo não está chamando atenção. Teste nova imagem ou vídeo.'
+                              : c.total_leads < 3
+                                ? 'Volume pequeno — aguarde mais dados antes de tomar decisões.'
+                                : 'Métricas aceitáveis — monitore e teste variações de criativo.';
+                      return (
+                        <div key={c.id} style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${scoreColor}25`, borderRadius: '14px', padding: '16px' }}>
+                          {/* Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '3px' }}>{c.name}</p>
+                              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>{PLATFORM_LABEL[c.platform] || c.platform} · {c.status === 'active' ? '🟢 Ativa' : c.status === 'paused' ? '⏸ Pausada' : c.status}</p>
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+                              <p style={{ fontSize: '24px', fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{c.score}</p>
+                              <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>saúde</p>
+                            </div>
+                          </div>
+
+                          {/* Métricas principais */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                            <div style={{ padding: '10px', borderRadius: '10px', background: `${cplColor}10`, border: `1px solid ${cplColor}25` }}>
+                              <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '3px' }}>Custo por Lead (CPL)</p>
+                              <p style={{ fontSize: '18px', fontWeight: 800, color: cplColor, lineHeight: 1 }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
+                              <p style={{ fontSize: '10px', color: cplColor, marginTop: '3px', fontWeight: 600 }}>{cplLabel}</p>
+                            </div>
+                            <div style={{ padding: '10px', borderRadius: '10px', background: `${ctrColor}10`, border: `1px solid ${ctrColor}25` }}>
+                              <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '3px' }}>Taxa de Cliques (CTR)</p>
+                              <p style={{ fontSize: '18px', fontWeight: 800, color: ctrColor, lineHeight: 1 }}>{c.avg_ctr > 0 ? `${c.avg_ctr.toFixed(2)}%` : '—'}</p>
+                              <p style={{ fontSize: '10px', color: ctrColor, marginTop: '3px', fontWeight: 600 }}>{ctrLabel}</p>
+                            </div>
+                          </div>
+
+                          {/* Métricas secundárias */}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '10px' }}>
+                            {[
+                              { lbl: 'Investido', val: `R$ ${c.total_spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                              { lbl: 'Leads', val: String(c.total_leads), color: '#10b981' },
+                              { lbl: 'ROAS', val: c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—', color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas >= 2 ? '#f59e0b' : '#ef4444' },
+                            ].map(({ lbl, val, color }) => (
+                              <div key={lbl} style={{ textAlign: 'center', padding: '7px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)' }}>
+                                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '2px' }}>{lbl}</p>
+                                <p style={{ fontSize: '13px', fontWeight: 700, color }}>{val}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Diagnóstico */}
+                          <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${scoreColor}50` }}>
+                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>{scoreEmoji} {diag}</p>
+                          </div>
+
+                          {/* Ação recomendada */}
+                          {c.top_action && (
+                            <div style={{ marginTop: '8px', padding: '8px 10px', borderRadius: '8px', background: `${PRIORITY_COLOR[c.top_action.priority] || '#64748b'}08`, border: `1px solid ${PRIORITY_COLOR[c.top_action.priority] || '#64748b'}20` }}>
+                              <p style={{ fontSize: '10px', fontWeight: 700, color: PRIORITY_COLOR[c.top_action.priority] || '#64748b', marginBottom: '3px' }}>{c.top_action.priority.toUpperCase()}</p>
+                              <p style={{ fontSize: '12px', color: '#fff', fontWeight: 600, marginBottom: '2px' }}>{c.top_action.acao}</p>
+                              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{c.top_action.motivo}</p>
+                            </div>
+                          )}
+
+                          {/* Expand button */}
+                          <button
+                            onClick={() => loadCampaignDeepForCard(c.id)}
+                            style={{ marginTop: '10px', width: '100%', padding: '8px', borderRadius: '8px', border: `1px solid rgba(255,255,255,0.08)`, background: expandedCampaignId === c.id ? 'rgba(61,184,232,0.08)' : 'rgba(255,255,255,0.03)', color: expandedCampaignId === c.id ? CYAN : 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          >
+                            {loadingDeepId === c.id ? '⟳ Carregando...' : expandedCampaignId === c.id ? '▲ Ocultar conjuntos e anúncios' : '▼ Ver conjuntos e anúncios'}
+                          </button>
+
+                          {/* Expanded: ad sets + ads */}
+                          {expandedCampaignId === c.id && campaignDeepCache[c.id] && (() => {
+                            const deep = campaignDeepCache[c.id];
+                            return (
+                              <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px' }}>
+                                {/* Ad Sets */}
+                                {deep.adSets.length > 0 && (
+                                  <div style={{ marginBottom: '12px' }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '8px', letterSpacing: '0.05em' }}>CONJUNTOS DE ANÚNCIOS ({deep.adSets.length})</p>
+                                    {deep.adSets.map((as) => {
+                                      const asColor = as.score >= 75 ? '#10b981' : as.score >= 50 ? '#f59e0b' : '#ef4444';
+                                      const isActive = as.status === 'active';
+                                      const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
+                                      return (
+                                        <div key={as.id} style={{ padding: '10px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: `1px solid ${asColor}20`, marginBottom: '6px' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <p style={{ fontSize: '12px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {as.name}</p>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '8px' }}>
+                                              <span style={{ fontSize: '10px', fontWeight: 700, color: as.action.color, background: as.action.bg, padding: '2px 7px', borderRadius: '8px' }}>{as.action.label}</span>
+                                              <span style={{ fontSize: '13px', fontWeight: 800, color: asColor }}>{as.score}</span>
+                                            </div>
+                                          </div>
+                                          {isActive && (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+                                              {[
+                                                { lbl: 'CPL', val: as.cpa > 0 ? `R$${as.cpa.toFixed(0)}` : '—', color: as.cpa <= 60 ? '#10b981' : as.cpa <= 150 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'CTR', val: as.ctr > 0 ? `${as.ctr.toFixed(1)}%` : '—', color: as.ctr >= 2.5 ? '#10b981' : as.ctr >= 1 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'Leads', val: String(as.leads), color: '#fff' },
+                                                { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                              ].map(({ lbl, val, color }) => (
+                                                <div key={lbl} style={{ textAlign: 'center', padding: '4px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
+                                                  <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>{lbl}</p>
+                                                  <p style={{ fontSize: '12px', fontWeight: 700, color }}>{val}</p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Individual Ads */}
+                                {deep.ads && deep.ads.length > 0 && (
+                                  <div>
+                                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '8px', letterSpacing: '0.05em' }}>ANÚNCIOS INDIVIDUAIS ({deep.ads.length})</p>
+                                    {deep.ads.map((ad) => {
+                                      const adColor = ad.score >= 75 ? '#10b981' : ad.score >= 50 ? '#f59e0b' : '#ef4444';
+                                      const isActive = ad.status === 'active';
+                                      const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
+                                      return (
+                                        <div key={ad.id} style={{ padding: '9px 12px', borderRadius: '9px', background: 'rgba(255,255,255,0.015)', border: `1px solid rgba(255,255,255,0.05)`, marginBottom: '5px' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <p style={{ fontSize: '11px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {ad.name}</p>
+                                              <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginTop: '1px' }}>Conjunto: {ad.ad_set_name}</p>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                              <span style={{ fontSize: '10px', fontWeight: 700, color: ad.action.color, background: ad.action.bg, padding: '1px 6px', borderRadius: '6px' }}>{ad.action.label}</span>
+                                              <span style={{ fontSize: '12px', fontWeight: 800, color: adColor }}>{ad.score}</span>
+                                            </div>
+                                          </div>
+                                          {isActive && (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginTop: '6px' }}>
+                                              {[
+                                                { lbl: 'CPL', val: ad.cpa > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#10b981' : Number(ad.cpa) <= 150 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'CTR', val: ad.ctr > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#10b981' : Number(ad.ctr) >= 1 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'CPC', val: ad.cpc > 0 ? `R$${Number(ad.cpc).toFixed(2)}` : '—', color: 'rgba(255,255,255,0.6)' },
+                                                { lbl: 'Leads', val: String(ad.leads), color: '#10b981' },
+                                                { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                              ].map(({ lbl, val, color }) => (
+                                                <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: 'rgba(255,255,255,0.025)' }}>
+                                                  <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>{lbl}</p>
+                                                  <p style={{ fontSize: '11px', fontWeight: 700, color }}>{val}</p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {deep.adSets.length === 0 && (!deep.ads || deep.ads.length === 0) && (
+                                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '12px' }}>Nenhum conjunto/anúncio sincronizado ainda.</p>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
             </div>
           )}

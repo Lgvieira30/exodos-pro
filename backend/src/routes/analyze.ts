@@ -374,6 +374,21 @@ analyzeRouter.get('/deep/:campaignId', async (req: AuthRequest, res: Response) =
     return { ...as, score, action };
   });
 
+  // Ads (individual ads) for this campaign
+  const adsRaw = await sql`
+    SELECT a.*, s.name AS ad_set_name
+    FROM ads a
+    JOIN ad_sets s ON s.id = a.ad_set_id
+    WHERE a.campaign_id = ${req.params.campaignId} AND a.user_id = ${req.userId!}
+    ORDER BY a.spend DESC
+  `;
+
+  const adsWithRec = adsRaw.map((ad: any) => {
+    const { score } = diagnose(Number(ad.cpa), Number(ad.ctr), Number(ad.roas), Number(ad.cpc), Number(ad.spend), Number(ad.leads));
+    const action = adSetAction(score, ad);
+    return { ...ad, score, action };
+  });
+
   // Funnel
   const impressions = Number(summary.total_impressions);
   const clicks = Number(summary.total_clicks);
@@ -416,6 +431,7 @@ analyzeRouter.get('/deep/:campaignId', async (req: AuthRequest, res: Response) =
       funnel: { impressions, ctr: ctrActual, clicks, clickToLeadRate, leads, conversions, revenueEst },
       daily,
       adSets: adSetsWithRec,
+      ads: adsWithRec,
       analysis,
       projection: {
         daysRemaining,

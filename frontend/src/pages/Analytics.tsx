@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  AreaChart, Area, BarChart, Bar, LineChart, Line, Cell, ReferenceLine,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Users, Target, Zap, MousePointerClick, Eye, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { metricsApi, campaignsApi } from '../lib/api';
+import { metricsApi, campaignsApi, analyzeApi } from '../lib/api';
 import { Tooltip as MetricTooltip } from '../components/Tooltip';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
@@ -65,6 +65,67 @@ function ChartCard({ title, desc, children }: { title: string; desc: string; chi
   );
 }
 
+function BenchmarkStrip() {
+  return (
+    <div style={{ marginBottom: '20px', background: 'rgba(61,184,232,0.04)', border: '1px solid rgba(61,184,232,0.2)', borderRadius: '12px', padding: '14px 20px' }}>
+      <p style={{ fontSize: '10px', fontWeight: 700, color: CYAN, marginBottom: '12px', letterSpacing: '0.8px' }}>📊 REFERÊNCIA DE MERCADO — BENCHMARKS B2B META ADS</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }} className="grid-benchmark">
+        {[
+          { label: 'Custo por Lead', abbr: 'CPL', otimo: 'Abaixo de R$60', aceitavel: 'Até R$150', alto: 'Acima de R$150' },
+          { label: 'Taxa de Cliques', abbr: 'CTR', otimo: 'Acima de 2,5%', aceitavel: 'Acima de 1%', alto: 'Abaixo de 1%' },
+          { label: 'Custo por Clique', abbr: 'CPC', otimo: 'Abaixo de R$5', aceitavel: 'Até R$15', alto: 'Acima de R$15' },
+          { label: 'Retorno sobre Gasto', abbr: 'ROAS', otimo: 'Acima de 3x', aceitavel: 'Acima de 2x', alto: 'Abaixo de 2x' },
+        ].map(({ label, abbr, otimo, aceitavel, alto }) => (
+          <div key={abbr}>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#fff', marginBottom: '6px' }}>{label} <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>({abbr})</span></p>
+            <p style={{ fontSize: '11px', color: '#10b981', marginBottom: '2px' }}>🟢 {otimo}</p>
+            <p style={{ fontSize: '11px', color: '#f59e0b', marginBottom: '2px' }}>🟡 {aceitavel}</p>
+            <p style={{ fontSize: '11px', color: '#ef4444' }}>🔴 {alto}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GlossarySection() {
+  const [open, setOpen] = useState(false);
+  const items = [
+    { abbr: 'CPL', full: 'Custo por Lead', emoji: '💰', desc: 'Quanto você pagou em média por cada pessoa que demonstrou interesse e deixou contato. É a métrica mais importante para B2B. Benchmark: ótimo abaixo de R$60, aceitável até R$150.' },
+    { abbr: 'CTR', full: 'Taxa de Cliques', emoji: '📊', desc: 'De cada 100 pessoas que viram seu anúncio, quantas clicaram. CTR 2% = 100 viram, 2 clicaram. Indica se o criativo (imagem/vídeo) está chamando atenção. Bom: acima de 2,5%.' },
+    { abbr: 'CPC', full: 'Custo por Clique', emoji: '🖱️', desc: 'Quanto custou cada clique no anúncio. Se você gastou R$100 e teve 20 cliques, o CPC é R$5. Indica a eficiência do anúncio em atrair visitas. Bom: abaixo de R$5.' },
+    { abbr: 'ROAS', full: 'Retorno sobre Gasto em Anúncios', emoji: '📈', desc: 'Para cada R$1 investido em anúncios, quanto voltou em receita. ROAS 3x = para cada R$1 gasto, R$3 de retorno. Para serviços B2B com ticket alto, mesmo ROAS 2x pode ser lucrativo.' },
+    { abbr: 'CPM', full: 'Custo por Mil Impressões', emoji: '👁️', desc: 'Quanto custa aparecer para 1.000 pessoas. CPM de R$20 = R$20 para mostrar o anúncio 1.000 vezes. CPM alto pode indicar audiência muito disputada ou anúncio de baixa relevância.' },
+    { abbr: 'Impressões', full: 'Impressões', emoji: '🔁', desc: 'Número de vezes que o anúncio apareceu na tela de alguém. Muitas impressões + CTR baixo = o anúncio aparece mas não chama atenção suficiente para gerar cliques.' },
+  ];
+  return (
+    <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', marginTop: '16px' }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+      >
+        <div style={{ textAlign: 'left' }}>
+          <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>📚 Glossário — O que cada métrica significa</p>
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>Clique para {open ? 'fechar' : 'ver'} as explicações em português</p>
+        </div>
+        <span style={{ color: CYAN, fontSize: '16px', marginLeft: '16px' }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '16px' }} className="grid-glossary">
+          {items.map(({ abbr, full, emoji, desc }) => (
+            <div key={abbr} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '14px' }}>
+              <p style={{ fontSize: '20px', marginBottom: '6px' }}>{emoji}</p>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>{full}</p>
+              <p style={{ fontSize: '10px', color: CYAN, marginBottom: '8px', fontWeight: 600, letterSpacing: '0.5px' }}>{abbr}</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{desc}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -92,6 +153,9 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [noData, setNoData] = useState(false);
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
+  const [campaignDeepCache, setCampaignDeepCache] = useState<Record<string, any>>({});
+  const [loadingDeepId, setLoadingDeepId] = useState<string | null>(null);
 
   const load = useCallback((r: DateRange, initial = false) => {
     if (initial) setLoading(true); else setFetching(true);
@@ -126,6 +190,22 @@ export default function Analytics() {
     }).finally(() => { setLoading(false); setFetching(false); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const loadCampaignDeep = useCallback(async (campaignId: string) => {
+    if (campaignDeepCache[campaignId]) {
+      setExpandedCampaignId(prev => prev === campaignId ? null : campaignId);
+      return;
+    }
+    if (expandedCampaignId === campaignId) { setExpandedCampaignId(null); return; }
+    setLoadingDeepId(campaignId);
+    try {
+      const res = await analyzeApi.deep(campaignId, range.from, range.to);
+      if (res?.data) {
+        setCampaignDeepCache(prev => ({ ...prev, [campaignId]: res.data }));
+        setExpandedCampaignId(campaignId);
+      }
+    } catch { /* ignore */ } finally { setLoadingDeepId(null); }
+  }, [campaignDeepCache, expandedCampaignId, range]);
+
   const isFirstMount = React.useRef(true);
   useEffect(() => {
     if (isFirstMount.current) { isFirstMount.current = false; load(range, true); }
@@ -159,40 +239,40 @@ export default function Analytics() {
       sub: 'Contatos qualificados',
     },
     {
-      label: 'CPA Médio',
+      label: 'Custo por Lead — CPL',
       value: summary?.cpa ? `R$ ${Number(summary.cpa).toFixed(2)}` : '—',
-      tooltip: 'Custo Por Aquisição — quanto custa em média conquistar um lead. Abaixo de R$50 é excelente.',
+      tooltip: 'CPL = quanto você pagou por cada pessoa que se interessou e deixou contato. Benchmark B2B Meta Ads: ótimo abaixo de R$60, aceitável até R$150.',
       icon: Target,
       gradient: ['#c2410c', '#f97316'],
       glow: 'rgba(249,115,22,0.2)',
-      sub: 'Menor = melhor',
+      sub: summary?.cpa ? (Number(summary.cpa) <= 60 ? '✅ Ótimo — abaixo de R$60' : Number(summary.cpa) <= 150 ? '⚠️ Aceitável — abaixo de R$150' : '❌ Alto — acima de R$150') : 'Quanto você paga por lead',
     },
     {
-      label: 'ROAS',
+      label: 'Retorno sobre Gasto — ROAS',
       value: summary?.roas ? `${Number(summary.roas).toFixed(1)}x` : '—',
-      tooltip: 'Para cada R$1 investido, quanto voltou em receita. Acima de 3x é ótimo.',
+      tooltip: 'ROAS = para cada R$1 investido em anúncios, quanto voltou em receita. ROAS 3x significa R$3 de retorno para cada R$1 gasto. Acima de 3x é ótimo para B2B.',
       icon: Zap,
       gradient: ['#7c3aed', '#a78bfa'],
       glow: 'rgba(139,92,246,0.2)',
-      sub: 'Acima de 3x = ótimo',
+      sub: summary?.roas ? (Number(summary.roas) >= 3 ? '✅ Ótimo — acima de 3x' : Number(summary.roas) >= 2 ? '⚠️ Aceitável — acima de 2x' : '❌ Baixo — abaixo de 2x') : 'R$ de retorno por R$ investido',
     },
     {
-      label: 'CTR Médio',
+      label: 'Taxa de Cliques — CTR',
       value: summary?.ctr ? `${Number(summary.ctr).toFixed(2)}%` : '—',
-      tooltip: 'Taxa de Cliques — percentual de pessoas que clicaram no anúncio. Acima de 1.5% é bom.',
+      tooltip: 'CTR = de cada 100 pessoas que viram o anúncio, quantas clicaram. CTR 2% = 100 viram, 2 clicaram. Indica se o criativo (imagem/vídeo) está chamando atenção. Ótimo: acima de 2,5%.',
       icon: MousePointerClick,
       gradient: ['#0e7490', CYAN],
       glow: `${CYAN}30`,
-      sub: 'Acima de 1.5% = bom',
+      sub: summary?.ctr ? (Number(summary.ctr) >= 2.5 ? '✅ Excelente — acima de 2,5%' : Number(summary.ctr) >= 1 ? '⚠️ Aceitável — acima de 1%' : '❌ Baixo — abaixo de 1%') : '% de quem viu e clicou',
     },
     {
-      label: 'CPC Médio',
+      label: 'Custo por Clique — CPC',
       value: summary?.cpc ? `R$ ${Number(summary.cpc).toFixed(2)}` : '—',
-      tooltip: 'Custo Por Clique — quanto custa cada clique no anúncio.',
+      tooltip: 'CPC = quanto custou cada clique no anúncio. Se você gastou R$100 e teve 20 cliques, o CPC é R$5. Indica eficiência do anúncio. Ótimo: abaixo de R$5.',
       icon: Eye,
       gradient: ['#1e3a5f', '#2563eb'],
       glow: 'rgba(37,99,235,0.2)',
-      sub: 'Custo por clique',
+      sub: summary?.cpc ? (Number(summary.cpc) <= 5 ? '✅ Bom — abaixo de R$5' : Number(summary.cpc) <= 15 ? '⚠️ Médio — abaixo de R$15' : '❌ Caro — acima de R$15') : 'Preço de cada visita ao site',
     },
   ];
 
@@ -227,6 +307,8 @@ export default function Analytics() {
         )}
       </div>
 
+      <BenchmarkStrip />
+
       {/* KPIs — 6 cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}
         className="grid-kpis-analytics">
@@ -237,7 +319,7 @@ export default function Analytics() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}
         className="grid-charts">
 
-        <ChartCard title="Investimento vs Leads" desc="Correlação entre gasto e leads gerados por dia.">
+        <ChartCard title="Investimento vs Leads por Dia" desc="Barras azuis = quanto você gastou. Verde = quantos leads chegaram. Dias com gasto alto mas leads baixos indicam problema no funil.">
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={weekly}>
               <defs>
@@ -261,7 +343,7 @@ export default function Analytics() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="CTR por Dia" desc="Taxa de cliques diária — identifique os dias com melhor engajamento.">
+        <ChartCard title="Taxa de Cliques (CTR) e Custo por Clique (CPC) por Dia" desc="CTR (azul) = % que clicou. CPC (roxo) = preço de cada clique. CTR alto + CPC baixo = anúncio eficiente.">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={weekly}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -279,25 +361,25 @@ export default function Analytics() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}
         className="grid-charts">
 
-        <ChartCard title="CPA por Dia" desc="Custo Por Aquisição diário — identifique os dias mais eficientes.">
+        <ChartCard title="Custo por Lead (CPL) por Dia" desc="Verde = ótimo (abaixo de R$60) · Amarelo = aceitável (R$60–R$150) · Vermelho = alto (acima de R$150). Linhas tracejadas mostram os limites de benchmark.">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weekly} barSize={26}>
-              <defs>
-                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f97316" />
-                  <stop offset="100%" stopColor="#c2410c" />
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" stroke="transparent" tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis stroke="transparent" tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="cpa" name="CPA (R$)" fill="url(#barGrad)" radius={[6, 6, 0, 0]} />
+              <ReferenceLine y={60} stroke="#10b981" strokeDasharray="4 4" label={{ value: 'Bom R$60', fill: '#10b981', fontSize: 10, position: 'right' }} />
+              <ReferenceLine y={150} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Alto R$150', fill: '#ef4444', fontSize: 10, position: 'right' }} />
+              <Bar dataKey="cpa" name="Custo por Lead (R$)" radius={[6, 6, 0, 0]}>
+                {weekly.map((entry, index) => (
+                  <Cell key={`cpa-${index}`} fill={entry.cpa <= 60 ? '#10b981' : entry.cpa <= 150 ? '#f59e0b' : '#ef4444'} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Cliques e Impressões" desc="Volume de cliques e alcance dos anúncios por dia.">
+        <ChartCard title="Cliques vs Impressões por Dia" desc="Azul = cliques (pessoas que clicaram). Roxo = impressões (pessoas que viram). Se impressões sobem mas cliques não: o criativo não está chamando atenção.">
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={weekly}>
               <defs>
@@ -341,8 +423,18 @@ export default function Analytics() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  {['Campanha', 'Plataforma', 'Status', 'Gasto', 'Leads', 'CPA', 'ROAS', 'CTR', 'CPC'].map((h) => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Campanha' ? 'left' : 'right', color: 'rgba(255,255,255,0.35)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                  {[
+                    { key: 'Campanha', label: 'Campanha', title: '' },
+                    { key: 'Plataforma', label: 'Plataforma', title: '' },
+                    { key: 'Status', label: 'Status', title: '' },
+                    { key: 'Gasto', label: 'Total Investido', title: 'Quanto foi gasto nesta campanha no período selecionado' },
+                    { key: 'Leads', label: 'Leads', title: 'Número de contatos qualificados gerados por esta campanha' },
+                    { key: 'CPA', label: 'Custo por Lead (CPL)', title: 'CPL — quanto custou em média cada lead gerado. Bom: abaixo de R$60. Aceitável: até R$150' },
+                    { key: 'ROAS', label: 'Retorno sobre Gasto (ROAS)', title: 'ROAS — para cada R$1 investido, quanto voltou em receita. Acima de 3x é ótimo' },
+                    { key: 'CTR', label: 'Taxa de Cliques (CTR)', title: 'CTR — % de pessoas que viram o anúncio e clicaram. Acima de 2,5% é ótimo; acima de 1% é aceitável' },
+                    { key: 'CPC', label: 'Custo por Clique (CPC)', title: 'CPC — quanto custou cada clique individual no anúncio. Bom: abaixo de R$5' },
+                  ].map((h) => (
+                    <th key={h.key} title={h.title || undefined} style={{ padding: '10px 16px', textAlign: h.key === 'Campanha' ? 'left' : 'right', color: 'rgba(255,255,255,0.35)', fontWeight: 600, whiteSpace: 'nowrap', cursor: h.title ? 'help' : 'default' }}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -385,16 +477,190 @@ export default function Analytics() {
         </div>
       )}
 
+      {/* Análise por campanha */}
+      {campaigns.length > 0 && (
+        <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+          <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Análise Individual por Campanha</p>
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>Cada campanha avaliada com semáforo de saúde baseado nos benchmarks B2B.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px' }}>
+            {campaigns.map((c) => {
+              const cplColor = c.avg_cpa <= 0 ? '#64748b' : c.avg_cpa <= 60 ? '#10b981' : c.avg_cpa <= 150 ? '#f59e0b' : '#ef4444';
+              const cplLabel = c.avg_cpa <= 0 ? 'Sem dados' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
+              const ctrColor = c.avg_ctr <= 0 ? '#64748b' : c.avg_ctr >= 2.5 ? '#10b981' : c.avg_ctr >= 1 ? '#f59e0b' : '#ef4444';
+              const ctrLabel = c.avg_ctr <= 0 ? 'Sem dados' : c.avg_ctr >= 2.5 ? '✅ Excelente' : c.avg_ctr >= 1 ? '⚠️ Aceitável' : '❌ Baixo';
+              const badge = STATUS_BADGE[c.status] || STATUS_BADGE.draft;
+              const healthScore = [
+                c.avg_cpa > 0 && c.avg_cpa <= 60 ? 40 : c.avg_cpa > 0 && c.avg_cpa <= 150 ? 25 : c.avg_cpa > 0 ? 0 : 20,
+                c.avg_ctr >= 2.5 ? 30 : c.avg_ctr >= 1 ? 20 : c.avg_ctr > 0 ? 5 : 15,
+                c.avg_cpc > 0 && c.avg_cpc <= 5 ? 30 : c.avg_cpc > 0 && c.avg_cpc <= 15 ? 20 : c.avg_cpc > 0 ? 5 : 15,
+              ].reduce((a, b) => a + b, 0);
+              const healthColor = healthScore >= 70 ? '#10b981' : healthScore >= 45 ? '#f59e0b' : '#ef4444';
+              const healthEmoji = healthScore >= 70 ? '🟢' : healthScore >= 45 ? '🟡' : '🔴';
+              return (
+                <div key={c.id} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${healthColor}25`, borderRadius: '12px', padding: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px', color: badge.color, background: badge.bg }}>{badge.label}</span>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>{PLATFORM_LABEL[c.platform] || c.platform}</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '10px' }}>
+                      <p style={{ fontSize: '20px', fontWeight: 800, color: healthColor, lineHeight: 1 }}>{healthScore}</p>
+                      <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>saúde/100</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${cplColor}10`, border: `1px solid ${cplColor}20` }}>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '2px' }}>Custo por Lead (CPL)</p>
+                      <p style={{ fontSize: '15px', fontWeight: 700, color: cplColor }}>{c.avg_cpa > 0 ? `R$ ${Number(c.avg_cpa).toFixed(0)}` : '—'}</p>
+                      <p style={{ fontSize: '10px', color: cplColor }}>{cplLabel}</p>
+                    </div>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${ctrColor}10`, border: `1px solid ${ctrColor}20` }}>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '2px' }}>Taxa de Cliques (CTR)</p>
+                      <p style={{ fontSize: '15px', fontWeight: 700, color: ctrColor }}>{c.avg_ctr > 0 ? `${Number(c.avg_ctr).toFixed(2)}%` : '—'}</p>
+                      <p style={{ fontSize: '10px', color: ctrColor }}>{ctrLabel}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                    <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>Investido</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>R$ {Number(c.total_spend).toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>Leads</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: '#10b981' }}>{Number(c.total_leads)}</p>
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>ROAS</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas >= 2 ? '#f59e0b' : '#64748b' }}>{c.avg_roas > 0 ? `${Number(c.avg_roas).toFixed(1)}x` : '—'}</p>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '10px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${healthColor}` }}>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>
+                      {healthEmoji} {
+                        c.total_leads === 0 && c.total_spend > 0 ? 'Investimento sem leads — verifique o pixel de rastreamento e a landing page.' :
+                        c.avg_cpa <= 60 && c.avg_ctr >= 1 ? 'Campanha eficiente — boa candidata para aumentar o orçamento gradualmente.' :
+                        c.avg_cpa > 150 ? 'CPL alto — revise a landing page e o criativo antes de continuar investindo.' :
+                        c.avg_ctr < 1 && c.avg_ctr > 0 ? 'CTR baixo — o criativo não está chamando atenção. Teste uma nova imagem ou vídeo.' :
+                        c.total_leads < 3 ? 'Volume pequeno — aguarde mais dados antes de tomar decisões.' :
+                        'Métricas aceitáveis — monitore diariamente e teste variações de criativo.'
+                      }
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => loadCampaignDeep(c.id)}
+                    style={{ marginTop: '10px', width: '100%', padding: '7px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.08)', background: expandedCampaignId === c.id ? 'rgba(61,184,232,0.08)' : 'rgba(255,255,255,0.03)', color: expandedCampaignId === c.id ? CYAN : 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    {loadingDeepId === c.id ? '⟳ Carregando...' : expandedCampaignId === c.id ? '▲ Ocultar detalhes' : '▼ Conjuntos e anúncios'}
+                  </button>
+
+                  {expandedCampaignId === c.id && campaignDeepCache[c.id] && (() => {
+                    const deep = campaignDeepCache[c.id];
+                    return (
+                      <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
+                        {deep.adSets?.length > 0 && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <p style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', marginBottom: '6px' }}>CONJUNTOS ({deep.adSets.length})</p>
+                            {deep.adSets.map((as: any) => {
+                              const asColor = as.score >= 75 ? '#10b981' : as.score >= 50 ? '#f59e0b' : '#ef4444';
+                              const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
+                              const isActive = as.status === 'active';
+                              return (
+                                <div key={as.id} style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: `1px solid ${asColor}18`, marginBottom: '4px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isActive ? '5px' : 0 }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.35)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '6px' }}>{statusDot} {as.name}</p>
+                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                                      <span style={{ fontSize: '9px', fontWeight: 700, color: as.action?.color, background: as.action?.bg, padding: '1px 6px', borderRadius: '6px' }}>{as.action?.label}</span>
+                                      <span style={{ fontSize: '12px', fontWeight: 800, color: asColor }}>{as.score}</span>
+                                    </div>
+                                  </div>
+                                  {isActive && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
+                                      {[
+                                        { lbl: 'CPL', val: Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—', color: Number(as.cpa) <= 60 ? '#10b981' : Number(as.cpa) <= 150 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'CTR', val: Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—', color: Number(as.ctr) >= 2.5 ? '#10b981' : Number(as.ctr) >= 1 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'Leads', val: String(as.leads), color: '#fff' },
+                                        { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                      ].map(({ lbl, val, color }) => (
+                                        <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: 'rgba(255,255,255,0.03)' }}>
+                                          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>{lbl}</p>
+                                          <p style={{ fontSize: '10px', fontWeight: 700, color }}>{val}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {deep.ads?.length > 0 && (
+                          <div>
+                            <p style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', marginBottom: '6px' }}>ANÚNCIOS ({deep.ads.length})</p>
+                            {deep.ads.map((ad: any) => {
+                              const adColor = ad.score >= 75 ? '#10b981' : ad.score >= 50 ? '#f59e0b' : '#ef4444';
+                              const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
+                              const isActive = ad.status === 'active';
+                              return (
+                                <div key={ad.id} style={{ padding: '7px 9px', borderRadius: '7px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '3px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <p style={{ fontSize: '10px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {ad.name}</p>
+                                      <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>{ad.ad_set_name}</p>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                                      <span style={{ fontSize: '9px', fontWeight: 700, color: ad.action?.color, background: ad.action?.bg, padding: '1px 5px', borderRadius: '5px' }}>{ad.action?.label}</span>
+                                      <span style={{ fontSize: '11px', fontWeight: 800, color: adColor }}>{ad.score}</span>
+                                    </div>
+                                  </div>
+                                  {isActive && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px', marginTop: '4px' }}>
+                                      {[
+                                        { lbl: 'CPL', val: Number(ad.cpa) > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#10b981' : Number(ad.cpa) <= 150 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'CTR', val: Number(ad.ctr) > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#10b981' : Number(ad.ctr) >= 1 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'Leads', val: String(ad.leads), color: '#10b981' },
+                                        { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                      ].map(({ lbl, val, color }) => (
+                                        <div key={lbl} style={{ textAlign: 'center', padding: '2px', borderRadius: '4px', background: 'rgba(255,255,255,0.025)' }}>
+                                          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.25)', marginBottom: '1px' }}>{lbl}</p>
+                                          <p style={{ fontSize: '10px', fontWeight: 700, color }}>{val}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {(!deep.adSets?.length && !deep.ads?.length) && (
+                          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', textAlign: 'center', padding: '8px' }}>Nenhum conjunto/anúncio sincronizado.</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Insights */}
       <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px' }}>
-        <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Insights da Semana</p>
-        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>Análise automática dos últimos 7 dias.</p>
+        <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Destaques do Período</p>
+        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>Análise automática dos dados do período selecionado.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }} className="grid-insights">
           {[
-            { icon: TrendingDown, color: '#10b981', title: 'Melhor dia', value: bestDay ? bestDay.day : '—', desc: bestDay ? `${bestDay.leads} leads gerados` : 'Sem dados no período' },
-            { icon: TrendingUp, color: '#f97316', title: 'CPA mais alto', value: worstDay ? worstDay.day : '—', desc: worstDay?.cpa ? `R$ ${Number(worstDay.cpa).toFixed(0)}` : '—' },
-            { icon: DollarSign, color: '#3b82f6', title: 'Total investido', value: `R$ ${totalWeekSpend.toLocaleString('pt-BR')}`, desc: 'Nos últimos 7 dias' },
-            { icon: MousePointerClick, color: CYAN, title: 'CTR médio semanal', value: avgWeekCTR > 0 ? `${avgWeekCTR.toFixed(2)}%` : '—', desc: avgWeekCTR >= 1.5 ? 'Bom engajamento' : avgWeekCTR >= 1 ? 'Pode melhorar' : 'Revise criativos' },
+            { icon: TrendingDown, color: '#10b981', title: 'Melhor dia (mais leads)', value: bestDay ? bestDay.day : '—', desc: bestDay ? `${bestDay.leads} leads gerados` : 'Sem dados no período' },
+            { icon: TrendingUp, color: '#f97316', title: 'Dia mais caro (CPL alto)', value: worstDay ? worstDay.day : '—', desc: worstDay?.cpa ? `Custo por Lead: R$ ${Number(worstDay.cpa).toFixed(0)}` : '—' },
+            { icon: DollarSign, color: '#3b82f6', title: 'Total investido no período', value: `R$ ${totalWeekSpend.toLocaleString('pt-BR')}`, desc: 'Soma de todas as campanhas' },
+            { icon: MousePointerClick, color: CYAN, title: 'Taxa de Cliques média (CTR)', value: avgWeekCTR > 0 ? `${avgWeekCTR.toFixed(2)}%` : '—', desc: avgWeekCTR >= 2.5 ? '✅ Excelente — acima de 2,5%' : avgWeekCTR >= 1 ? '⚠️ Aceitável — acima de 1%' : avgWeekCTR > 0 ? '❌ Baixo — revise os criativos' : 'Sincronize para ver' },
           ].map(({ icon: Icon, color, title, value, desc }) => (
             <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ width: '34px', height: '34px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: `${color}15` }}>
@@ -410,16 +676,22 @@ export default function Analytics() {
         </div>
       </div>
 
+      <GlossarySection />
+
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 900px) {
           .grid-kpis-analytics { grid-template-columns: repeat(2, 1fr) !important; }
           .grid-charts { grid-template-columns: 1fr !important; }
           .grid-insights { grid-template-columns: repeat(2, 1fr) !important; }
+          .grid-benchmark { grid-template-columns: repeat(2, 1fr) !important; }
+          .grid-glossary { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 600px) {
           .grid-kpis-analytics { grid-template-columns: 1fr !important; }
           .grid-insights { grid-template-columns: 1fr !important; }
+          .grid-benchmark { grid-template-columns: 1fr !important; }
+          .grid-glossary { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
