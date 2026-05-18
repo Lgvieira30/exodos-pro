@@ -1,93 +1,128 @@
-﻿import { Router, Response } from 'express';
+import { Router, Response } from 'express';
 import { sql } from '../db/index.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 export const analyzeRouter = Router();
 analyzeRouter.use(requireAuth);
 
+function getDateRange(req: any, defaultDays = 7) {
+  const to = (req.query.to as string) || new Date().toISOString().split('T')[0];
+  const from = (req.query.from as string) || (() => {
+    const d = new Date(to);
+    d.setDate(d.getDate() - defaultDays + 1);
+    return d.toISOString().split('T')[0];
+  })();
+  return { from, to };
+}
+
 function diagnose(cpa: number, ctr: number, roas: number, cpc: number, spend: number, leads: number) {
   const issues: string[] = [];
   const actions: { priority: 'alta' | 'media' | 'baixa'; acao: string; motivo: string }[] = [];
   let score = 100;
 
-  // ROAS
   if (roas > 0) {
     if (roas < 1) {
-      score -= 50; issues.push(`ROAS critico: ${roas.toFixed(1)}x (campanha gerando prejuizo)`);
-      actions.push({ priority: 'alta', acao: 'Pause a campanha imediatamente', motivo: 'Cada R$1 investido retorna menos de R$1 — prejuizo garantido' });
+      score -= 50; issues.push(`ROAS critico: ${roas.toFixed(1)}x (prejuizo)`);
+      actions.push({ priority: 'alta', acao: 'Pause a campanha imediatamente', motivo: 'Cada R$1 investido retorna menos de R$1' });
     } else if (roas < 2) {
       score -= 30; issues.push(`ROAS baixo: ${roas.toFixed(1)}x`);
-      actions.push({ priority: 'alta', acao: 'Revise o funil de conversao e a oferta', motivo: 'Retorno insuficiente para cobrir custos operacionais' });
+      actions.push({ priority: 'alta', acao: 'Revise o funil de conversao e a oferta', motivo: 'Retorno insuficiente para cobrir custos' });
     } else if (roas < 3) {
       score -= 10; issues.push(`ROAS pode melhorar: ${roas.toFixed(1)}x`);
-      actions.push({ priority: 'media', acao: 'Otimize audiencia e tente escalar com cautela', motivo: 'ROAS abaixo do ideal de 3x' });
+      actions.push({ priority: 'media', acao: 'Otimize audiencia e escale com cautela', motivo: 'ROAS abaixo do ideal de 3x' });
     } else {
       actions.push({ priority: 'baixa', acao: `ROAS excelente (${roas.toFixed(1)}x) — escale o orcamento 20-30%`, motivo: 'Campanha gerando bom retorno' });
     }
   }
 
-  // CPA
   if (cpa > 0) {
     if (cpa > 100) {
       score -= 40; issues.push(`CPA critico: R$${cpa.toFixed(0)} por lead`);
-      actions.push({ priority: 'alta', acao: 'Pause os conjuntos de anuncios mais caros', motivo: `Custo por lead R$${cpa.toFixed(0)} esta muito acima do aceitavel` });
+      actions.push({ priority: 'alta', acao: 'Pause os conjuntos mais caros', motivo: `CPA R$${cpa.toFixed(0)} muito acima do aceitavel` });
     } else if (cpa > 60) {
       score -= 20; issues.push(`CPA alto: R$${cpa.toFixed(0)} por lead`);
-      actions.push({ priority: 'alta', acao: 'Revise a landing page e o formulario de captura', motivo: 'CPA elevado indica problema na conversao' });
+      actions.push({ priority: 'alta', acao: 'Revise landing page e formulario de captura', motivo: 'CPA elevado indica problema na conversao' });
     } else if (cpa > 40) {
-      score -= 8; issues.push(`CPA acima do ideal: R$${cpa.toFixed(0)}`);
+      score -= 8;
       actions.push({ priority: 'media', acao: 'Teste novos criativos e publicos', motivo: 'CPA pode ser reduzido com otimizacao' });
     } else {
       actions.push({ priority: 'baixa', acao: `CPA otimo (R$${cpa.toFixed(0)}) — mantenha e monitore`, motivo: 'Custo por lead dentro do esperado' });
     }
   }
 
-  // CTR
   if (ctr > 0) {
     if (ctr < 0.5) {
       score -= 30; issues.push(`CTR critico: ${ctr.toFixed(2)}%`);
-      actions.push({ priority: 'alta', acao: 'Troque todos os criativos urgentemente', motivo: 'Menos de 0.5% dos usuarios clicam — criativo nao engaja' });
+      actions.push({ priority: 'alta', acao: 'Troque todos os criativos urgentemente', motivo: 'Menos de 0.5% clicam — criativo nao engaja' });
     } else if (ctr < 1) {
       score -= 15; issues.push(`CTR baixo: ${ctr.toFixed(2)}%`);
       actions.push({ priority: 'alta', acao: 'Teste pelo menos 3 novos criativos esta semana', motivo: 'CTR abaixo de 1% indica criativo fraco' });
     } else if (ctr < 1.5) {
       score -= 5;
-      actions.push({ priority: 'media', acao: 'Teste variacao do criativo atual', motivo: 'CTR pode melhorar com pequenos ajustes de copy' });
+      actions.push({ priority: 'media', acao: 'Teste variacao do criativo atual', motivo: 'CTR pode melhorar com ajustes de copy' });
     } else {
       actions.push({ priority: 'baixa', acao: `CTR saudavel (${ctr.toFixed(2)}%) — documente o criativo vencedor`, motivo: 'Criativo funcionando bem' });
     }
   }
 
-  // CPC
   if (cpc > 0) {
     if (cpc > 8) {
       score -= 15; issues.push(`CPC elevado: R$${cpc.toFixed(2)}`);
-      actions.push({ priority: 'media', acao: 'Melhore o Quality Score — use extensoes e landing page relevante', motivo: 'CPC alto consome orcamento sem proporcional retorno' });
+      actions.push({ priority: 'media', acao: 'Melhore relevancia do anuncio', motivo: 'CPC alto consome orcamento sem retorno proporcional' });
     } else if (cpc > 4) {
       score -= 5;
-      actions.push({ priority: 'baixa', acao: 'Monitore o CPC — pode indicar aumento de concorrencia', motivo: `CPC de R$${cpc.toFixed(2)} esta na zona de atencao` });
+      actions.push({ priority: 'baixa', acao: 'Monitore o CPC — pode indicar aumento de concorrencia', motivo: `CPC R$${cpc.toFixed(2)} na zona de atencao` });
     }
   }
 
   const finalScore = Math.max(0, Math.min(100, score));
   const status = finalScore >= 75 ? 'saudavel' : finalScore >= 50 ? 'atencao' : 'critico';
-
   return { score: finalScore, status, issues, actions };
 }
 
+function adSetAction(score: number, adSet: any): { label: string; color: string; bg: string; detail: string } {
+  if (score >= 75) return {
+    label: 'Escalar',
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.1)',
+    detail: `ROAS ${Number(adSet.roas).toFixed(1)}x — aumente o orçamento em 20%.`,
+  };
+  if (score >= 55) return {
+    label: 'Monitorar',
+    color: '#3b82f6',
+    bg: 'rgba(59,130,246,0.1)',
+    detail: 'Aguarde mais 3 dias antes de escalar.',
+  };
+  if (score >= 35) return {
+    label: 'Revisar',
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,0.1)',
+    detail: `CTR ${Number(adSet.ctr).toFixed(1)}% abaixo do ideal — teste novo criativo.`,
+  };
+  return {
+    label: 'Pausar',
+    color: '#ef4444',
+    bg: 'rgba(239,68,68,0.1)',
+    detail: `CPA R$${Number(adSet.cpa).toFixed(0)} crítico — pause e revise toda a estrutura.`,
+  };
+}
+
+// GET /api/analyze/dashboard?from=&to=
 analyzeRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
+  const { from, to } = getDateRange(req, 7);
+
   const [summary] = await sql`
     SELECT
-      COALESCE(AVG(m.cpa) FILTER (WHERE m.cpa > 0), 0) AS avg_cpa,
-      COALESCE(AVG(m.ctr) FILTER (WHERE m.ctr > 0), 0) AS avg_ctr,
+      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0) AS avg_cpa,
+      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0) AS avg_ctr,
       COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
-      COALESCE(AVG(m.cpc) FILTER (WHERE m.cpc > 0), 0) AS avg_cpc,
-      COALESCE(SUM(m.spend), 0) AS total_spend,
-      COALESCE(SUM(m.leads), 0) AS total_leads
+      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0) AS avg_cpc,
+      COALESCE(SUM(m.spend), 0)  AS total_spend,
+      COALESCE(SUM(m.leads), 0)  AS total_leads
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!} AND c.status IN ('active', 'paused')
-      AND m.date >= NOW() - INTERVAL '7 days'
+      AND m.date >= ${from} AND m.date <= ${to}
   `;
 
   const result = diagnose(
@@ -95,17 +130,17 @@ analyzeRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
     Number(summary.avg_roas), Number(summary.avg_cpc),
     Number(summary.total_spend), Number(summary.total_leads)
   );
-
   res.json({ success: true, data: result });
 });
 
+// GET /api/analyze/paused
 analyzeRouter.get('/paused', async (req: AuthRequest, res: Response) => {
   const rows = await sql`
     SELECT c.id, c.name, c.platform, c.updated_at AS paused_at,
-      COALESCE(AVG(m.cpa) FILTER (WHERE m.cpa > 0), 0) AS avg_cpa,
-      COALESCE(AVG(m.ctr) FILTER (WHERE m.ctr > 0), 0) AS avg_ctr,
+      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0) AS avg_cpa,
+      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0) AS avg_ctr,
       COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
-      COALESCE(AVG(m.cpc) FILTER (WHERE m.cpc > 0), 0) AS avg_cpc,
+      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0) AS avg_cpc,
       COALESCE(SUM(m.spend), 0) AS total_spend,
       COALESCE(SUM(m.leads), 0) AS total_leads
     FROM campaigns c
@@ -114,9 +149,6 @@ analyzeRouter.get('/paused', async (req: AuthRequest, res: Response) => {
     GROUP BY c.id
     ORDER BY c.updated_at DESC
   `;
-
-  const SCORE_REATIVAR = 65;
-  const SCORE_CAUTELA = 40;
 
   const paused = rows.map((c: Record<string, unknown>) => {
     const avg_cpa = Number(c.avg_cpa);
@@ -133,47 +165,154 @@ analyzeRouter.get('/paused', async (req: AuthRequest, res: Response) => {
 
     if (total_spend === 0) {
       verdict = 'reativar_com_cautela';
-      verdict_reason = 'Sem metricas suficientes para avaliar. Teste com orcamento reduzido e monitore por 3 dias.';
-    } else if (analysis.score >= SCORE_REATIVAR) {
+      verdict_reason = 'Sem métricas suficientes. Teste com orçamento reduzido por 3 dias.';
+    } else if (analysis.score >= 65) {
       verdict = 'reativar';
-      verdict_reason = 'Metricas historicas saudaveis. Reative e monitore nos primeiros 3 dias.';
-    } else if (analysis.score >= SCORE_CAUTELA) {
+      verdict_reason = 'Métricas históricas saudáveis. Reative e monitore nos primeiros 3 dias.';
+    } else if (analysis.score >= 40) {
       verdict = 'reativar_com_cautela';
-      verdict_reason = `Corrija antes de reativar: ${analysis.issues[0] || 'otimize os criativos'}. Reative com orcamento 30% menor.`;
+      verdict_reason = `Corrija antes de reativar: ${analysis.issues[0] || 'otimize os criativos'}. Reative com orçamento 30% menor.`;
     } else {
       verdict = 'manter_pausada';
-      verdict_reason = `${analysis.issues[0] || 'Multiplos problemas criticos detectados'}. Reformule a estrategia antes de reativar.`;
+      verdict_reason = `${analysis.issues[0] || 'Múltiplos problemas críticos detectados'}. Reformule a estratégia antes de reativar.`;
     }
 
-    return {
-      id: c.id, name: c.name, platform: c.platform, paused_at: c.paused_at,
-      avg_cpa, avg_roas, avg_ctr, total_spend, total_leads,
-      ...analysis, verdict, verdict_reason,
-    };
+    return { id: c.id, name: c.name, platform: c.platform, paused_at: c.paused_at, avg_cpa, avg_roas, avg_ctr, total_spend, total_leads, ...analysis, verdict, verdict_reason };
   });
 
   res.json({ success: true, data: { paused } });
 });
 
+// GET /api/analyze/deep/:campaignId?from=&to=  — análise cirúrgica por campanha
+analyzeRouter.get('/deep/:campaignId', async (req: AuthRequest, res: Response) => {
+  const { from, to } = getDateRange(req, 7);
+
+  const [campaign] = await sql`
+    SELECT id, name, platform FROM campaigns
+    WHERE id = ${req.params.campaignId} AND user_id = ${req.userId!}
+  `;
+  if (!campaign) {
+    res.status(404).json({ success: false, error: { message: 'Campanha não encontrada' } });
+    return;
+  }
+
+  // Aggregated summary for the period
+  const [summary] = await sql`
+    SELECT
+      COALESCE(SUM(spend), 0)                              AS total_spend,
+      COALESCE(SUM(leads), 0)                              AS total_leads,
+      COALESCE(SUM(clicks), 0)                             AS total_clicks,
+      COALESCE(SUM(impressions), 0)                        AS total_impressions,
+      COALESCE(SUM(conversions), 0)                        AS total_conversions,
+      COALESCE(AVG(cpa)  FILTER (WHERE cpa  > 0), 0)      AS avg_cpa,
+      COALESCE(AVG(roas) FILTER (WHERE roas > 0), 0)      AS avg_roas,
+      COALESCE(AVG(ctr)  FILTER (WHERE ctr  > 0), 0)      AS avg_ctr,
+      COALESCE(AVG(cpc)  FILTER (WHERE cpc  > 0), 0)      AS avg_cpc
+    FROM metrics
+    WHERE campaign_id = ${req.params.campaignId}
+      AND date >= ${from} AND date <= ${to}
+  `;
+
+  // Daily breakdown for chart
+  const daily = await sql`
+    SELECT
+      date::text,
+      TO_CHAR(date, 'DD/MM') AS label,
+      spend, leads, clicks, impressions, cpa, ctr, cpc, roas
+    FROM metrics
+    WHERE campaign_id = ${req.params.campaignId}
+      AND date >= ${from} AND date <= ${to}
+    ORDER BY date
+  `;
+
+  // Ad sets with diagnostic
+  const adSets = await sql`
+    SELECT * FROM ad_sets
+    WHERE campaign_id = ${req.params.campaignId} AND user_id = ${req.userId!}
+    ORDER BY spend DESC
+  `;
+
+  const adSetsWithRec = adSets.map((as: any) => {
+    const { score } = diagnose(Number(as.cpa), Number(as.ctr), Number(as.roas), Number(as.cpc), Number(as.spend), Number(as.leads));
+    const action = adSetAction(score, as);
+    return { ...as, score, action };
+  });
+
+  // Funnel
+  const impressions = Number(summary.total_impressions);
+  const clicks = Number(summary.total_clicks);
+  const leads = Number(summary.total_leads);
+  const conversions = Number(summary.total_conversions);
+  const ctrActual = impressions > 0 ? (clicks / impressions) * 100 : 0;
+  const clickToLeadRate = clicks > 0 ? (leads / clicks) * 100 : 0;
+  const revenueEst = Number(summary.avg_roas) > 0 ? Number(summary.total_spend) * Number(summary.avg_roas) : 0;
+
+  // Monthly projection
+  const days = Math.max(1, daily.length || 1);
+  const today = new Date();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysRemaining = Math.max(0, daysInMonth - today.getDate());
+  const dailySpend = Number(summary.total_spend) / days;
+  const dailyLeads = Number(summary.total_leads) / days;
+
+  const analysis = diagnose(
+    Number(summary.avg_cpa), Number(summary.avg_ctr),
+    Number(summary.avg_roas), Number(summary.avg_cpc),
+    Number(summary.total_spend), Number(summary.total_leads)
+  );
+
+  res.json({
+    success: true,
+    data: {
+      campaign: { id: campaign.id, name: campaign.name, platform: campaign.platform },
+      period: { from, to, days },
+      summary: {
+        spend: Number(summary.total_spend),
+        leads,
+        clicks,
+        impressions,
+        conversions,
+        cpa: Number(summary.avg_cpa),
+        roas: Number(summary.avg_roas),
+        ctr: Number(summary.avg_ctr),
+        cpc: Number(summary.avg_cpc),
+      },
+      funnel: { impressions, ctr: ctrActual, clicks, clickToLeadRate, leads, conversions, revenueEst },
+      daily,
+      adSets: adSetsWithRec,
+      analysis,
+      projection: {
+        daysRemaining,
+        projectedTotalSpend: Number(summary.total_spend) + dailySpend * daysRemaining,
+        projectedTotalLeads: Number(summary.total_leads) + Math.round(dailyLeads * daysRemaining),
+        projectedCpa: Number(summary.avg_cpa),
+      },
+    },
+  });
+});
+
+// GET /api/analyze/:campaignId?from=&to=
 analyzeRouter.get('/:campaignId', async (req: AuthRequest, res: Response) => {
   const [campaign] = await sql`
     SELECT id, name FROM campaigns WHERE id = ${req.params.campaignId} AND user_id = ${req.userId!}
   `;
   if (!campaign) {
-    res.status(404).json({ success: false, error: { message: 'Campanha nao encontrada' } });
+    res.status(404).json({ success: false, error: { message: 'Campanha não encontrada' } });
     return;
   }
 
+  const { from, to } = getDateRange(req, 7);
+
   const [m] = await sql`
     SELECT
-      COALESCE(AVG(cpa) FILTER (WHERE cpa > 0), 0) AS avg_cpa,
-      COALESCE(AVG(ctr) FILTER (WHERE ctr > 0), 0) AS avg_ctr,
+      COALESCE(AVG(cpa)  FILTER (WHERE cpa  > 0), 0) AS avg_cpa,
+      COALESCE(AVG(ctr)  FILTER (WHERE ctr  > 0), 0) AS avg_ctr,
       COALESCE(AVG(roas) FILTER (WHERE roas > 0), 0) AS avg_roas,
-      COALESCE(AVG(cpc) FILTER (WHERE cpc > 0), 0) AS avg_cpc,
+      COALESCE(AVG(cpc)  FILTER (WHERE cpc  > 0), 0) AS avg_cpc,
       COALESCE(SUM(spend), 0) AS total_spend,
       COALESCE(SUM(leads), 0) AS total_leads
     FROM metrics WHERE campaign_id = ${req.params.campaignId}
-      AND date >= NOW() - INTERVAL '7 days'
+      AND date >= ${from} AND date <= ${to}
   `;
 
   const result = diagnose(
@@ -181,6 +320,5 @@ analyzeRouter.get('/:campaignId', async (req: AuthRequest, res: Response) => {
     Number(m.avg_roas), Number(m.avg_cpc),
     Number(m.total_spend), Number(m.total_leads)
   );
-
   res.json({ success: true, data: { campaign: campaign.name, ...result } });
 });

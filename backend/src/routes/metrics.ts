@@ -3,15 +3,28 @@ import { sql } from '../db/index.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 export const metricsRouter = Router();
-
 metricsRouter.use(requireAuth);
 
-// GET /api/metrics/dashboard — resumo geral do usuário
+function dateRange(req: any, defaultDays = 7) {
+  const to = (req.query.to as string) || new Date().toISOString().split('T')[0];
+  const from = (req.query.from as string) || (() => {
+    const d = new Date(to);
+    d.setDate(d.getDate() - defaultDays + 1);
+    return d.toISOString().split('T')[0];
+  })();
+  return { from, to };
+}
+
+// GET /api/metrics/dashboard
 metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
+  const { from, to } = dateRange(req, 7);
+
   const [summary] = await sql`
     SELECT
       COALESCE(SUM(m.spend), 0)                            AS total_spend,
       COALESCE(SUM(m.leads), 0)                            AS total_leads,
+      COALESCE(SUM(m.clicks), 0)                           AS total_clicks,
+      COALESCE(SUM(m.impressions), 0)                      AS total_impressions,
       COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)  AS avg_cpa,
       COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)  AS avg_roas,
       COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0)  AS avg_ctr,
@@ -19,34 +32,39 @@ metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
       COUNT(DISTINCT c.id)                                  AS total_campaigns
     FROM campaigns c
     LEFT JOIN metrics m ON m.campaign_id = c.id
+      AND m.date >= ${from} AND m.date <= ${to}
     WHERE c.user_id = ${req.userId!}
       AND c.status = 'active'
   `;
 
   const weekly = await sql`
     SELECT
-      TO_CHAR(m.date, 'Dy')  AS day,
-      SUM(m.spend)            AS spend,
-      SUM(m.leads)            AS leads,
-      SUM(m.clicks)           AS clicks,
-      SUM(m.impressions)      AS impressions,
-      AVG(m.cpa)              AS cpa,
-      AVG(m.ctr) FILTER (WHERE m.ctr > 0) AS ctr,
-      AVG(m.cpc) FILTER (WHERE m.cpc > 0) AS cpc
+      TO_CHAR(m.date, 'DD/MM')                             AS day,
+      m.date::text                                          AS date,
+      SUM(m.spend)                                          AS spend,
+      SUM(m.leads)                                          AS leads,
+      SUM(m.clicks)                                         AS clicks,
+      SUM(m.impressions)                                    AS impressions,
+      AVG(m.cpa)  FILTER (WHERE m.cpa  > 0)                AS cpa,
+      AVG(m.ctr)  FILTER (WHERE m.ctr  > 0)                AS ctr,
+      AVG(m.cpc)  FILTER (WHERE m.cpc  > 0)                AS cpc
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!}
-      AND m.date >= NOW() - INTERVAL '7 days'
-    GROUP BY m.date, day
+      AND m.date >= ${from} AND m.date <= ${to}
+    GROUP BY m.date
     ORDER BY m.date
   `;
 
   res.json({
     success: true,
     data: {
+      period: { from, to },
       summary: {
         spend: Number(summary.total_spend),
         leads: Number(summary.total_leads),
+        clicks: Number(summary.total_clicks),
+        impressions: Number(summary.total_impressions),
         cpa: Number(summary.avg_cpa),
         roas: Number(summary.avg_roas),
         ctr: Number(summary.avg_ctr),
@@ -58,7 +76,7 @@ metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
   });
 });
 
-// GET /api/metrics/:campaignId — métricas de uma campanha
+// GET /api/metrics/:campaignId
 metricsRouter.get('/:campaignId', async (req: AuthRequest, res: Response) => {
   const [campaign] = await sql`
     SELECT id FROM campaigns WHERE id = ${req.params.campaignId} AND user_id = ${req.userId!}
@@ -68,17 +86,19 @@ metricsRouter.get('/:campaignId', async (req: AuthRequest, res: Response) => {
     return;
   }
 
+  const { from, to } = dateRange(req, 30);
+
   const metrics = await sql`
     SELECT * FROM metrics
     WHERE campaign_id = ${req.params.campaignId}
+      AND date >= ${from} AND date <= ${to}
     ORDER BY date DESC
-    LIMIT 30
   `;
 
-  res.json({ success: true, data: { metrics } });
+  res.json({ success: true, data: { metrics, period: { from, to } } });
 });
 
-// POST /api/metrics/:campaignId — inserir/atualizar métricas do dia
+// POST /api/metrics/:campaignId
 metricsRouter.post('/:campaignId', async (req: AuthRequest, res: Response) => {
   const [campaign] = await sql`
     SELECT id FROM campaigns WHERE id = ${req.params.campaignId} AND user_id = ${req.userId!}
@@ -97,14 +117,9 @@ metricsRouter.post('/:campaignId', async (req: AuthRequest, res: Response) => {
     INSERT INTO metrics (campaign_id, date, spend, leads, conversions, impressions, clicks, cpc, cpa, ctr)
     VALUES (${req.params.campaignId}, ${date}, ${spend}, ${leads}, ${conversions}, ${impressions}, ${clicks}, ${cpc}, ${cpa}, ${ctr})
     ON CONFLICT (campaign_id, date) DO UPDATE SET
-      spend = EXCLUDED.spend,
-      leads = EXCLUDED.leads,
-      conversions = EXCLUDED.conversions,
-      impressions = EXCLUDED.impressions,
-      clicks = EXCLUDED.clicks,
-      cpc = EXCLUDED.cpc,
-      cpa = EXCLUDED.cpa,
-      ctr = EXCLUDED.ctr
+      spend = EXCLUDED.spend, leads = EXCLUDED.leads, conversions = EXCLUDED.conversions,
+      impressions = EXCLUDED.impressions, clicks = EXCLUDED.clicks,
+      cpc = EXCLUDED.cpc, cpa = EXCLUDED.cpa, ctr = EXCLUDED.ctr
     RETURNING *
   `;
 
