@@ -61,6 +61,8 @@ export const analyzeApi = {
   deep: (campaignId: string, from?: string, to?: string) =>
     api.get(`/analyze/deep/${campaignId}`, { params: { from, to } }).then((r) => r.data),
   paused: () => api.get('/analyze/paused').then((r) => r.data),
+  summary: (from?: string, to?: string) =>
+    api.get('/analyze/summary', { params: { from, to } }).then((r) => r.data),
 };
 
 export const integrationsApi = {
