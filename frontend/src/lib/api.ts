@@ -51,6 +51,7 @@ export const syncApi = {
   status: () => api.get('/sync/status').then((r) => r.data),
   meta: () => api.post('/sync/meta').then((r) => r.data),
   google: () => api.post('/sync/google').then((r) => r.data),
+  debug: () => api.get('/sync/debug').then((r) => r.data),
 };
 
 export const analyzeApi = {
