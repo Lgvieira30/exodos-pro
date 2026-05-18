@@ -27,15 +27,6 @@ interface CampaignRow {
   avg_roas: number; avg_ctr: number; avg_cpc: number;
 }
 
-const mockWeekly: WeeklyPoint[] = [
-  { day: 'Seg', spend: 800,  leads: 45, cpa: 50, ctr: 1.2, cpc: 3.5, clicks: 228,  impressions: 19000 },
-  { day: 'Ter', spend: 950,  leads: 52, cpa: 48, ctr: 1.4, cpc: 3.2, clicks: 296,  impressions: 21142 },
-  { day: 'Qua', spend: 1200, leads: 60, cpa: 52, ctr: 1.6, cpc: 4.0, clicks: 300,  impressions: 18750 },
-  { day: 'Qui', spend: 1100, leads: 58, cpa: 51, ctr: 1.3, cpc: 3.7, clicks: 297,  impressions: 22846 },
-  { day: 'Sex', spend: 1500, leads: 75, cpa: 48, ctr: 1.8, cpc: 3.1, clicks: 483,  impressions: 26833 },
-  { day: 'Sáb', spend: 1800, leads: 85, cpa: 50, ctr: 2.1, cpc: 3.6, clicks: 500,  impressions: 23809 },
-  { day: 'Dom', spend: 900,  leads: 48, cpa: 49, ctr: 1.1, cpc: 3.2, clicks: 281,  impressions: 25545 },
-];
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   active:    { label: 'Ativa',      color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
@@ -96,11 +87,11 @@ export default function Analytics() {
   const navigate = useNavigate();
   const [range, setRange] = useState<DateRange>(defaultRange());
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [weekly, setWeekly] = useState<WeeklyPoint[]>(mockWeekly);
+  const [weekly, setWeekly] = useState<WeeklyPoint[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
-  const [usingMock, setUsingMock] = useState(false);
+  const [noData, setNoData] = useState(false);
 
   const load = useCallback((r: DateRange, initial = false) => {
     if (initial) setLoading(true); else setFetching(true);
@@ -111,7 +102,7 @@ export default function Analytics() {
       if (metricsRes?.data?.summary) {
         setSummary(metricsRes.data.summary);
         if (metricsRes.data.weekly?.length > 0) {
-          setUsingMock(false);
+          setNoData(false);
           setWeekly(metricsRes.data.weekly.map((d: any) => ({
             day: d.label || d.day,
             spend: Number(d.spend) || 0,
@@ -123,11 +114,13 @@ export default function Analytics() {
             impressions: Number(d.impressions) || 0,
           })));
         } else {
-          setUsingMock(true);
+          setWeekly([]);
+          setNoData(true);
         }
       } else {
-        setSummary({ spend: 8250, leads: 423, cpa: 47, roas: 3.4, ctr: 1.6, cpc: 3.5, campaigns: 4 });
-        setUsingMock(true);
+        setSummary(null);
+        setWeekly([]);
+        setNoData(true);
       }
       if (campaignsRes?.data?.campaigns) setCampaigns(campaignsRes.data.campaigns);
     }).finally(() => { setLoading(false); setFetching(false); });
@@ -203,8 +196,8 @@ export default function Analytics() {
     },
   ];
 
-  const bestDay = weekly.reduce((b, d) => d.leads > b.leads ? d : b, weekly[0]);
-  const worstDay = weekly.reduce((w, d) => (d.cpa || 0) > (w.cpa || 0) ? d : w, weekly[0]);
+  const bestDay = weekly.length > 0 ? weekly.reduce((b, d) => d.leads > b.leads ? d : b, weekly[0]) : null;
+  const worstDay = weekly.length > 0 ? weekly.reduce((w, d) => (d.cpa || 0) > (w.cpa || 0) ? d : w, weekly[0]) : null;
   const totalWeekSpend = weekly.reduce((s, d) => s + (d.spend || 0), 0);
   const avgWeekCTR = weekly.filter((d) => d.ctr > 0).reduce((s, d, _, a) => s + d.ctr / a.length, 0);
 
@@ -222,9 +215,14 @@ export default function Analytics() {
           </div>
           <DateRangePicker value={range} onChange={setRange} />
         </div>
-        {usingMock && (
+        {noData && (
           <div style={{ marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#f59e0b', padding: '5px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
-            Dados de demonstração — sincronize o Meta Ads para ver seus números reais.
+            Nenhum dado para este período — sincronize o Meta Ads em Configurações para ver seus números reais.
+          </div>
+        )}
+        {fetching && (
+          <div style={{ marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', padding: '5px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)' }}>
+            Atualizando...
           </div>
         )}
       </div>
@@ -393,8 +391,8 @@ export default function Analytics() {
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>Análise automática dos últimos 7 dias.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }} className="grid-insights">
           {[
-            { icon: TrendingDown, color: '#10b981', title: 'Melhor dia', value: bestDay?.day || '—', desc: `${bestDay?.leads || 0} leads gerados` },
-            { icon: TrendingUp, color: '#f97316', title: 'CPA mais alto', value: worstDay?.day || '—', desc: worstDay?.cpa ? `R$ ${Number(worstDay.cpa).toFixed(0)}` : '—' },
+            { icon: TrendingDown, color: '#10b981', title: 'Melhor dia', value: bestDay ? bestDay.day : '—', desc: bestDay ? `${bestDay.leads} leads gerados` : 'Sem dados no período' },
+            { icon: TrendingUp, color: '#f97316', title: 'CPA mais alto', value: worstDay ? worstDay.day : '—', desc: worstDay?.cpa ? `R$ ${Number(worstDay.cpa).toFixed(0)}` : '—' },
             { icon: DollarSign, color: '#3b82f6', title: 'Total investido', value: `R$ ${totalWeekSpend.toLocaleString('pt-BR')}`, desc: 'Nos últimos 7 dias' },
             { icon: MousePointerClick, color: CYAN, title: 'CTR médio semanal', value: avgWeekCTR > 0 ? `${avgWeekCTR.toFixed(2)}%` : '—', desc: avgWeekCTR >= 1.5 ? 'Bom engajamento' : avgWeekCTR >= 1 ? 'Pode melhorar' : 'Revise criativos' },
           ].map(({ icon: Icon, color, title, value, desc }) => (
