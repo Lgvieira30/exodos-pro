@@ -9,11 +9,11 @@ export interface DateRange {
 }
 
 const PRESETS = [
-  { label: 'Hoje', days: 0 },
-  { label: 'Ontem', days: 1, offset: 1 },
-  { label: '7 dias', days: 6 },
-  { label: '14 dias', days: 13 },
-  { label: '30 dias', days: 29 },
+  { label: 'Hoje',    days: 0, offset: 0 },
+  { label: 'Ontem',  days: 0, offset: 1 },
+  { label: '7 dias', days: 6, offset: 0 },
+  { label: '14 dias', days: 13, offset: 0 },
+  { label: '30 dias', days: 29, offset: 0 },
 ];
 
 function fmt(d: Date) {

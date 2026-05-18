@@ -7,20 +7,28 @@ export const campaignsRouter = Router();
 
 campaignsRouter.use(requireAuth);
 
-// GET /api/campaigns
+// GET /api/campaigns?from=YYYY-MM-DD&to=YYYY-MM-DD
 campaignsRouter.get('/', async (req: AuthRequest, res: Response) => {
+  const from = (req.query.from as string) || null;
+  const to   = (req.query.to   as string) || null;
+
   const campaigns = await sql`
     SELECT c.*,
       COALESCE(SUM(m.spend), 0) AS total_spend,
       COALESCE(SUM(m.leads), 0) AS total_leads,
       COALESCE(SUM(m.clicks), 0) AS total_clicks,
       COALESCE(SUM(m.impressions), 0) AS total_impressions,
-      COALESCE(AVG(m.cpa) FILTER (WHERE m.cpa > 0), 0) AS avg_cpa,
-      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
-      COALESCE(AVG(m.ctr) FILTER (WHERE m.ctr > 0), 0) AS avg_ctr,
-      COALESCE(AVG(m.cpc) FILTER (WHERE m.cpc > 0), 0) AS avg_cpc
+      CASE WHEN SUM(m.leads) > 0
+        THEN SUM(m.spend) / SUM(m.leads) ELSE 0 END AS avg_cpa,
+      CASE WHEN SUM(m.impressions) > 0
+        THEN (SUM(m.clicks)::float / SUM(m.impressions)) * 100 ELSE 0 END AS avg_ctr,
+      CASE WHEN SUM(m.clicks) > 0
+        THEN SUM(m.spend) / SUM(m.clicks) ELSE 0 END AS avg_cpc,
+      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas
     FROM campaigns c
     LEFT JOIN metrics m ON m.campaign_id = c.id
+      AND (${from}::date IS NULL OR m.date >= ${from}::date)
+      AND (${to}::date   IS NULL OR m.date <= ${to}::date)
     WHERE c.user_id = ${req.userId!}
     GROUP BY c.id
     ORDER BY c.created_at DESC

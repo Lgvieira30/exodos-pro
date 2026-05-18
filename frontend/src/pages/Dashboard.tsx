@@ -3,6 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { TrendingUp, Users, DollarSign, Zap, Plus, Target, RefreshCw, AlertTriangle, CheckCircle, ArrowRight, PauseCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { campaignsApi, metricsApi, syncApi, analyzeApi } from '../lib/api';
+import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
 const CYAN = '#3DB8E8';
 
@@ -52,6 +53,7 @@ const PLATFORM_LABEL: Record<string, string> = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [range, setRange] = useState<DateRange>(defaultRange());
   const [summary, setSummary] = useState<any>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [weekly, setWeekly] = useState<any[]>([]);
@@ -62,11 +64,11 @@ export default function Dashboard() {
   const [syncMsg, setSyncMsg] = useState('');
   const [lastSync, setLastSync] = useState<{ at: string | null; status: string | null }>({ at: null, status: null });
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (r: DateRange) => {
     try {
       const [metricsRes, campaignsRes, syncStatusRes] = await Promise.all([
-        metricsApi.dashboard().catch(() => null),
-        campaignsApi.list().catch(() => ({ campaigns: [] })),
+        metricsApi.dashboard(r.from, r.to).catch(() => null),
+        campaignsApi.list(r.from, r.to).catch(() => ({ campaigns: [] })),
         syncApi.status().catch(() => null),
       ]);
       setSummary(metricsRes?.data?.summary || { spend: 0, leads: 0, cpa: 0, roas: 0, campaigns: 0 });
@@ -89,7 +91,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(range); }, [range]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSync() {
     setSyncing(true);
@@ -97,7 +99,7 @@ export default function Dashboard() {
     try {
       const res = await syncApi.meta();
       setSyncMsg(res.data?.message || res.message || 'Sincronizado com sucesso!');
-      await load();
+      await load(range);
     } catch (err: any) {
       setSyncMsg(err.response?.data?.error?.message || 'Erro ao sincronizar. Configure o Meta Ads em Configuracoes.');
     } finally {
@@ -126,12 +128,13 @@ export default function Dashboard() {
     <div className="page-pad" style={{ minHeight: '100vh', background: '#000', padding: '32px' }}>
 
       {/* Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Dashboard</h1>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Visao geral das suas campanhas</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <DateRangePicker value={range} onChange={setRange} />
           {syncMsg && (
             <span style={{ fontSize: '12px', color: syncMsg.includes('Erro') ? '#ef4444' : '#10b981', padding: '6px 12px', borderRadius: '8px', background: syncMsg.includes('Erro') ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)' }}>
               {syncMsg}
@@ -388,7 +391,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
             <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Leads por dia</p>
-            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '16px' }}>Ultimos 7 dias</p>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '16px' }}>{range.from.split('-').reverse().join('/')} → {range.to.split('-').reverse().join('/')}</p>
             {weekly.length > 0 ? (
               <ResponsiveContainer width="100%" height={150}>
                 <AreaChart data={weekly}>
