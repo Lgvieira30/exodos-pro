@@ -53,17 +53,19 @@ syncRouter.get('/debug', async (req: AuthRequest, res: Response) => {
   });
 });
 
-const LEAD_ACTION_TYPES = [
+// Priority order: first match with value > 0 is used (avoids double-counting when
+// one conversion fires multiple action types, e.g. contact + lead simultaneously)
+const LEAD_ACTION_PRIORITY = [
+  'contact',
   'lead',
   'offsite_conversion.fb_pixel_lead',
   'onsite_conversion.lead_grouped',
-  'onsite_conversion.messaging_conversation_started_7d',
-  'contact',
   'complete_registration',
   'submit_application',
   'schedule',
   'start_trial',
   'subscribe',
+  'onsite_conversion.messaging_conversation_started_7d',
 ];
 
 const PURCHASE_ACTION_TYPES = [
@@ -73,10 +75,16 @@ const PURCHASE_ACTION_TYPES = [
 ];
 
 function extractActions(actions: any[], actionValues: any[]) {
-  // Sum all lead-type actions (pixel lead, native lead form, registration, etc.)
-  const leads = actions
-    .filter((a: any) => LEAD_ACTION_TYPES.includes(a.action_type))
-    .reduce((sum: number, a: any) => sum + Number(a.value || 0), 0);
+  // Use the highest-priority lead action type that has a value.
+  // Summing all types inflates counts because one conversion can fire multiple events.
+  let leads = 0;
+  for (const type of LEAD_ACTION_PRIORITY) {
+    const match = actions.find((a: any) => a.action_type === type);
+    if (match && Number(match.value || 0) > 0) {
+      leads = Number(match.value);
+      break;
+    }
+  }
 
   const conversions = actions
     .filter((a: any) => PURCHASE_ACTION_TYPES.includes(a.action_type))
