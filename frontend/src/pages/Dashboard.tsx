@@ -116,10 +116,34 @@ export default function Dashboard() {
   );
 
   const kpis = [
-    { label: 'Investimento', value: `R$ ${(summary?.spend || 0).toLocaleString('pt-BR')}`, icon: DollarSign, color: '#3b82f6' },
-    { label: 'Leads Gerados', value: (summary?.leads || 0).toLocaleString('pt-BR'), icon: Users, color: '#10b981' },
-    { label: 'CPA Medio', value: summary?.cpa > 0 ? `R$ ${Number(summary.cpa).toFixed(2)}` : '--', icon: Target, color: '#f97316' },
-    { label: 'ROAS', value: summary?.roas > 0 ? `${Number(summary.roas).toFixed(1)}x` : '--', icon: Zap, color: '#a78bfa' },
+    {
+      label: 'Total Investido',
+      value: `R$ ${(summary?.spend || 0).toLocaleString('pt-BR')}`,
+      icon: DollarSign,
+      color: '#3b82f6',
+      tooltip: 'Quanto foi gasto em anúncios no período selecionado.',
+    },
+    {
+      label: 'Leads Gerados',
+      value: (summary?.leads || 0).toLocaleString('pt-BR'),
+      icon: Users,
+      color: '#10b981',
+      tooltip: 'Número de pessoas que demonstraram interesse (preencheram formulário, enviaram mensagem, etc.).',
+    },
+    {
+      label: 'CPL — Custo por Lead',
+      value: summary?.cpa > 0 ? `R$ ${Number(summary.cpa).toFixed(2)}` : '--',
+      icon: Target,
+      color: '#f97316',
+      tooltip: 'Quanto você pagou em média para cada pessoa interessada. Benchmark B2B Meta Ads: bom abaixo de R$60, aceitável até R$150.',
+    },
+    {
+      label: 'ROAS — Retorno sobre Gasto',
+      value: summary?.roas > 0 ? `${Number(summary.roas).toFixed(1)}x` : '--',
+      icon: Zap,
+      color: '#a78bfa',
+      tooltip: 'Para cada R$1 investido em anúncios, quanto voltou em receita. Ex: ROAS 3x = R$3 de retorno para cada R$1 gasto.',
+    },
   ];
 
   const scoreColor = !analysis ? '#64748b' : analysis.score >= 75 ? '#10b981' : analysis.score >= 50 ? '#f59e0b' : '#ef4444';
@@ -207,13 +231,16 @@ export default function Dashboard() {
 
       {/* KPIs */}
       <div className="grid-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
-        {kpis.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-              <Icon size={18} color={color} />
+        {kpis.map(({ label, value, icon: Icon, color, tooltip }) => (
+          <div key={label} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={18} color={color} />
+              </div>
+              <span title={tooltip} style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.35)', cursor: 'help', flexShrink: 0 }}>?</span>
             </div>
-            <p style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>{value}</p>
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{label}</p>
+            <p style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{value}</p>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.3' }}>{label}</p>
           </div>
         ))}
       </div>
@@ -316,20 +343,22 @@ export default function Dashboard() {
                       <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginLeft: '16px' }}>
                         {c.avg_ctr > 0 && (
                           <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>CTR</p>
-                            <p style={{ fontSize: '12px', fontWeight: 600, color: c.avg_ctr >= 1.5 ? '#10b981' : c.avg_ctr >= 1 ? '#f59e0b' : '#ef4444' }}>{Number(c.avg_ctr).toFixed(1)}%</p>
+                            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>Taxa de Cliques</p>
+                            <p style={{ fontSize: '13px', fontWeight: 700, color: c.avg_ctr >= 1.5 ? '#10b981' : c.avg_ctr >= 1 ? '#f59e0b' : '#ef4444' }}>{Number(c.avg_ctr).toFixed(1)}%</p>
+                            <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>CTR</p>
                           </div>
                         )}
                         {c.avg_roas > 0 && (
                           <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>ROAS</p>
-                            <p style={{ fontSize: '12px', fontWeight: 600, color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas >= 2 ? '#f59e0b' : '#ef4444' }}>{Number(c.avg_roas).toFixed(1)}x</p>
+                            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>Retorno sobre Gasto</p>
+                            <p style={{ fontSize: '13px', fontWeight: 700, color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas >= 2 ? '#f59e0b' : '#ef4444' }}>{Number(c.avg_roas).toFixed(1)}x</p>
+                            <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>ROAS</p>
                           </div>
                         )}
                         <div style={{ textAlign: 'right' }}>
                           <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>R$ {Number(c.total_spend).toLocaleString('pt-BR')}</p>
                           <p style={{ fontSize: '11px', color: c.avg_cpa > 60 ? '#ef4444' : c.avg_cpa > 0 ? '#10b981' : 'rgba(255,255,255,0.3)' }}>
-                            {c.avg_cpa > 0 ? `CPA R$ ${Number(c.avg_cpa).toFixed(0)}` : 'Sem metricas'}
+                            {c.avg_cpa > 0 ? `CPL R$ ${Number(c.avg_cpa).toFixed(0)}` : 'Sem métricas'}
                           </p>
                         </div>
                       </div>
