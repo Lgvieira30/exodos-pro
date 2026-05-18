@@ -81,3 +81,8 @@ export const adSetsApi = {
   ads: (adSetId: string) =>
     api.get(`/ad-sets/${adSetId}/ads`).then((r) => r.data),
 };
+
+export const aiApi = {
+  professor: (from?: string, to?: string) =>
+    api.post('/ai/professor', {}, { params: from ? { from, to } : {} }).then((r) => r.data),
+};

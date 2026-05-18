@@ -8,7 +8,7 @@ import {
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-import { metricsApi, analyzeApi, campaignsApi } from '../lib/api';
+import { metricsApi, analyzeApi, campaignsApi, aiApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
 const CYAN = '#3DB8E8';
@@ -256,7 +256,7 @@ function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: numbe
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Professor() {
-  const [tab, setTab] = useState<'resumo' | 'geral' | 'campanha' | 'pausadas'>('resumo');
+  const [tab, setTab] = useState<'resumo' | 'geral' | 'campanha' | 'pausadas' | 'ia'>('ia');
   const [range, setRange] = useState<DateRange>(defaultRange());
 
   // Geral
@@ -276,6 +276,11 @@ export default function Professor() {
   const [deepData, setDeepData] = useState<DeepData | null>(null);
   const [deepLoading, setDeepLoading] = useState(false);
   const [deepError, setDeepError] = useState<string | null>(null);
+
+  // IA
+  const [aiData, setAiData] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Pausadas
   const [pausedCampaigns, setPausedCampaigns] = useState<any[]>([]);
@@ -439,12 +444,13 @@ export default function Professor() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '16px' }}>
           <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', padding: '4px', borderRadius: '10px', flexWrap: 'wrap' }}>
             {([
+              ['ia',       '✦ Análise IA'],
               ['resumo',   'Resumo'],
               ['geral',    'Geral'],
               ['campanha', 'Por Campanha'],
               ['pausadas', pausedCampaigns.length > 0 ? `Pausadas (${pausedCampaigns.length})` : 'Pausadas'],
             ] as const).map(([t, lbl]) => (
-              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? 'rgba(255,255,255,0.08)' : 'transparent', color: tab === t ? '#fff' : 'rgba(255,255,255,0.4)' }}>
+              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'ia' ? `${CYAN}25` : 'rgba(255,255,255,0.08)') : 'transparent', color: tab === t ? (t === 'ia' ? CYAN : '#fff') : 'rgba(255,255,255,0.4)' }}>
                 {lbl}
               </button>
             ))}
@@ -452,6 +458,206 @@ export default function Professor() {
           <DateRangePicker value={range} onChange={setRange} />
         </div>
       </div>
+
+      {/* ─── TAB: ANÁLISE IA ─── */}
+      {tab === 'ia' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>Análise por Inteligência Artificial</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Claude analisa suas campanhas, conjuntos e tendências como um especialista em tráfego pago</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {aiData && (
+                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  ↓ Exportar PDF
+                </button>
+              )}
+              <button
+                onClick={async () => { setAiLoading(true); setAiError(null); try { const r = await aiApi.professor(range.from, range.to); setAiData(r.data); } catch (e: any) { setAiError(e?.response?.data?.error?.message || 'Erro ao gerar análise'); } finally { setAiLoading(false); } }}
+                disabled={aiLoading}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: aiLoading ? 'rgba(61,184,232,0.2)' : `linear-gradient(135deg, ${CYAN}, #1a8ab8)`, color: aiLoading ? CYAN : '#000', fontSize: '13px', fontWeight: 700, cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {aiLoading ? '⟳ Analisando...' : aiData ? '↺ Nova Análise' : '✦ Analisar Agora'}
+              </button>
+            </div>
+          </div>
+
+          {aiError && (
+            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', marginBottom: '16px' }}>
+              <p style={{ fontSize: '13px', color: '#ef4444', fontWeight: 600 }}>{aiError}</p>
+              {aiError.includes('ANTHROPIC_API_KEY') && (
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '6px' }}>
+                  Acesse <strong style={{ color: CYAN }}>console.anthropic.com</strong> → API Keys → crie uma chave → adicione como <code style={{ background: 'rgba(255,255,255,0.08)', padding: '1px 6px', borderRadius: '4px' }}>ANTHROPIC_API_KEY</code> no Easypanel.
+                </p>
+              )}
+            </div>
+          )}
+
+          {aiLoading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '16px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `3px solid ${CYAN}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>Claude está analisando suas campanhas...</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>Isso leva 10-20 segundos</p>
+            </div>
+          )}
+
+          {!aiData && !aiLoading && !aiError && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '16px', background: 'rgba(15,23,42,0.5)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: `${CYAN}15`, border: `1px solid ${CYAN}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <GraduationCap size={28} color={CYAN} />
+              </div>
+              <p style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>Professor IA pronto para analisar</p>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', maxWidth: '400px' }}>
+                Clique em "Analisar Agora" para receber diagnóstico completo: campanhas, conjuntos, tendências e ações prioritárias com o Claude.
+              </p>
+            </div>
+          )}
+
+          {aiData?.analysis && (
+            <div id="ai-report">
+              {/* Diagnóstico geral */}
+              <div style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${CYAN}25`, borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '11px', color: CYAN, fontWeight: 700, letterSpacing: '0.5px', marginBottom: '8px' }}>DIAGNÓSTICO GERAL</p>
+                    <p style={{ fontSize: '15px', color: '#fff', lineHeight: '1.6', fontWeight: 500 }}>{aiData.analysis.diagnostico_geral}</p>
+                  </div>
+                  {aiData.analysis.nota_geral != null && (
+                    <HealthGauge score={aiData.analysis.nota_geral} size={110} />
+                  )}
+                </div>
+                {aiData.analysis.insight_oculto && (
+                  <div style={{ marginTop: '16px', padding: '12px 16px', borderRadius: '10px', background: `${CYAN}08`, border: `1px solid ${CYAN}20` }}>
+                    <p style={{ fontSize: '11px', color: CYAN, fontWeight: 700, marginBottom: '4px' }}>💡 INSIGHT OCULTO</p>
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>{aiData.analysis.insight_oculto}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Alerta crítico */}
+              {aiData.analysis.alerta_critico && (
+                <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '14px', padding: '16px 20px', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <AlertTriangle size={18} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginBottom: '4px' }}>ALERTA CRÍTICO</p>
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>{aiData.analysis.alerta_critico}</p>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }} className="grid-ai-2col">
+                {/* O que está funcionando */}
+                {aiData.analysis.o_que_esta_funcionando?.length > 0 && (
+                  <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '14px', padding: '20px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', marginBottom: '12px' }}>✓ O QUE ESTÁ FUNCIONANDO</p>
+                    {aiData.analysis.o_que_esta_funcionando.map((item: string, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981', flexShrink: 0, marginTop: '7px' }} />
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5' }}>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* O que precisa melhorar */}
+                {aiData.analysis.o_que_nao_esta_funcionando?.length > 0 && (
+                  <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '14px', padding: '20px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#ef4444', marginBottom: '12px' }}>✗ O QUE PRECISA MELHORAR</p>
+                    {aiData.analysis.o_que_nao_esta_funcionando.map((item: string, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ef4444', flexShrink: 0, marginTop: '7px' }} />
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5' }}>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Ações prioritárias */}
+              {aiData.analysis.acoes_prioritarias?.length > 0 && (
+                <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '16px' }}>Ações Prioritárias</p>
+                  {aiData.analysis.acoes_prioritarias.map((a: any, i: number) => {
+                    const pc = a.prioridade === 'URGENTE' ? '#ef4444' : a.prioridade === 'ALTA' ? '#f97316' : '#f59e0b';
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: '14px', padding: '14px 16px', borderRadius: '12px', background: `${pc}06`, border: `1px solid ${pc}20`, marginBottom: '10px', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: pc, background: `${pc}18`, padding: '3px 9px', borderRadius: '20px', flexShrink: 0, marginTop: '2px' }}>{a.prioridade}</span>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{a.titulo}</p>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)', lineHeight: '1.6', marginBottom: '6px' }}>{a.descricao}</p>
+                          {a.impacto_esperado && (
+                            <p style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>↑ {a.impacto_esperado}</p>
+                          )}
+                          {a.campanha_ou_conjunto && a.campanha_ou_conjunto !== 'Geral' && (
+                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '4px', display: 'block' }}>Campanha/Conjunto: {a.campanha_ou_conjunto}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }} className="grid-ai-2col">
+                {/* Análise por campanha */}
+                {aiData.analysis.analise_por_campanha?.length > 0 && (
+                  <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '20px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '14px' }}>Por Campanha</p>
+                    {aiData.analysis.analise_por_campanha.map((c: any, i: number) => {
+                      const rc = c.recomendacao === 'ESCALAR' ? '#10b981' : c.recomendacao === 'PAUSAR' ? '#ef4444' : c.recomendacao === 'OTIMIZAR' ? '#f59e0b' : '#3b82f6';
+                      return (
+                        <div key={i} style={{ padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', flex: 1, marginRight: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</p>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: rc, background: `${rc}18`, padding: '2px 8px', borderRadius: '12px', flexShrink: 0 }}>{c.recomendacao}</span>
+                          </div>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5', marginBottom: '4px' }}>{c.diagnostico}</p>
+                          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{c.motivo}</p>
+                          {c.proximos_passos?.length > 0 && (
+                            <div style={{ marginTop: '8px' }}>
+                              {c.proximos_passos.map((p: string, j: number) => (
+                                <p key={j} style={{ fontSize: '11px', color: CYAN, marginBottom: '2px' }}>→ {p}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Análise conjuntos */}
+                {aiData.analysis.analise_conjuntos?.length > 0 && (
+                  <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '20px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '14px' }}>Por Conjunto de Anúncios</p>
+                    {aiData.analysis.analise_conjuntos.map((a: any, i: number) => {
+                      const ac = a.acao === 'ESCALAR' ? '#10b981' : a.acao === 'PAUSAR' ? '#ef4444' : '#f59e0b';
+                      return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '6px' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: '12px', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{a.nome}</p>
+                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '3px' }}>{a.campanha}</p>
+                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)' }}>{a.motivo_rapido}</p>
+                          </div>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: ac, background: `${ac}18`, padding: '3px 8px', borderRadius: '10px', flexShrink: 0 }}>{a.acao}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Meta próximo período */}
+              {aiData.analysis.meta_proximo_periodo && (
+                <div style={{ background: `${CYAN}08`, border: `1px solid ${CYAN}25`, borderRadius: '14px', padding: '20px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: CYAN, marginBottom: '8px' }}>🎯 FOCO PARA OS PRÓXIMOS 7 DIAS</p>
+                  <p style={{ fontSize: '14px', color: '#fff', lineHeight: '1.6' }}>{aiData.analysis.meta_proximo_periodo}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ─── TAB: RESUMO EXECUTIVO ─── */}
       {tab === 'resumo' && (
@@ -922,9 +1128,11 @@ export default function Professor() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        .grid-ai-2col { grid-template-columns: 1fr 1fr; }
         @media (max-width: 1100px) {
           .grid-resumo-top { grid-template-columns: 1fr !important; }
           .grid-resumo-bottom { grid-template-columns: 1fr !important; }
+          .grid-ai-2col { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 900px) {
           .grid-professor { grid-template-columns: 1fr !important; }
@@ -932,6 +1140,14 @@ export default function Professor() {
         }
         @media (max-width: 600px) {
           .grid-resumo-kpis { grid-template-columns: 1fr !important; }
+        }
+        @media print {
+          body { background: white !important; color: black !important; }
+          .app-sidebar, .mobile-menu-btn, button, .app-main > *:not(#ai-report) { display: none !important; }
+          .app-main { margin-left: 0 !important; }
+          #ai-report { display: block !important; color: black; }
+          #ai-report * { color: black !important; background: white !important; border-color: #ccc !important; }
+          #ai-report p, #ai-report span { color: #111 !important; }
         }
       `}</style>
     </div>
