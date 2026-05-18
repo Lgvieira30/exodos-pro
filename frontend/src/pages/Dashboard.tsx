@@ -60,16 +60,23 @@ export default function Dashboard() {
   const [pausedCampaigns, setPausedCampaigns] = useState<PausedCampaign[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
+  const [lastSync, setLastSync] = useState<{ at: string | null; status: string | null }>({ at: null, status: null });
 
   const load = useCallback(async () => {
     try {
-      const [metricsRes, campaignsRes] = await Promise.all([
+      const [metricsRes, campaignsRes, syncStatusRes] = await Promise.all([
         metricsApi.dashboard().catch(() => null),
         campaignsApi.list().catch(() => ({ campaigns: [] })),
+        syncApi.status().catch(() => null),
       ]);
       setSummary(metricsRes?.data?.summary || { spend: 0, leads: 0, cpa: 0, roas: 0, campaigns: 0 });
       setWeekly(metricsRes?.data?.weekly || []);
       setCampaigns(campaignsRes?.data?.campaigns || []);
+
+      const metaIntegration = (syncStatusRes?.data?.integrations || []).find((i: any) => i.platform === 'meta');
+      if (metaIntegration) {
+        setLastSync({ at: metaIntegration.last_sync_at, status: metaIntegration.last_sync_status });
+      }
 
       const [analysisRes, pausedRes] = await Promise.all([
         analyzeApi.dashboard().catch(() => null),
@@ -158,6 +165,42 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Sync status banner */}
+      {lastSync.status === 'error' && (
+        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+          <AlertTriangle size={16} color="#ef4444" />
+          <span style={{ fontSize: '13px', color: '#ef4444', fontWeight: 600 }}>Última sincronização falhou</span>
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+            — token Meta Ads provavelmente expirou. Vá em{' '}
+            <span onClick={() => navigate('/settings')} style={{ color: CYAN, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>
+            {' '}e renove o token.
+          </span>
+          {lastSync.at && (
+            <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+              Última tentativa: {new Date(lastSync.at).toLocaleString('pt-BR')}
+            </span>
+          )}
+        </div>
+      )}
+      {lastSync.status === 'success' && lastSync.at && (
+        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
+          <CheckCircle size={14} color="#10b981" />
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+            Dados do Meta Ads sincronizados em <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{new Date(lastSync.at).toLocaleString('pt-BR')}</strong>
+          </span>
+        </div>
+      )}
+      {!lastSync.status && (
+        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+          <AlertTriangle size={14} color="#f59e0b" />
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+            Meta Ads não sincronizado ainda. Configure o token em{' '}
+            <span onClick={() => navigate('/settings')} style={{ color: CYAN, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>
+            {' '}e clique em Sincronizar.
+          </span>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
