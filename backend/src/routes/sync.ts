@@ -53,17 +53,19 @@ syncRouter.get('/debug', async (req: AuthRequest, res: Response) => {
   });
 });
 
-const LEAD_ACTION_TYPES = [
+// Priority order: first match with value > 0 is used (avoids double-counting when
+// one conversion fires multiple action types, e.g. contact + lead simultaneously)
+const LEAD_ACTION_PRIORITY = [
+  'contact',
   'lead',
   'offsite_conversion.fb_pixel_lead',
   'onsite_conversion.lead_grouped',
-  'onsite_conversion.messaging_conversation_started_7d',
-  'contact',
   'complete_registration',
   'submit_application',
   'schedule',
   'start_trial',
   'subscribe',
+  'onsite_conversion.messaging_conversation_started_7d',
 ];
 
 const PURCHASE_ACTION_TYPES = [
@@ -73,10 +75,16 @@ const PURCHASE_ACTION_TYPES = [
 ];
 
 function extractActions(actions: any[], actionValues: any[]) {
-  // Sum all lead-type actions (pixel lead, native lead form, registration, etc.)
-  const leads = actions
-    .filter((a: any) => LEAD_ACTION_TYPES.includes(a.action_type))
-    .reduce((sum: number, a: any) => sum + Number(a.value || 0), 0);
+  // Use the highest-priority lead action type that has a value.
+  // Summing all types inflates counts because one conversion can fire multiple events.
+  let leads = 0;
+  for (const type of LEAD_ACTION_PRIORITY) {
+    const match = actions.find((a: any) => a.action_type === type);
+    if (match && Number(match.value || 0) > 0) {
+      leads = Number(match.value);
+      break;
+    }
+  }
 
   const conversions = actions
     .filter((a: any) => PURCHASE_ACTION_TYPES.includes(a.action_type))
@@ -87,6 +95,24 @@ function extractActions(actions: any[], actionValues: any[]) {
     .reduce((sum: number, a: any) => sum + Number(a.value || 0), 0);
 
   return { leads, conversions, revenue };
+}
+
+// Fetch all pages from a paginated Meta API endpoint
+async function fetchAllPages(url: string, params: Record<string, any>, timeout = 20000): Promise<any[]> {
+  const results: any[] = [];
+  let nextUrl: string | null = null;
+
+  const firstRes = await axios.get(url, { params, timeout });
+  results.push(...(firstRes.data?.data || []));
+  nextUrl = firstRes.data?.paging?.next || null;
+
+  while (nextUrl) {
+    const res = await axios.get(nextUrl, { timeout });
+    results.push(...(res.data?.data || []));
+    nextUrl = res.data?.paging?.next || null;
+  }
+
+  return results;
 }
 
 syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
@@ -101,39 +127,42 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
 
   try {
     const { access_token, account_id } = integration;
+    const BASE = `https://graph.facebook.com/v20.0`;
 
-    // Fetch daily campaign breakdown (last 30 days), adsets/ads aggregated (last 7 days)
-    const [campaignDailyRes, adSetInfoRes, adSetInsightsRes, adInfoRes, adInsightsRes] = await Promise.all([
-      axios.get(`https://graph.facebook.com/v20.0/act_${account_id}/insights`, {
-        params: {
-          fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values',
-          date_preset: 'last_30d',
-          time_increment: 1,
-          level: 'campaign',
-          access_token,
-          limit: 1000,
-        },
-        timeout: 20000,
+    // Fetch all pages for each endpoint in parallel
+    const [campaignDailyRows, adSetInfoRows, adSetInsightRows, adInfoRows, adInsightRows] = await Promise.all([
+      fetchAllPages(`${BASE}/act_${account_id}/insights`, {
+        fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values',
+        date_preset: 'last_30d',
+        time_increment: 1,
+        level: 'campaign',
+        // Match default Ads Manager attribution window (7-day click, 1-day view)
+        action_attribution_windows: ['7d_click', '1d_view'],
+        access_token,
+        limit: 500,
       }),
-      axios.get(`https://graph.facebook.com/v20.0/act_${account_id}/adsets`, {
-        params: { fields: 'id,name,campaign_id,status,daily_budget', access_token, limit: 500 },
-        timeout: 15000,
-      }),
-      axios.get(`https://graph.facebook.com/v20.0/act_${account_id}/insights`, {
-        params: { fields: 'adset_id,adset_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values', date_preset: 'last_7d', level: 'adset', access_token, limit: 500 },
-        timeout: 15000,
-      }),
-      axios.get(`https://graph.facebook.com/v20.0/act_${account_id}/ads`, {
-        params: { fields: 'id,name,adset_id,campaign_id,status', access_token, limit: 500 },
-        timeout: 15000,
-      }),
-      axios.get(`https://graph.facebook.com/v20.0/act_${account_id}/insights`, {
-        params: { fields: 'ad_id,ad_name,adset_id,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values', date_preset: 'last_7d', level: 'ad', access_token, limit: 500 },
-        timeout: 15000,
-      }),
+      fetchAllPages(`${BASE}/act_${account_id}/adsets`, {
+        fields: 'id,name,campaign_id,status,daily_budget',
+        access_token, limit: 500,
+      }, 15000),
+      fetchAllPages(`${BASE}/act_${account_id}/insights`, {
+        fields: 'adset_id,adset_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values',
+        date_preset: 'last_7d', level: 'adset',
+        action_attribution_windows: ['7d_click', '1d_view'],
+        access_token, limit: 500,
+      }, 15000),
+      fetchAllPages(`${BASE}/act_${account_id}/ads`, {
+        fields: 'id,name,adset_id,campaign_id,status',
+        access_token, limit: 500,
+      }, 15000),
+      fetchAllPages(`${BASE}/act_${account_id}/insights`, {
+        fields: 'ad_id,ad_name,adset_id,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values',
+        date_preset: 'last_7d', level: 'ad',
+        action_attribution_windows: ['7d_click', '1d_view'],
+        access_token, limit: 500,
+      }, 15000),
     ]);
 
-    const campaignDailyRows = campaignDailyRes.data?.data || [];
     const campaignIdMap: Record<string, string> = {};
 
     // ─── Pass 1: Upsert unique campaigns ───
@@ -199,10 +228,10 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
 
     // ─── Ad Sets ───
     const adSetInfoMap: Record<string, any> = {};
-    for (const as of (adSetInfoRes.data?.data || [])) adSetInfoMap[as.id] = as;
+    for (const as of adSetInfoRows) adSetInfoMap[as.id] = as;
 
     let syncedAdSets = 0;
-    for (const row of (adSetInsightsRes.data?.data || [])) {
+    for (const row of adSetInsightRows) {
       const campaignId = campaignIdMap[row.campaign_id];
       if (!campaignId) continue;
 
@@ -233,10 +262,10 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
 
     // ─── Ads ───
     const adInfoMap: Record<string, any> = {};
-    for (const ad of (adInfoRes.data?.data || [])) adInfoMap[ad.id] = ad;
+    for (const ad of adInfoRows) adInfoMap[ad.id] = ad;
 
     let syncedAds = 0;
-    for (const row of (adInsightsRes.data?.data || [])) {
+    for (const row of adInsightRows) {
       const campaignId = campaignIdMap[row.campaign_id];
       if (!campaignId) continue;
 
@@ -274,7 +303,7 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
     // Collect all unique action_types seen for diagnostics
     const actionTypesFound = new Set<string>();
     for (const row of campaignDailyRows) {
-      for (const a of (row.actions || [])) actionTypesFound.add(a.action_type);
+      for (const a of (row.actions || [])) actionTypesFound.add(a.action_type as string);
     }
 
     res.json({
