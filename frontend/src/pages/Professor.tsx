@@ -212,23 +212,25 @@ export default function Professor() {
 
   useEffect(() => { loadGeneral(); }, [loadGeneral]);
 
-  // Load deep campaign data when campaign or range changes
-  const loadDeep = useCallback(async () => {
-    if (!selectedCampaignId) return;
+  const doLoadDeep = useCallback(async (campaignId: string, r: DateRange) => {
+    if (!campaignId) return;
     setDeepLoading(true);
+    setDeepData(null);
     try {
-      const res = await analyzeApi.deep(selectedCampaignId, range.from, range.to);
+      const res = await analyzeApi.deep(campaignId, r.from, r.to);
       setDeepData(res?.data || null);
     } catch {
       setDeepData(null);
     } finally {
       setDeepLoading(false);
     }
-  }, [selectedCampaignId, range]);
+  }, []);
 
   useEffect(() => {
-    if (tab === 'campanha') loadDeep();
-  }, [tab, loadDeep]);
+    if (tab === 'campanha' && selectedCampaignId) {
+      doLoadDeep(selectedCampaignId, range);
+    }
+  }, [tab, selectedCampaignId, range]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function buildMetrics(cpa: number, roas: number, ctr: number, cpc: number, roi: number) {
     const raw = [
@@ -401,7 +403,7 @@ export default function Professor() {
               </select>
             </div>
             <button
-              onClick={loadDeep}
+              onClick={() => doLoadDeep(selectedCampaignId, range)}
               disabled={deepLoading}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-end', padding: '8px 16px', borderRadius: '10px', border: `1px solid ${CYAN}40`, background: `${CYAN}15`, color: CYAN, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: deepLoading ? 0.6 : 1 }}
             >
