@@ -14,14 +14,39 @@ syncRouter.get('/status', async (req: AuthRequest, res: Response) => {
   res.json({ success: true, data: { integrations: rows } });
 });
 
+const LEAD_ACTION_TYPES = [
+  'lead',
+  'offsite_conversion.fb_pixel_lead',
+  'onsite_conversion.lead_grouped',
+  'onsite_conversion.messaging_conversation_started_7d',
+  'contact',
+  'complete_registration',
+  'submit_application',
+  'schedule',
+  'start_trial',
+  'subscribe',
+];
+
+const PURCHASE_ACTION_TYPES = [
+  'offsite_conversion.fb_pixel_purchase',
+  'purchase',
+  'omni_purchase',
+];
+
 function extractActions(actions: any[], actionValues: any[]) {
-  const leads = Number(actions.find((a: any) => a.action_type === 'lead')?.value || 0);
-  const conversions = Number(actions.find((a: any) =>
-    a.action_type === 'offsite_conversion.fb_pixel_purchase' || a.action_type === 'purchase'
-  )?.value || 0);
-  const revenue = Number(actionValues.find((a: any) =>
-    a.action_type === 'offsite_conversion.fb_pixel_purchase' || a.action_type === 'purchase'
-  )?.value || 0);
+  // Sum all lead-type actions (pixel lead, native lead form, registration, etc.)
+  const leads = actions
+    .filter((a: any) => LEAD_ACTION_TYPES.includes(a.action_type))
+    .reduce((sum: number, a: any) => sum + Number(a.value || 0), 0);
+
+  const conversions = actions
+    .filter((a: any) => PURCHASE_ACTION_TYPES.includes(a.action_type))
+    .reduce((sum: number, a: any) => sum + Number(a.value || 0), 0);
+
+  const revenue = actionValues
+    .filter((a: any) => PURCHASE_ACTION_TYPES.includes(a.action_type))
+    .reduce((sum: number, a: any) => sum + Number(a.value || 0), 0);
+
   return { leads, conversions, revenue };
 }
 
@@ -207,6 +232,12 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       WHERE id = ${integration.id}
     `;
 
+    // Collect all unique action_types seen for diagnostics
+    const actionTypesFound = new Set<string>();
+    for (const row of campaignDailyRows) {
+      for (const a of (row.actions || [])) actionTypesFound.add(a.action_type);
+    }
+
     res.json({
       success: true,
       data: {
@@ -214,6 +245,7 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
         daily_metrics: syncedMetrics,
         ad_sets: syncedAdSets,
         ads: syncedAds,
+        action_types_found: Array.from(actionTypesFound),
         message: `${seenMetaCampaigns.size} campanha(s) — ${syncedMetrics} registros diarios — ${syncedAdSets} conjunto(s) — ${syncedAds} anuncio(s) sincronizados.`,
       },
     });
