@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers, Database } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Wizard from './pages/Wizard';
@@ -9,6 +9,7 @@ import Professor from './pages/Professor';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Campaigns from './pages/Campaigns';
+import Diagnostico from './pages/Diagnostico';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
@@ -20,6 +21,7 @@ const NAV = [
   { to: '/professor', label: 'Professor IA', icon: GraduationCap },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/wizard', label: 'Nova Campanha', icon: Rocket },
+  { to: '/diagnostico', label: 'Diagnóstico', icon: Database },
   { to: '/settings', label: 'Configuracoes', icon: Settings },
 ];
 
@@ -135,6 +137,7 @@ function ProtectedLayout() {
           <Route path="professor" element={<Professor />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="wizard" element={<Wizard />} />
+          <Route path="diagnostico" element={<Diagnostico />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
       </main>
