@@ -14,6 +14,45 @@ syncRouter.get('/status', async (req: AuthRequest, res: Response) => {
   res.json({ success: true, data: { integrations: rows } });
 });
 
+// Debug: ver dados reais no banco
+syncRouter.get('/debug', async (req: AuthRequest, res: Response) => {
+  const campaigns = await sql`
+    SELECT id, name, platform, status, meta_id FROM campaigns
+    WHERE user_id = ${req.userId!} ORDER BY name
+  `;
+
+  const metrics = await sql`
+    SELECT c.name AS campaign_name, m.date, m.spend, m.leads, m.clicks, m.impressions, m.cpa, m.ctr, m.cpc, m.roas
+    FROM metrics m
+    JOIN campaigns c ON c.id = m.campaign_id
+    WHERE c.user_id = ${req.userId!}
+    ORDER BY m.date DESC
+    LIMIT 60
+  `;
+
+  const [totals] = await sql`
+    SELECT
+      COUNT(DISTINCT m.campaign_id) AS campaigns_with_data,
+      SUM(m.spend) AS total_spend,
+      SUM(m.leads) AS total_leads,
+      SUM(m.clicks) AS total_clicks,
+      MIN(m.date) AS oldest_date,
+      MAX(m.date) AS newest_date
+    FROM metrics m
+    JOIN campaigns c ON c.id = m.campaign_id
+    WHERE c.user_id = ${req.userId!}
+  `;
+
+  res.json({
+    success: true,
+    data: {
+      campaigns,
+      recent_metrics: metrics,
+      totals,
+    },
+  });
+});
+
 const LEAD_ACTION_TYPES = [
   'lead',
   'offsite_conversion.fb_pixel_lead',
