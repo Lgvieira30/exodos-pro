@@ -37,12 +37,19 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
 
   try {
     const { access_token, account_id } = integration;
-    const today = new Date().toISOString().split('T')[0];
 
-    const [campaignRes, adSetInfoRes, adSetInsightsRes, adInfoRes, adInsightsRes] = await Promise.all([
+    // Fetch daily campaign breakdown (last 30 days), adsets/ads aggregated (last 7 days)
+    const [campaignDailyRes, adSetInfoRes, adSetInsightsRes, adInfoRes, adInsightsRes] = await Promise.all([
       axios.get(`https://graph.facebook.com/v20.0/act_${account_id}/insights`, {
-        params: { fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values', date_preset: 'last_7d', level: 'campaign', access_token, limit: 100 },
-        timeout: 15000,
+        params: {
+          fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values',
+          date_preset: 'last_30d',
+          time_increment: 1,
+          level: 'campaign',
+          access_token,
+          limit: 1000,
+        },
+        timeout: 20000,
       }),
       axios.get(`https://graph.facebook.com/v20.0/act_${account_id}/adsets`, {
         params: { fields: 'id,name,campaign_id,status,daily_budget', access_token, limit: 500 },
@@ -62,25 +69,17 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       }),
     ]);
 
-    // ─── Campaigns ───
-    const campaignRows = campaignRes.data?.data || [];
-    let syncedCampaigns = 0;
-    const campaignIdMap: Record<string, string> = {}; // meta_id → local uuid
+    const campaignDailyRows = campaignDailyRes.data?.data || [];
+    const campaignIdMap: Record<string, string> = {};
 
-    for (const row of campaignRows) {
-      const { leads, conversions, revenue } = extractActions(row.actions || [], row.action_values || []);
-      const spend = parseFloat(row.spend || '0');
-      const clicks = parseInt(row.clicks || '0');
-      const impressions = parseInt(row.impressions || '0');
-      const cpc = parseFloat(row.cpc || '0');
-      const ctr = parseFloat(row.ctr || '0');
-      const leadsOrConv = leads || conversions;
-      const cpa = leadsOrConv > 0 ? spend / leadsOrConv : 0;
-      const roas = spend > 0 && revenue > 0 ? revenue / spend : 0;
+    // ─── Pass 1: Upsert unique campaigns ───
+    const seenMetaCampaigns = new Set<string>();
+    for (const row of campaignDailyRows) {
+      if (seenMetaCampaigns.has(row.campaign_id)) continue;
+      seenMetaCampaigns.add(row.campaign_id);
 
       const [existing] = await sql`
-        SELECT id FROM campaigns
-        WHERE user_id = ${req.userId!} AND meta_id = ${row.campaign_id}
+        SELECT id FROM campaigns WHERE user_id = ${req.userId!} AND meta_id = ${row.campaign_id}
       `;
 
       let campaignId: string;
@@ -89,8 +88,7 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
         await sql`UPDATE campaigns SET status = 'active', updated_at = NOW() WHERE id = ${campaignId}`;
       } else {
         const [byName] = await sql`
-          SELECT id FROM campaigns
-          WHERE user_id = ${req.userId!} AND name = ${row.campaign_name} AND platform = 'meta'
+          SELECT id FROM campaigns WHERE user_id = ${req.userId!} AND name = ${row.campaign_name} AND platform = 'meta'
         `;
         if (byName) {
           campaignId = byName.id;
@@ -104,30 +102,43 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
           campaignId = created.id;
         }
       }
-
       campaignIdMap[row.campaign_id] = campaignId;
+    }
+
+    // ─── Pass 2: Save daily metrics (one row per campaign per day) ───
+    let syncedMetrics = 0;
+    for (const row of campaignDailyRows) {
+      const campaignId = campaignIdMap[row.campaign_id];
+      if (!campaignId) continue;
+
+      const date = row.date_start; // YYYY-MM-DD — actual day from Meta
+      const { leads, conversions, revenue } = extractActions(row.actions || [], row.action_values || []);
+      const spend = parseFloat(row.spend || '0');
+      const clicks = parseInt(row.clicks || '0');
+      const impressions = parseInt(row.impressions || '0');
+      const cpc = parseFloat(row.cpc || '0');
+      const ctr = parseFloat(row.ctr || '0');
+      const leadsOrConv = leads || conversions;
+      const cpa = leadsOrConv > 0 ? spend / leadsOrConv : 0;
+      const roas = spend > 0 && revenue > 0 ? revenue / spend : 0;
 
       await sql`
         INSERT INTO metrics (campaign_id, date, spend, leads, conversions, impressions, clicks, cpc, cpa, ctr, roas)
-        VALUES (${campaignId}, ${today}, ${spend}, ${leads}, ${conversions}, ${impressions}, ${clicks}, ${cpc}, ${cpa}, ${ctr}, ${roas})
+        VALUES (${campaignId}, ${date}, ${spend}, ${leads}, ${conversions}, ${impressions}, ${clicks}, ${cpc}, ${cpa}, ${ctr}, ${roas})
         ON CONFLICT (campaign_id, date) DO UPDATE SET
           spend = EXCLUDED.spend, leads = EXCLUDED.leads, conversions = EXCLUDED.conversions,
           impressions = EXCLUDED.impressions, clicks = EXCLUDED.clicks,
           cpc = EXCLUDED.cpc, cpa = EXCLUDED.cpa, ctr = EXCLUDED.ctr, roas = EXCLUDED.roas
       `;
-      syncedCampaigns++;
+      syncedMetrics++;
     }
 
     // ─── Ad Sets ───
     const adSetInfoMap: Record<string, any> = {};
-    for (const as of (adSetInfoRes.data?.data || [])) {
-      adSetInfoMap[as.id] = as;
-    }
+    for (const as of (adSetInfoRes.data?.data || [])) adSetInfoMap[as.id] = as;
 
-    const adSetInsights = adSetInsightsRes.data?.data || [];
     let syncedAdSets = 0;
-
-    for (const row of adSetInsights) {
+    for (const row of (adSetInsightsRes.data?.data || [])) {
       const campaignId = campaignIdMap[row.campaign_id];
       if (!campaignId) continue;
 
@@ -158,14 +169,10 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
 
     // ─── Ads ───
     const adInfoMap: Record<string, any> = {};
-    for (const ad of (adInfoRes.data?.data || [])) {
-      adInfoMap[ad.id] = ad;
-    }
+    for (const ad of (adInfoRes.data?.data || [])) adInfoMap[ad.id] = ad;
 
-    const adInsights = adInsightsRes.data?.data || [];
     let syncedAds = 0;
-
-    for (const row of adInsights) {
+    for (const row of (adInsightsRes.data?.data || [])) {
       const campaignId = campaignIdMap[row.campaign_id];
       if (!campaignId) continue;
 
@@ -203,10 +210,11 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
     res.json({
       success: true,
       data: {
-        synced: syncedCampaigns,
+        synced: seenMetaCampaigns.size,
+        daily_metrics: syncedMetrics,
         ad_sets: syncedAdSets,
         ads: syncedAds,
-        message: `${syncedCampaigns} campanha(s), ${syncedAdSets} conjunto(s), ${syncedAds} anuncio(s) sincronizados.`,
+        message: `${seenMetaCampaigns.size} campanha(s) — ${syncedMetrics} registros diarios — ${syncedAdSets} conjunto(s) — ${syncedAds} anuncio(s) sincronizados.`,
       },
     });
   } catch (err: any) {

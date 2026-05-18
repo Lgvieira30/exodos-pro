@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -7,6 +7,7 @@ import { TrendingUp, TrendingDown, DollarSign, Users, Target, Zap, MousePointerC
 import { useNavigate } from 'react-router-dom';
 import { metricsApi, campaignsApi } from '../lib/api';
 import { Tooltip as MetricTooltip } from '../components/Tooltip';
+import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
 const CYAN = '#3DB8E8';
 
@@ -93,22 +94,24 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export default function Analytics() {
   const navigate = useNavigate();
+  const [range, setRange] = useState<DateRange>(defaultRange());
   const [summary, setSummary] = useState<Summary | null>(null);
   const [weekly, setWeekly] = useState<WeeklyPoint[]>(mockWeekly);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingMock, setUsingMock] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback((r: DateRange) => {
+    setLoading(true);
     Promise.all([
-      metricsApi.dashboard().catch(() => null),
+      metricsApi.dashboard(r.from, r.to).catch(() => null),
       campaignsApi.list().catch(() => null),
     ]).then(([metricsRes, campaignsRes]) => {
       if (metricsRes?.data?.summary) {
         setSummary(metricsRes.data.summary);
         if (metricsRes.data.weekly?.length > 0) {
           setWeekly(metricsRes.data.weekly.map((d: any) => ({
-            day: d.day,
+            day: d.label || d.day,
             spend: Number(d.spend) || 0,
             leads: Number(d.leads) || 0,
             cpa: Number(d.cpa) || 0,
@@ -129,6 +132,8 @@ export default function Analytics() {
       }
     }).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(range); }, [range]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#000' }}>
@@ -204,10 +209,15 @@ export default function Analytics() {
 
       {/* Header */}
       <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Analytics</h1>
-        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
-          Performance detalhada — gráficos, métricas e comparativos de campanhas.
-        </p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '8px' }}>
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Analytics</h1>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+              Performance detalhada — gráficos, métricas e comparativos de campanhas.
+            </p>
+          </div>
+          <DateRangePicker value={range} onChange={setRange} />
+        </div>
         {usingMock && (
           <div style={{ marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#f59e0b', padding: '5px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
             Dados de demonstração — sincronize o Meta Ads para ver seus números reais.

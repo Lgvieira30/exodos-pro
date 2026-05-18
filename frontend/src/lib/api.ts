@@ -41,8 +41,10 @@ export const campaignsApi = {
 };
 
 export const metricsApi = {
-  dashboard: () => api.get('/metrics/dashboard').then((r) => r.data),
-  campaign: (id: string) => api.get(`/metrics/${id}`).then((r) => r.data),
+  dashboard: (from?: string, to?: string) =>
+    api.get('/metrics/dashboard', { params: { from, to } }).then((r) => r.data),
+  campaign: (id: string, from?: string, to?: string) =>
+    api.get(`/metrics/${id}`, { params: { from, to } }).then((r) => r.data),
 };
 
 export const syncApi = {
@@ -52,8 +54,12 @@ export const syncApi = {
 };
 
 export const analyzeApi = {
-  dashboard: () => api.get('/analyze/dashboard').then((r) => r.data),
-  campaign: (id: string) => api.get(`/analyze/${id}`).then((r) => r.data),
+  dashboard: (from?: string, to?: string) =>
+    api.get('/analyze/dashboard', { params: { from, to } }).then((r) => r.data),
+  campaign: (id: string, from?: string, to?: string) =>
+    api.get(`/analyze/${id}`, { params: { from, to } }).then((r) => r.data),
+  deep: (campaignId: string, from?: string, to?: string) =>
+    api.get(`/analyze/deep/${campaignId}`, { params: { from, to } }).then((r) => r.data),
   paused: () => api.get('/analyze/paused').then((r) => r.data),
 };
 
