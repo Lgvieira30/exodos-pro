@@ -99,10 +99,11 @@ export default function Analytics() {
   const [weekly, setWeekly] = useState<WeeklyPoint[]>(mockWeekly);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [usingMock, setUsingMock] = useState(false);
 
-  const load = useCallback((r: DateRange) => {
-    setLoading(true);
+  const load = useCallback((r: DateRange, initial = false) => {
+    if (initial) setLoading(true); else setFetching(true);
     Promise.all([
       metricsApi.dashboard(r.from, r.to).catch(() => null),
       campaignsApi.list().catch(() => null),
@@ -110,6 +111,7 @@ export default function Analytics() {
       if (metricsRes?.data?.summary) {
         setSummary(metricsRes.data.summary);
         if (metricsRes.data.weekly?.length > 0) {
+          setUsingMock(false);
           setWeekly(metricsRes.data.weekly.map((d: any) => ({
             day: d.label || d.day,
             spend: Number(d.spend) || 0,
@@ -127,13 +129,15 @@ export default function Analytics() {
         setSummary({ spend: 8250, leads: 423, cpa: 47, roas: 3.4, ctr: 1.6, cpc: 3.5, campaigns: 4 });
         setUsingMock(true);
       }
-      if (campaignsRes?.data?.campaigns) {
-        setCampaigns(campaignsRes.data.campaigns);
-      }
-    }).finally(() => setLoading(false));
-  }, []);
+      if (campaignsRes?.data?.campaigns) setCampaigns(campaignsRes.data.campaigns);
+    }).finally(() => { setLoading(false); setFetching(false); });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { load(range); }, [range]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isFirstMount = React.useRef(true);
+  useEffect(() => {
+    if (isFirstMount.current) { isFirstMount.current = false; load(range, true); }
+    else load(range, false);
+  }, [range]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#000' }}>
