@@ -26,6 +26,12 @@ interface AdSet {
   ctr: number; cpc: number; cpa: number; roas: number; daily_budget: number;
   score: number; action: AdSetAction;
 }
+interface Ad {
+  id: string; meta_id: string; name: string; status: string; ad_set_name: string;
+  spend: number; impressions: number; clicks: number; leads: number;
+  ctr: number; cpc: number; cpa: number; roas: number;
+  score: number; action: AdSetAction;
+}
 interface DeepData {
   campaign: { id: string; name: string; platform: string };
   period: { from: string; to: string; days: number };
@@ -33,6 +39,7 @@ interface DeepData {
   funnel: { impressions: number; ctr: number; clicks: number; clickToLeadRate: number; leads: number; conversions: number; revenueEst: number };
   daily: { date: string; label: string; spend: number; leads: number; ctr: number; cpa: number }[];
   adSets: AdSet[];
+  ads: Ad[];
   analysis: { score: number; status: string; issues: string[]; actions: { priority: string; acao: string; motivo: string }[] };
   projection: { daysRemaining: number; projectedTotalSpend: number; projectedTotalLeads: number; projectedCpa: number };
 }
@@ -287,6 +294,11 @@ export default function Professor() {
   // Pausadas
   const [pausedCampaigns, setPausedCampaigns] = useState<any[]>([]);
 
+  // Expanded campaign detail (ad sets + ads) in Resumo tab
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
+  const [campaignDeepCache, setCampaignDeepCache] = useState<Record<string, DeepData>>({});
+  const [loadingDeepId, setLoadingDeepId] = useState<string | null>(null);
+
   // Load campaigns list once
   useEffect(() => {
     campaignsApi.list().then((res) => {
@@ -332,6 +344,25 @@ export default function Professor() {
       setSummaryLoading(false);
     }
   }, []);
+
+  // Load deep data for a campaign card in Resumo tab (with cache)
+  const loadCampaignDeepForCard = useCallback(async (campaignId: string) => {
+    if (campaignDeepCache[campaignId]) {
+      setExpandedCampaignId(prev => prev === campaignId ? null : campaignId);
+      return;
+    }
+    if (expandedCampaignId === campaignId) { setExpandedCampaignId(null); return; }
+    setLoadingDeepId(campaignId);
+    try {
+      const res = await analyzeApi.deep(campaignId, range.from, range.to);
+      if (res?.data) {
+        setCampaignDeepCache(prev => ({ ...prev, [campaignId]: res.data }));
+        setExpandedCampaignId(campaignId);
+      }
+    } catch { /* silently ignore */ } finally {
+      setLoadingDeepId(null);
+    }
+  }, [campaignDeepCache, expandedCampaignId, range]);
 
   // Deep campaign analysis
   const doLoadDeep = useCallback(async (campaignId: string, r: DateRange) => {
@@ -875,6 +906,108 @@ export default function Professor() {
                               <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{c.top_action.motivo}</p>
                             </div>
                           )}
+
+                          {/* Expand button */}
+                          <button
+                            onClick={() => loadCampaignDeepForCard(c.id)}
+                            style={{ marginTop: '10px', width: '100%', padding: '8px', borderRadius: '8px', border: `1px solid rgba(255,255,255,0.08)`, background: expandedCampaignId === c.id ? 'rgba(61,184,232,0.08)' : 'rgba(255,255,255,0.03)', color: expandedCampaignId === c.id ? CYAN : 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          >
+                            {loadingDeepId === c.id ? '⟳ Carregando...' : expandedCampaignId === c.id ? '▲ Ocultar conjuntos e anúncios' : '▼ Ver conjuntos e anúncios'}
+                          </button>
+
+                          {/* Expanded: ad sets + ads */}
+                          {expandedCampaignId === c.id && campaignDeepCache[c.id] && (() => {
+                            const deep = campaignDeepCache[c.id];
+                            return (
+                              <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px' }}>
+                                {/* Ad Sets */}
+                                {deep.adSets.length > 0 && (
+                                  <div style={{ marginBottom: '12px' }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '8px', letterSpacing: '0.05em' }}>CONJUNTOS DE ANÚNCIOS ({deep.adSets.length})</p>
+                                    {deep.adSets.map((as) => {
+                                      const asColor = as.score >= 75 ? '#10b981' : as.score >= 50 ? '#f59e0b' : '#ef4444';
+                                      const isActive = as.status === 'active';
+                                      const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
+                                      return (
+                                        <div key={as.id} style={{ padding: '10px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: `1px solid ${asColor}20`, marginBottom: '6px' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <p style={{ fontSize: '12px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {as.name}</p>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '8px' }}>
+                                              <span style={{ fontSize: '10px', fontWeight: 700, color: as.action.color, background: as.action.bg, padding: '2px 7px', borderRadius: '8px' }}>{as.action.label}</span>
+                                              <span style={{ fontSize: '13px', fontWeight: 800, color: asColor }}>{as.score}</span>
+                                            </div>
+                                          </div>
+                                          {isActive && (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+                                              {[
+                                                { lbl: 'CPL', val: as.cpa > 0 ? `R$${as.cpa.toFixed(0)}` : '—', color: as.cpa <= 60 ? '#10b981' : as.cpa <= 150 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'CTR', val: as.ctr > 0 ? `${as.ctr.toFixed(1)}%` : '—', color: as.ctr >= 2.5 ? '#10b981' : as.ctr >= 1 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'Leads', val: String(as.leads), color: '#fff' },
+                                                { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                              ].map(({ lbl, val, color }) => (
+                                                <div key={lbl} style={{ textAlign: 'center', padding: '4px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
+                                                  <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>{lbl}</p>
+                                                  <p style={{ fontSize: '12px', fontWeight: 700, color }}>{val}</p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Individual Ads */}
+                                {deep.ads && deep.ads.length > 0 && (
+                                  <div>
+                                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '8px', letterSpacing: '0.05em' }}>ANÚNCIOS INDIVIDUAIS ({deep.ads.length})</p>
+                                    {deep.ads.map((ad) => {
+                                      const adColor = ad.score >= 75 ? '#10b981' : ad.score >= 50 ? '#f59e0b' : '#ef4444';
+                                      const isActive = ad.status === 'active';
+                                      const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
+                                      return (
+                                        <div key={ad.id} style={{ padding: '9px 12px', borderRadius: '9px', background: 'rgba(255,255,255,0.015)', border: `1px solid rgba(255,255,255,0.05)`, marginBottom: '5px' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <p style={{ fontSize: '11px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {ad.name}</p>
+                                              <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginTop: '1px' }}>Conjunto: {ad.ad_set_name}</p>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                              <span style={{ fontSize: '10px', fontWeight: 700, color: ad.action.color, background: ad.action.bg, padding: '1px 6px', borderRadius: '6px' }}>{ad.action.label}</span>
+                                              <span style={{ fontSize: '12px', fontWeight: 800, color: adColor }}>{ad.score}</span>
+                                            </div>
+                                          </div>
+                                          {isActive && (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginTop: '6px' }}>
+                                              {[
+                                                { lbl: 'CPL', val: ad.cpa > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#10b981' : Number(ad.cpa) <= 150 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'CTR', val: ad.ctr > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#10b981' : Number(ad.ctr) >= 1 ? '#f59e0b' : '#ef4444' },
+                                                { lbl: 'CPC', val: ad.cpc > 0 ? `R$${Number(ad.cpc).toFixed(2)}` : '—', color: 'rgba(255,255,255,0.6)' },
+                                                { lbl: 'Leads', val: String(ad.leads), color: '#10b981' },
+                                                { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                              ].map(({ lbl, val, color }) => (
+                                                <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: 'rgba(255,255,255,0.025)' }}>
+                                                  <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>{lbl}</p>
+                                                  <p style={{ fontSize: '11px', fontWeight: 700, color }}>{val}</p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {deep.adSets.length === 0 && (!deep.ads || deep.ads.length === 0) && (
+                                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '12px' }}>Nenhum conjunto/anúncio sincronizado ainda.</p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       );
                     })}

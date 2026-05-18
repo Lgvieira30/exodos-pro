@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Users, Target, Zap, MousePointerClick, Eye, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { metricsApi, campaignsApi } from '../lib/api';
+import { metricsApi, campaignsApi, analyzeApi } from '../lib/api';
 import { Tooltip as MetricTooltip } from '../components/Tooltip';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
@@ -153,6 +153,9 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [noData, setNoData] = useState(false);
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
+  const [campaignDeepCache, setCampaignDeepCache] = useState<Record<string, any>>({});
+  const [loadingDeepId, setLoadingDeepId] = useState<string | null>(null);
 
   const load = useCallback((r: DateRange, initial = false) => {
     if (initial) setLoading(true); else setFetching(true);
@@ -186,6 +189,22 @@ export default function Analytics() {
       if (campaignsRes?.data?.campaigns) setCampaigns(campaignsRes.data.campaigns);
     }).finally(() => { setLoading(false); setFetching(false); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadCampaignDeep = useCallback(async (campaignId: string) => {
+    if (campaignDeepCache[campaignId]) {
+      setExpandedCampaignId(prev => prev === campaignId ? null : campaignId);
+      return;
+    }
+    if (expandedCampaignId === campaignId) { setExpandedCampaignId(null); return; }
+    setLoadingDeepId(campaignId);
+    try {
+      const res = await analyzeApi.deep(campaignId, range.from, range.to);
+      if (res?.data) {
+        setCampaignDeepCache(prev => ({ ...prev, [campaignId]: res.data }));
+        setExpandedCampaignId(campaignId);
+      }
+    } catch { /* ignore */ } finally { setLoadingDeepId(null); }
+  }, [campaignDeepCache, expandedCampaignId, range]);
 
   const isFirstMount = React.useRef(true);
   useEffect(() => {
@@ -530,6 +549,101 @@ export default function Analytics() {
                       }
                     </p>
                   </div>
+
+                  <button
+                    onClick={() => loadCampaignDeep(c.id)}
+                    style={{ marginTop: '10px', width: '100%', padding: '7px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.08)', background: expandedCampaignId === c.id ? 'rgba(61,184,232,0.08)' : 'rgba(255,255,255,0.03)', color: expandedCampaignId === c.id ? CYAN : 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    {loadingDeepId === c.id ? '⟳ Carregando...' : expandedCampaignId === c.id ? '▲ Ocultar detalhes' : '▼ Conjuntos e anúncios'}
+                  </button>
+
+                  {expandedCampaignId === c.id && campaignDeepCache[c.id] && (() => {
+                    const deep = campaignDeepCache[c.id];
+                    return (
+                      <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
+                        {deep.adSets?.length > 0 && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <p style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', marginBottom: '6px' }}>CONJUNTOS ({deep.adSets.length})</p>
+                            {deep.adSets.map((as: any) => {
+                              const asColor = as.score >= 75 ? '#10b981' : as.score >= 50 ? '#f59e0b' : '#ef4444';
+                              const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
+                              const isActive = as.status === 'active';
+                              return (
+                                <div key={as.id} style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: `1px solid ${asColor}18`, marginBottom: '4px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isActive ? '5px' : 0 }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.35)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '6px' }}>{statusDot} {as.name}</p>
+                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                                      <span style={{ fontSize: '9px', fontWeight: 700, color: as.action?.color, background: as.action?.bg, padding: '1px 6px', borderRadius: '6px' }}>{as.action?.label}</span>
+                                      <span style={{ fontSize: '12px', fontWeight: 800, color: asColor }}>{as.score}</span>
+                                    </div>
+                                  </div>
+                                  {isActive && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
+                                      {[
+                                        { lbl: 'CPL', val: Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—', color: Number(as.cpa) <= 60 ? '#10b981' : Number(as.cpa) <= 150 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'CTR', val: Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—', color: Number(as.ctr) >= 2.5 ? '#10b981' : Number(as.ctr) >= 1 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'Leads', val: String(as.leads), color: '#fff' },
+                                        { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                      ].map(({ lbl, val, color }) => (
+                                        <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: 'rgba(255,255,255,0.03)' }}>
+                                          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>{lbl}</p>
+                                          <p style={{ fontSize: '10px', fontWeight: 700, color }}>{val}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {deep.ads?.length > 0 && (
+                          <div>
+                            <p style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', marginBottom: '6px' }}>ANÚNCIOS ({deep.ads.length})</p>
+                            {deep.ads.map((ad: any) => {
+                              const adColor = ad.score >= 75 ? '#10b981' : ad.score >= 50 ? '#f59e0b' : '#ef4444';
+                              const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
+                              const isActive = ad.status === 'active';
+                              return (
+                                <div key={ad.id} style={{ padding: '7px 9px', borderRadius: '7px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '3px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <p style={{ fontSize: '10px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {ad.name}</p>
+                                      <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>{ad.ad_set_name}</p>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                                      <span style={{ fontSize: '9px', fontWeight: 700, color: ad.action?.color, background: ad.action?.bg, padding: '1px 5px', borderRadius: '5px' }}>{ad.action?.label}</span>
+                                      <span style={{ fontSize: '11px', fontWeight: 800, color: adColor }}>{ad.score}</span>
+                                    </div>
+                                  </div>
+                                  {isActive && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px', marginTop: '4px' }}>
+                                      {[
+                                        { lbl: 'CPL', val: Number(ad.cpa) > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#10b981' : Number(ad.cpa) <= 150 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'CTR', val: Number(ad.ctr) > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#10b981' : Number(ad.ctr) >= 1 ? '#f59e0b' : '#ef4444' },
+                                        { lbl: 'Leads', val: String(ad.leads), color: '#10b981' },
+                                        { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#fff' },
+                                      ].map(({ lbl, val, color }) => (
+                                        <div key={lbl} style={{ textAlign: 'center', padding: '2px', borderRadius: '4px', background: 'rgba(255,255,255,0.025)' }}>
+                                          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.25)', marginBottom: '1px' }}>{lbl}</p>
+                                          <p style={{ fontSize: '10px', fontWeight: 700, color }}>{val}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {(!deep.adSets?.length && !deep.ads?.length) && (
+                          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', textAlign: 'center', padding: '8px' }}>Nenhum conjunto/anúncio sincronizado.</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

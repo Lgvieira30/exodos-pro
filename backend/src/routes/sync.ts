@@ -282,6 +282,15 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       syncedAdSets++;
     }
 
+    // Update status for ALL known ad sets — even those without recent spend
+    for (const [metaId, info] of Object.entries(adSetInfoMap)) {
+      const status = (info as any).status?.toLowerCase() || 'unknown';
+      await sql`
+        UPDATE ad_sets SET status = ${status}, updated_at = NOW()
+        WHERE meta_id = ${metaId} AND user_id = ${req.userId!}
+      `;
+    }
+
     // ─── Ads ───
     const adInfoMap: Record<string, any> = {};
     for (const ad of adInfoRows) adInfoMap[ad.id] = ad;
@@ -315,6 +324,15 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
           cpc = EXCLUDED.cpc, cpa = EXCLUDED.cpa, roas = EXCLUDED.roas, updated_at = NOW()
       `;
       syncedAds++;
+    }
+
+    // Update status for ALL known ads — even those without recent spend
+    for (const [metaId, info] of Object.entries(adInfoMap)) {
+      const status = (info as any).status?.toLowerCase() || 'unknown';
+      await sql`
+        UPDATE ads SET status = ${status}, updated_at = NOW()
+        WHERE meta_id = ${metaId} AND user_id = ${req.userId!}
+      `;
     }
 
     await sql`
