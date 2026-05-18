@@ -113,12 +113,15 @@ analyzeRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
 
   const [summary] = await sql`
     SELECT
-      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0) AS avg_cpa,
-      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0) AS avg_ctr,
-      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
-      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0) AS avg_cpc,
       COALESCE(SUM(m.spend), 0)  AS total_spend,
-      COALESCE(SUM(m.leads), 0)  AS total_leads
+      COALESCE(SUM(m.leads), 0)  AS total_leads,
+      COALESCE(SUM(m.clicks), 0) AS total_clicks,
+      COALESCE(SUM(m.impressions), 0) AS total_impressions,
+      CASE WHEN SUM(m.leads) > 0 THEN SUM(m.spend) / SUM(m.leads) ELSE 0 END AS avg_cpa,
+      CASE WHEN SUM(m.impressions) > 0 THEN (SUM(m.clicks)::float / SUM(m.impressions)) * 100 ELSE 0 END AS avg_ctr,
+      CASE WHEN SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) > 0
+        THEN SUM(m.spend * m.roas) / SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) ELSE 0 END AS avg_roas,
+      CASE WHEN SUM(m.clicks) > 0 THEN SUM(m.spend) / SUM(m.clicks) ELSE 0 END AS avg_cpc
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!} AND c.status IN ('active', 'paused')
@@ -137,12 +140,15 @@ analyzeRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
 analyzeRouter.get('/paused', async (req: AuthRequest, res: Response) => {
   const rows = await sql`
     SELECT c.id, c.name, c.platform, c.updated_at AS paused_at,
-      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0) AS avg_cpa,
-      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0) AS avg_ctr,
-      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
-      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0) AS avg_cpc,
       COALESCE(SUM(m.spend), 0) AS total_spend,
-      COALESCE(SUM(m.leads), 0) AS total_leads
+      COALESCE(SUM(m.leads), 0) AS total_leads,
+      COALESCE(SUM(m.clicks), 0) AS total_clicks,
+      COALESCE(SUM(m.impressions), 0) AS total_impressions,
+      CASE WHEN SUM(m.leads) > 0 THEN SUM(m.spend) / SUM(m.leads) ELSE 0 END AS avg_cpa,
+      CASE WHEN SUM(m.impressions) > 0 THEN (SUM(m.clicks)::float / SUM(m.impressions)) * 100 ELSE 0 END AS avg_ctr,
+      CASE WHEN SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) > 0
+        THEN SUM(m.spend * m.roas) / SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) ELSE 0 END AS avg_roas,
+      CASE WHEN SUM(m.clicks) > 0 THEN SUM(m.spend) / SUM(m.clicks) ELSE 0 END AS avg_cpc
     FROM campaigns c
     LEFT JOIN metrics m ON m.campaign_id = c.id
     WHERE c.user_id = ${req.userId!} AND c.status = 'paused'
@@ -199,15 +205,16 @@ analyzeRouter.get('/summary', async (req: AuthRequest, res: Response) => {
 
   const [cur] = await sql`
     SELECT
-      COALESCE(SUM(m.spend), 0)                             AS total_spend,
-      COALESCE(SUM(m.leads), 0)                             AS total_leads,
-      COALESCE(SUM(m.clicks), 0)                            AS total_clicks,
-      COALESCE(SUM(m.impressions), 0)                       AS total_impressions,
-      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)   AS avg_cpa,
-      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)   AS avg_roas,
-      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0)   AS avg_ctr,
-      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0)   AS avg_cpc,
-      COUNT(DISTINCT m.campaign_id)                          AS active_campaigns
+      COALESCE(SUM(m.spend), 0)       AS total_spend,
+      COALESCE(SUM(m.leads), 0)       AS total_leads,
+      COALESCE(SUM(m.clicks), 0)      AS total_clicks,
+      COALESCE(SUM(m.impressions), 0) AS total_impressions,
+      CASE WHEN SUM(m.leads) > 0 THEN SUM(m.spend) / SUM(m.leads) ELSE 0 END AS avg_cpa,
+      CASE WHEN SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) > 0
+        THEN SUM(m.spend * m.roas) / SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) ELSE 0 END AS avg_roas,
+      CASE WHEN SUM(m.impressions) > 0 THEN (SUM(m.clicks)::float / SUM(m.impressions)) * 100 ELSE 0 END AS avg_ctr,
+      CASE WHEN SUM(m.clicks) > 0 THEN SUM(m.spend) / SUM(m.clicks) ELSE 0 END AS avg_cpc,
+      COUNT(DISTINCT m.campaign_id)   AS active_campaigns
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!}
@@ -216,10 +223,11 @@ analyzeRouter.get('/summary', async (req: AuthRequest, res: Response) => {
 
   const [prev] = await sql`
     SELECT
-      COALESCE(SUM(m.spend), 0)                             AS total_spend,
-      COALESCE(SUM(m.leads), 0)                             AS total_leads,
-      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)   AS avg_cpa,
-      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)   AS avg_roas
+      COALESCE(SUM(m.spend), 0) AS total_spend,
+      COALESCE(SUM(m.leads), 0) AS total_leads,
+      CASE WHEN SUM(m.leads) > 0 THEN SUM(m.spend) / SUM(m.leads) ELSE 0 END AS avg_cpa,
+      CASE WHEN SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) > 0
+        THEN SUM(m.spend * m.roas) / SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) ELSE 0 END AS avg_roas
     FROM metrics m
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!}
@@ -229,12 +237,15 @@ analyzeRouter.get('/summary', async (req: AuthRequest, res: Response) => {
   const campaignRows = await sql`
     SELECT
       c.id, c.name, c.platform, c.status,
-      COALESCE(SUM(m.spend), 0)                             AS total_spend,
-      COALESCE(SUM(m.leads), 0)                             AS total_leads,
-      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)   AS avg_cpa,
-      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)   AS avg_roas,
-      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0)   AS avg_ctr,
-      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0)   AS avg_cpc
+      COALESCE(SUM(m.spend), 0)       AS total_spend,
+      COALESCE(SUM(m.leads), 0)       AS total_leads,
+      COALESCE(SUM(m.clicks), 0)      AS total_clicks,
+      COALESCE(SUM(m.impressions), 0) AS total_impressions,
+      CASE WHEN SUM(m.leads) > 0 THEN SUM(m.spend) / SUM(m.leads) ELSE 0 END AS avg_cpa,
+      CASE WHEN SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) > 0
+        THEN SUM(m.spend * m.roas) / SUM(CASE WHEN m.roas > 0 THEN m.spend ELSE 0 END) ELSE 0 END AS avg_roas,
+      CASE WHEN SUM(m.impressions) > 0 THEN (SUM(m.clicks)::float / SUM(m.impressions)) * 100 ELSE 0 END AS avg_ctr,
+      CASE WHEN SUM(m.clicks) > 0 THEN SUM(m.spend) / SUM(m.clicks) ELSE 0 END AS avg_cpc
     FROM campaigns c
     LEFT JOIN metrics m ON m.campaign_id = c.id
       AND m.date >= ${from} AND m.date <= ${to}
