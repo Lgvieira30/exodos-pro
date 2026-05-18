@@ -134,9 +134,11 @@ function AdSetRow({ adSet }: { adSet: AdSet }) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <MetricBadge label="Impressões" value={adSet.impressions > 0 ? adSet.impressions.toLocaleString('pt-BR') : '—'} />
           <MetricBadge label="CTR" value={adSet.ctr > 0 ? `${adSet.ctr.toFixed(1)}%` : '—'} diag={ctrDiag} />
           <MetricBadge label="CPC" value={adSet.cpc > 0 ? `R$${adSet.cpc.toFixed(2)}` : '—'} />
           <MetricBadge label="CPA" value={adSet.cpa > 0 ? `R$${adSet.cpa.toFixed(0)}` : '—'} diag={cpaDiag} />
+          <MetricBadge label="ROAS" value={adSet.roas > 0 ? `${adSet.roas.toFixed(1)}x` : '—'} />
           <MetricBadge label="Leads" value={String(adSet.leads || 0)} />
           <MetricBadge label="Gasto" value={adSet.spend > 0 ? `R$${adSet.spend.toFixed(0)}` : '—'} />
           {worstDiag && (

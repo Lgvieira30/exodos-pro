@@ -13,8 +13,12 @@ campaignsRouter.get('/', async (req: AuthRequest, res: Response) => {
     SELECT c.*,
       COALESCE(SUM(m.spend), 0) AS total_spend,
       COALESCE(SUM(m.leads), 0) AS total_leads,
+      COALESCE(SUM(m.clicks), 0) AS total_clicks,
+      COALESCE(SUM(m.impressions), 0) AS total_impressions,
       COALESCE(AVG(m.cpa) FILTER (WHERE m.cpa > 0), 0) AS avg_cpa,
-      COALESCE(AVG(m.ctr) FILTER (WHERE m.ctr > 0), 0) AS avg_ctr
+      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0) AS avg_roas,
+      COALESCE(AVG(m.ctr) FILTER (WHERE m.ctr > 0), 0) AS avg_ctr,
+      COALESCE(AVG(m.cpc) FILTER (WHERE m.cpc > 0), 0) AS avg_cpc
     FROM campaigns c
     LEFT JOIN metrics m ON m.campaign_id = c.id
     WHERE c.user_id = ${req.userId!}

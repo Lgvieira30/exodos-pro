@@ -9,7 +9,8 @@ const CYAN = '#3DB8E8';
 interface Campaign {
   id: string; name: string; platform: string;
   status: 'active' | 'paused' | 'completed' | 'draft';
-  avg_cpa: number; total_spend: number; total_leads: number;
+  avg_cpa: number; avg_ctr: number; avg_roas: number;
+  total_spend: number; total_leads: number;
 }
 
 interface Analysis {
@@ -252,7 +253,13 @@ export default function Dashboard() {
                 {campaigns.map((c) => {
                   const badge = STATUS_BADGE[c.status];
                   return (
-                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div
+                      key={c.id}
+                      onClick={() => navigate('/campanhas')}
+                      style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.15s' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', marginBottom: '3px' }}>{c.name}</p>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -260,11 +267,25 @@ export default function Dashboard() {
                           <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>{PLATFORM_LABEL[c.platform] || c.platform}</span>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right', marginLeft: '16px' }}>
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>R$ {Number(c.total_spend).toLocaleString('pt-BR')}</p>
-                        <p style={{ fontSize: '11px', color: c.avg_cpa > 60 ? '#ef4444' : c.avg_cpa > 0 ? '#10b981' : 'rgba(255,255,255,0.3)' }}>
-                          {c.avg_cpa > 0 ? `CPA R$ ${Number(c.avg_cpa).toFixed(0)}` : 'Sem metricas'}
-                        </p>
+                      <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginLeft: '16px' }}>
+                        {c.avg_ctr > 0 && (
+                          <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>CTR</p>
+                            <p style={{ fontSize: '12px', fontWeight: 600, color: c.avg_ctr >= 1.5 ? '#10b981' : c.avg_ctr >= 1 ? '#f59e0b' : '#ef4444' }}>{Number(c.avg_ctr).toFixed(1)}%</p>
+                          </div>
+                        )}
+                        {c.avg_roas > 0 && (
+                          <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>ROAS</p>
+                            <p style={{ fontSize: '12px', fontWeight: 600, color: c.avg_roas >= 3 ? '#10b981' : c.avg_roas >= 2 ? '#f59e0b' : '#ef4444' }}>{Number(c.avg_roas).toFixed(1)}x</p>
+                          </div>
+                        )}
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>R$ {Number(c.total_spend).toLocaleString('pt-BR')}</p>
+                          <p style={{ fontSize: '11px', color: c.avg_cpa > 60 ? '#ef4444' : c.avg_cpa > 0 ? '#10b981' : 'rgba(255,255,255,0.3)' }}>
+                            {c.avg_cpa > 0 ? `CPA R$ ${Number(c.avg_cpa).toFixed(0)}` : 'Sem metricas'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
