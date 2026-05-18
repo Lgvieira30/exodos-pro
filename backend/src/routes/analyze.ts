@@ -183,6 +183,131 @@ analyzeRouter.get('/paused', async (req: AuthRequest, res: Response) => {
   res.json({ success: true, data: { paused } });
 });
 
+// GET /api/analyze/summary?from=&to=  — resumo executivo com comparativo de período
+analyzeRouter.get('/summary', async (req: AuthRequest, res: Response) => {
+  const { from, to } = getDateRange(req, 30);
+
+  const fromDate = new Date(from);
+  const toDate = new Date(to);
+  const periodDays = Math.round((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
+  const prevToDate = new Date(fromDate);
+  prevToDate.setDate(prevToDate.getDate() - 1);
+  const prevFromDate = new Date(prevToDate);
+  prevFromDate.setDate(prevFromDate.getDate() - periodDays + 1);
+  const prevFrom = prevFromDate.toISOString().split('T')[0];
+  const prevTo = prevToDate.toISOString().split('T')[0];
+
+  const [cur] = await sql`
+    SELECT
+      COALESCE(SUM(m.spend), 0)                             AS total_spend,
+      COALESCE(SUM(m.leads), 0)                             AS total_leads,
+      COALESCE(SUM(m.clicks), 0)                            AS total_clicks,
+      COALESCE(SUM(m.impressions), 0)                       AS total_impressions,
+      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)   AS avg_cpa,
+      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)   AS avg_roas,
+      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0)   AS avg_ctr,
+      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0)   AS avg_cpc,
+      COUNT(DISTINCT m.campaign_id)                          AS active_campaigns
+    FROM metrics m
+    JOIN campaigns c ON c.id = m.campaign_id
+    WHERE c.user_id = ${req.userId!}
+      AND m.date >= ${from} AND m.date <= ${to}
+  `;
+
+  const [prev] = await sql`
+    SELECT
+      COALESCE(SUM(m.spend), 0)                             AS total_spend,
+      COALESCE(SUM(m.leads), 0)                             AS total_leads,
+      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)   AS avg_cpa,
+      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)   AS avg_roas
+    FROM metrics m
+    JOIN campaigns c ON c.id = m.campaign_id
+    WHERE c.user_id = ${req.userId!}
+      AND m.date >= ${prevFrom} AND m.date <= ${prevTo}
+  `;
+
+  const campaignRows = await sql`
+    SELECT
+      c.id, c.name, c.platform, c.status,
+      COALESCE(SUM(m.spend), 0)                             AS total_spend,
+      COALESCE(SUM(m.leads), 0)                             AS total_leads,
+      COALESCE(AVG(m.cpa)  FILTER (WHERE m.cpa  > 0), 0)   AS avg_cpa,
+      COALESCE(AVG(m.roas) FILTER (WHERE m.roas > 0), 0)   AS avg_roas,
+      COALESCE(AVG(m.ctr)  FILTER (WHERE m.ctr  > 0), 0)   AS avg_ctr,
+      COALESCE(AVG(m.cpc)  FILTER (WHERE m.cpc  > 0), 0)   AS avg_cpc
+    FROM campaigns c
+    LEFT JOIN metrics m ON m.campaign_id = c.id
+      AND m.date >= ${from} AND m.date <= ${to}
+    WHERE c.user_id = ${req.userId!}
+    GROUP BY c.id
+    HAVING COALESCE(SUM(m.spend), 0) > 0
+    ORDER BY COALESCE(SUM(m.spend), 0) DESC
+  `;
+
+  const campaignResults = campaignRows.map((c: any) => {
+    const { score, actions } = diagnose(
+      Number(c.avg_cpa), Number(c.avg_ctr), Number(c.avg_roas),
+      Number(c.avg_cpc), Number(c.total_spend), Number(c.total_leads)
+    );
+    return {
+      id: c.id, name: c.name, platform: c.platform, status: c.status, score,
+      total_spend: Number(c.total_spend), total_leads: Number(c.total_leads),
+      avg_cpa: Number(c.avg_cpa), avg_roas: Number(c.avg_roas),
+      avg_ctr: Number(c.avg_ctr), avg_cpc: Number(c.avg_cpc),
+      top_action: actions[0] || null,
+    };
+  });
+
+  const topActions: any[] = [];
+  const prioMap: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
+  for (const c of campaignResults) {
+    if (c.top_action) topActions.push({ ...c.top_action, campaign_name: c.name, campaign_id: c.id, score: c.score });
+  }
+  topActions.sort((a, b) => (prioMap[a.priority] ?? 1) - (prioMap[b.priority] ?? 1));
+
+  const today = new Date();
+  const daysRemaining = Math.max(0, new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate());
+  const dailySpend = Number(cur.total_spend) / Math.max(1, periodDays);
+  const dailyLeads = Number(cur.total_leads) / Math.max(1, periodDays);
+  const overallScore = campaignResults.length > 0
+    ? Math.round(campaignResults.reduce((s: number, c: any) => s + c.score, 0) / campaignResults.length) : 0;
+
+  function pct(a: number, b: number): number | null { return b > 0 ? Math.round(((a - b) / b) * 100) : null; }
+
+  res.json({
+    success: true,
+    data: {
+      period: { from, to, days: periodDays, prev_from: prevFrom, prev_to: prevTo },
+      overview: {
+        health_score: overallScore,
+        total_spend: Number(cur.total_spend),
+        total_leads: Number(cur.total_leads),
+        total_clicks: Number(cur.total_clicks),
+        total_impressions: Number(cur.total_impressions),
+        avg_cpa: Number(cur.avg_cpa),
+        avg_roas: Number(cur.avg_roas),
+        avg_ctr: Number(cur.avg_ctr),
+        avg_cpc: Number(cur.avg_cpc),
+        active_campaigns: Number(cur.active_campaigns),
+      },
+      comparison: {
+        spend_change: pct(Number(cur.total_spend), Number(prev.total_spend)),
+        leads_change: pct(Number(cur.total_leads), Number(prev.total_leads)),
+        cpa_change: pct(Number(cur.avg_cpa), Number(prev.avg_cpa)),
+        roas_change: pct(Number(cur.avg_roas), Number(prev.avg_roas)),
+      },
+      campaigns: campaignResults,
+      top_actions: topActions.slice(0, 5),
+      projection: {
+        days_remaining: daysRemaining,
+        projected_spend: Math.round(Number(cur.total_spend) + dailySpend * daysRemaining),
+        projected_leads: Math.round(Number(cur.total_leads) + dailyLeads * daysRemaining),
+        projected_cpa: dailyLeads > 0 ? Math.round(dailySpend / dailyLeads) : 0,
+      },
+    },
+  });
+});
+
 // GET /api/analyze/deep/:campaignId?from=&to=  — análise cirúrgica por campanha
 analyzeRouter.get('/deep/:campaignId', async (req: AuthRequest, res: Response) => {
   const { from, to } = getDateRange(req, 7);
