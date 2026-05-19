@@ -94,7 +94,40 @@ async function runMigrations() {
     )`;
     await sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS meta_id TEXT`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_campaigns_meta_id ON campaigns(meta_id) WHERE meta_id IS NOT NULL`;
-    console.log('âœ… Banco de dados pronto');
+    await sql`CREATE TABLE IF NOT EXISTS ad_set_daily_metrics (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      ad_set_id UUID NOT NULL REFERENCES ad_sets(id) ON DELETE CASCADE,
+      campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      date DATE NOT NULL,
+      spend NUMERIC(12,2) DEFAULT 0,
+      impressions INTEGER DEFAULT 0,
+      clicks INTEGER DEFAULT 0,
+      leads INTEGER DEFAULT 0,
+      ctr NUMERIC(8,4) DEFAULT 0,
+      cpc NUMERIC(8,4) DEFAULT 0,
+      cpa NUMERIC(8,4) DEFAULT 0,
+      roas NUMERIC(8,4) DEFAULT 0,
+      UNIQUE(ad_set_id, date)
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS ad_daily_metrics (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      ad_id UUID NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+      ad_set_id UUID NOT NULL REFERENCES ad_sets(id) ON DELETE CASCADE,
+      campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      date DATE NOT NULL,
+      spend NUMERIC(12,2) DEFAULT 0,
+      impressions INTEGER DEFAULT 0,
+      clicks INTEGER DEFAULT 0,
+      leads INTEGER DEFAULT 0,
+      ctr NUMERIC(8,4) DEFAULT 0,
+      cpc NUMERIC(8,4) DEFAULT 0,
+      cpa NUMERIC(8,4) DEFAULT 0,
+      roas NUMERIC(8,4) DEFAULT 0,
+      UNIQUE(ad_id, date)
+    )`;
+    console.log('✅ Banco de dados pronto');
   } catch (err) {
     console.error('âŒ Erro nas migrations:', err);
   }
