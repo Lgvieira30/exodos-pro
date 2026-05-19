@@ -80,6 +80,10 @@ export const adSetsApi = {
     api.get('/ad-sets', { params: campaign_id ? { campaign_id } : {} }).then((r) => r.data),
   ads: (adSetId: string) =>
     api.get(`/ad-sets/${adSetId}/ads`).then((r) => r.data),
+  daily: (adSetId: string) =>
+    api.get(`/ad-sets/${adSetId}/daily`).then((r) => r.data),
+  adDaily: (adSetId: string, adId: string) =>
+    api.get(`/ad-sets/${adSetId}/ads/${adId}/daily`).then((r) => r.data),
 };
 
 export const aiApi = {

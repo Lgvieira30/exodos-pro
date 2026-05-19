@@ -152,13 +152,12 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
     const timeRange7  = JSON.stringify({ since: since7,  until: todayStr });
 
     // Fetch all pages for each endpoint in parallel
-    const [campaignDailyRows, adSetInfoRows, adSetInsightRows, adInfoRows, adInsightRows] = await Promise.all([
+    const [campaignDailyRows, adSetInfoRows, adSetInsightRows, adSetDailyRows, adInfoRows, adInsightRows, adDailyRows] = await Promise.all([
       fetchAllPages(`${BASE}/act_${account_id}/insights`, {
         fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values,date_start,date_stop',
         time_range: timeRange30,
         time_increment: 1,
         level: 'campaign',
-        // Match Ads Manager default attribution window (7-day click, 1-day view)
         action_attribution_windows: ['7d_click', '1d_view'],
         access_token,
         limit: 500,
@@ -173,6 +172,13 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
         action_attribution_windows: ['7d_click', '1d_view'],
         access_token, limit: 500,
       }, 15000),
+      // Daily breakdown per ad set (last 7 days)
+      fetchAllPages(`${BASE}/act_${account_id}/insights`, {
+        fields: 'adset_id,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values,date_start',
+        time_range: timeRange7, level: 'adset', time_increment: 1,
+        action_attribution_windows: ['7d_click', '1d_view'],
+        access_token, limit: 500,
+      }, 20000),
       fetchAllPages(`${BASE}/act_${account_id}/ads`, {
         fields: 'id,name,adset_id,campaign_id,status',
         access_token, limit: 500,
@@ -183,6 +189,13 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
         action_attribution_windows: ['7d_click', '1d_view'],
         access_token, limit: 500,
       }, 15000),
+      // Daily breakdown per ad (last 7 days)
+      fetchAllPages(`${BASE}/act_${account_id}/insights`, {
+        fields: 'ad_id,adset_id,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values,date_start',
+        time_range: timeRange7, level: 'ad', time_increment: 1,
+        action_attribution_windows: ['7d_click', '1d_view'],
+        access_token, limit: 500,
+      }, 20000),
     ]);
 
     const campaignIdMap: Record<string, string> = {};
@@ -291,6 +304,29 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       `;
     }
 
+    // ─── Ad Set daily metrics ───
+    for (const row of adSetDailyRows) {
+      const campaignId = campaignIdMap[row.campaign_id];
+      if (!campaignId) continue;
+      const [adSet] = await sql`SELECT id FROM ad_sets WHERE meta_id = ${row.adset_id} AND user_id = ${req.userId!}`;
+      if (!adSet) continue;
+      const { leads, revenue } = extractActions(row.actions || [], row.action_values || []);
+      const spend = parseFloat(row.spend || '0');
+      const clicks = parseInt(row.clicks || '0');
+      const impressions = parseInt(row.impressions || '0');
+      const cpc = parseFloat(row.cpc || '0');
+      const ctr = parseFloat(row.ctr || '0');
+      const cpa = leads > 0 ? spend / leads : 0;
+      const roas = spend > 0 && revenue > 0 ? revenue / spend : 0;
+      await sql`
+        INSERT INTO ad_set_daily_metrics (ad_set_id, campaign_id, user_id, date, spend, impressions, clicks, leads, ctr, cpc, cpa, roas)
+        VALUES (${adSet.id}, ${campaignId}, ${req.userId!}, ${row.date_start}, ${spend}, ${impressions}, ${clicks}, ${leads}, ${ctr}, ${cpc}, ${cpa}, ${roas})
+        ON CONFLICT (ad_set_id, date) DO UPDATE SET
+          spend = EXCLUDED.spend, impressions = EXCLUDED.impressions, clicks = EXCLUDED.clicks,
+          leads = EXCLUDED.leads, ctr = EXCLUDED.ctr, cpc = EXCLUDED.cpc, cpa = EXCLUDED.cpa, roas = EXCLUDED.roas
+      `;
+    }
+
     // ─── Ads ───
     const adInfoMap: Record<string, any> = {};
     for (const ad of adInfoRows) adInfoMap[ad.id] = ad;
@@ -332,6 +368,31 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       await sql`
         UPDATE ads SET status = ${status}, updated_at = NOW()
         WHERE meta_id = ${metaId} AND user_id = ${req.userId!}
+      `;
+    }
+
+    // ─── Ad daily metrics ───
+    for (const row of adDailyRows) {
+      const campaignId = campaignIdMap[row.campaign_id];
+      if (!campaignId) continue;
+      const [adSet] = await sql`SELECT id FROM ad_sets WHERE meta_id = ${row.adset_id} AND user_id = ${req.userId!}`;
+      if (!adSet) continue;
+      const [ad] = await sql`SELECT id FROM ads WHERE meta_id = ${row.ad_id} AND user_id = ${req.userId!}`;
+      if (!ad) continue;
+      const { leads, revenue } = extractActions(row.actions || [], row.action_values || []);
+      const spend = parseFloat(row.spend || '0');
+      const clicks = parseInt(row.clicks || '0');
+      const impressions = parseInt(row.impressions || '0');
+      const cpc = parseFloat(row.cpc || '0');
+      const ctr = parseFloat(row.ctr || '0');
+      const cpa = leads > 0 ? spend / leads : 0;
+      const roas = spend > 0 && revenue > 0 ? revenue / spend : 0;
+      await sql`
+        INSERT INTO ad_daily_metrics (ad_id, ad_set_id, campaign_id, user_id, date, spend, impressions, clicks, leads, ctr, cpc, cpa, roas)
+        VALUES (${ad.id}, ${adSet.id}, ${campaignId}, ${req.userId!}, ${row.date_start}, ${spend}, ${impressions}, ${clicks}, ${leads}, ${ctr}, ${cpc}, ${cpa}, ${roas})
+        ON CONFLICT (ad_id, date) DO UPDATE SET
+          spend = EXCLUDED.spend, impressions = EXCLUDED.impressions, clicks = EXCLUDED.clicks,
+          leads = EXCLUDED.leads, ctr = EXCLUDED.ctr, cpc = EXCLUDED.cpc, cpa = EXCLUDED.cpa, roas = EXCLUDED.roas
       `;
     }
 
