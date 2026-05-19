@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, CartesianGrid,
+  CartesianGrid,
 } from 'recharts';
 import {
-  TrendingUp, Users, DollarSign, Zap, Plus, Target, RefreshCw,
+  Users, DollarSign, Zap, Plus, Target, RefreshCw,
   AlertTriangle, CheckCircle, ArrowRight, PauseCircle, Brain,
   MousePointer2, Activity, ChevronDown, ChevronUp,
 } from 'lucide-react';
@@ -201,8 +201,6 @@ export default function Dashboard() {
   const arc = analysis ? (analysis.score / 100) * circ : 0;
 
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
-  const hasSpendInChart = weekly.some(w => w.spend > 0);
-
   return (
     <div style={{ minHeight: '100vh', background: '#000', padding: '28px 32px' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:rgba(255,255,255,0.025)!important}`}</style>
@@ -293,7 +291,7 @@ export default function Dashboard() {
               </div>
             </div>
             {weekly.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={weekly} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
@@ -317,7 +315,7 @@ export default function Dashboard() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' }}>
                 <Activity size={24} color="rgba(255,255,255,0.1)" />
                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>Gráfico aparece após sincronizar o Meta Ads</p>
               </div>
@@ -411,6 +409,49 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+          {/* ── Period highlights ──────────────────────────────────────────── */}
+          {campaigns.length > 0 && (() => {
+            const actives = campaigns.filter(c => c.status === 'active' && n(c.avg_cpa) > 0);
+            const bestCPL = actives.length > 0 ? [...actives].sort((a, b) => n(a.avg_cpa) - n(b.avg_cpa))[0] : null;
+            const bestLeads = campaigns.length > 0 ? [...campaigns].sort((a, b) => n(b.total_leads) - n(a.total_leads))[0] : null;
+            const dateFrom = new Date(range.from); const dateTo = new Date(range.to);
+            const days = Math.max(1, Math.round((dateTo.getTime() - dateFrom.getTime()) / 86400000) + 1);
+            const avgDailySpend = sp / days;
+            return (
+              <div style={{ background: BG_CARD, border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '18px 20px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '14px' }}>Destaques do Período</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                  <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '6px', fontWeight: 600 }}>Gasto médio/dia</p>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: '#fff' }}>{avgDailySpend > 0 ? `R$${avgDailySpend.toFixed(0)}` : '—'}</p>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginTop: '3px' }}>{days} dias no período</p>
+                  </div>
+                  <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '6px', fontWeight: 600 }}>Melhor CPL</p>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: bestCPL ? cplStatus(n(bestCPL.avg_cpa)).color : '#64748b' }}>
+                      {bestCPL ? `R$${n(bestCPL.avg_cpa).toFixed(0)}` : '—'}
+                    </p>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bestCPL?.name ?? 'sem dados'}</p>
+                  </div>
+                  <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '6px', fontWeight: 600 }}>Mais leads</p>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: n(bestLeads?.total_leads) > 0 ? '#10b981' : '#64748b' }}>
+                      {n(bestLeads?.total_leads) > 0 ? n(bestLeads!.total_leads) : '—'}
+                    </p>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bestLeads?.name ?? 'sem dados'}</p>
+                  </div>
+                </div>
+                {analysis && analysis.actions.length > 0 && (
+                  <div style={{ marginTop: '14px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <Brain size={13} color={CYAN} style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.55' }}>
+                      <strong style={{ color: '#fff' }}>IA: </strong>{analysis.actions[0].acao} — {analysis.actions[0].motivo}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Right column ─────────────────────────────────────────────────── */}
