@@ -13,8 +13,10 @@ import Diagnostico from './pages/Diagnostico';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
-const GREEN = '#2F7D4F';
-const SIDEBAR_BG = '#111418';
+const NEON = '#00FFB2';
+const GREEN = NEON;
+const SIDEBAR_BG = '#0D1117';
+const BORDER = 'rgba(0,255,178,0.1)';
 
 const NAV_MAIN = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -31,8 +33,8 @@ const NAV_ACTIONS = [
 const GROUP_LABEL_STYLE: React.CSSProperties = {
   fontSize: '9px',
   fontWeight: 700,
-  color: 'rgba(255,255,255,0.2)',
-  letterSpacing: '0.08em',
+  color: 'rgba(0,255,178,0.35)',
+  letterSpacing: '0.12em',
   padding: '10px 12px 5px',
   textTransform: 'uppercase' as const,
 };
@@ -65,9 +67,9 @@ function NavItem({
         textDecoration: 'none',
         fontSize: '13px',
         fontWeight: isActive ? 600 : 400,
-        color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
-        background: isActive ? 'rgba(47,125,79,0.12)' : 'transparent',
-        borderLeft: isActive ? `2px solid ${GREEN}` : '2px solid transparent',
+        color: isActive ? NEON : 'rgba(201,209,217,0.45)',
+        background: isActive ? 'rgba(0,255,178,0.07)' : 'transparent',
+        borderLeft: isActive ? `2px solid ${NEON}` : '2px solid transparent',
         transition: 'all 0.15s',
       })}
       className="btn-ghost"
@@ -76,7 +78,7 @@ function NavItem({
         <>
           <Icon
             size={15}
-            color={isActive ? GREEN : 'rgba(255,255,255,0.35)'}
+            color={isActive ? NEON : 'rgba(201,209,217,0.35)'}
           />
           {label}
         </>
@@ -117,7 +119,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           bottom: 0,
           width: '220px',
           background: SIDEBAR_BG,
-          borderRight: '1px solid rgba(255,255,255,0.05)',
+          borderRight: `1px solid ${BORDER}`,
           display: 'flex',
           flexDirection: 'column',
           zIndex: 50,
@@ -125,15 +127,15 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         }}
       >
         {/* Logo */}
-        <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ padding: '20px 16px 16px', borderBottom: `1px solid ${BORDER}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Logo size={36} />
             <div>
-              <div style={{ color: '#fff', fontSize: '13px', fontWeight: 700, letterSpacing: '-0.3px' }}>
+              <div style={{ color: '#C9D1D9', fontSize: '13px', fontWeight: 700, letterSpacing: '-0.3px' }}>
                 êxodos
               </div>
-              <div style={{ color: GREEN, fontSize: '9px', opacity: 0.85, letterSpacing: '0.3px' }}>
-                conversion
+              <div style={{ color: NEON, fontSize: '9px', letterSpacing: '0.15em', fontWeight: 600, opacity: 0.8 }}>
+                PRO
               </div>
             </div>
           </div>
@@ -158,7 +160,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         <div
           style={{
             padding: '12px 10px',
-            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderTop: `1px solid ${BORDER}`,
           }}
         >
           <NavLink
@@ -228,7 +230,7 @@ function ProtectedLayout() {
   if (!token) return <Navigate to="/login" replace />;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F6F7F9' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#080B14' }}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Hamburger button - mobile only */}

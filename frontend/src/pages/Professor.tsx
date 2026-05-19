@@ -3,7 +3,7 @@ import {
   GraduationCap, TrendingUp, TrendingDown, AlertTriangle, CheckCircle,
   Info, ChevronRight, Zap, Target, DollarSign, BarChart3, Activity,
   PauseCircle, ChevronDown, Layers, CalendarDays, RefreshCw,
-  ArrowUpRight, ArrowDownRight, Minus,
+  ArrowUpRight, ArrowDownRight, Minus, Users,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -11,16 +11,21 @@ import {
 import { metricsApi, analyzeApi, campaignsApi, aiApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-const GREEN = '#2F7D4F';
-const BG = '#F6F7F9';
-const BG_CARD = '#FFFFFF';
-const BG_SUBTLE = '#F9FAFB';
-const FG = '#111827';
-const FG_MUTED = '#6B7280';
-const FG_SUBTLE = '#9CA3AF';
-const BORDER = '#E5E7EB';
-const SHADOW = '0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.05)';
-const PRIORITY_COLOR: Record<string, string> = { alta: '#DC2626', media: '#D97706', baixa: '#2F7D4F' };
+const GREEN = '#00FFB2';
+const BG = '#080B14';
+const BG_CARD = '#0D1117';
+const BG_SUBTLE = '#111520';
+const BLUE = '#00BFFF';
+const FG = '#C9D1D9';
+const FG_MUTED = 'rgba(201,209,217,0.55)';
+const FG_SUBTLE = 'rgba(201,209,217,0.3)';
+const BORDER = 'rgba(0,255,178,0.1)';
+const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
+const RED = '#FF3B5C';
+const AMBER = '#FFB800';
+const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
+const SHADOW = GLOW;
+const PRIORITY_COLOR: Record<string, string> = { alta: RED, media: AMBER, baixa: GREEN };
 const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google: 'Google Ads', linkedin: 'LinkedIn' };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -76,23 +81,23 @@ function getStatus(key: string, value: number): 'excellent' | 'good' | 'warning'
 }
 
 const STATUS_CONFIG = {
-  excellent: { color: '#2F7D4F', bg: 'rgba(47,125,79,0.08)',  border: 'rgba(47,125,79,0.15)',  label: 'Excelente', icon: CheckCircle },
-  good:      { color: '#2563EB', bg: 'rgba(37,99,235,0.08)',  border: 'rgba(37,99,235,0.15)',  label: 'Bom',       icon: TrendingUp },
-  warning:   { color: '#D97706', bg: 'rgba(217,119,6,0.08)',  border: 'rgba(217,119,6,0.15)',  label: 'Atenção',   icon: AlertTriangle },
-  critical:  { color: '#DC2626', bg: 'rgba(220,38,38,0.08)',  border: 'rgba(220,38,38,0.15)',  label: 'Crítico',   icon: TrendingDown },
+  excellent: { color: '#00FFB2', bg: 'rgba(0,255,178,0.08)',  border: 'rgba(0,255,178,0.2)',  label: 'Excelente', icon: CheckCircle },
+  good:      { color: '#00BFFF', bg: 'rgba(0,191,255,0.08)',  border: 'rgba(0,191,255,0.2)',  label: 'Bom',       icon: TrendingUp },
+  warning:   { color: '#FFB800', bg: 'rgba(255,184,0,0.08)',  border: 'rgba(255,184,0,0.2)',  label: 'Atenção',   icon: AlertTriangle },
+  critical:  { color: '#FF3B5C', bg: 'rgba(255,59,92,0.08)',  border: 'rgba(255,59,92,0.2)',  label: 'Crítico',   icon: TrendingDown },
 };
 
 const VERDICT_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  reativar:             { label: 'Reativar',          color: '#2F7D4F', bg: 'rgba(47,125,79,0.08)',  border: 'rgba(47,125,79,0.2)' },
-  reativar_com_cautela: { label: 'Revisar e Reativar', color: '#D97706', bg: 'rgba(217,119,6,0.08)',  border: 'rgba(217,119,6,0.2)' },
-  manter_pausada:       { label: 'Manter Pausada',    color: '#DC2626', bg: 'rgba(220,38,38,0.08)',  border: 'rgba(220,38,38,0.2)' },
+  reativar:             { label: 'Reativar',          color: '#00FFB2', bg: 'rgba(0,255,178,0.08)',  border: 'rgba(0,255,178,0.2)' },
+  reativar_com_cautela: { label: 'Revisar e Reativar', color: '#FFB800', bg: 'rgba(255,184,0,0.08)',  border: 'rgba(255,184,0,0.2)' },
+  manter_pausada:       { label: 'Manter Pausada',    color: '#FF3B5C', bg: 'rgba(255,59,92,0.08)',  border: 'rgba(255,59,92,0.2)' },
 };
 
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
-  const color = score >= 75 ? '#2F7D4F' : score >= 50 ? '#D97706' : '#DC2626';
+  const color = score >= 75 ? '#00FFB2' : score >= 50 ? '#FFB800' : '#FF3B5C';
   const label = score >= 75 ? 'Excelente' : score >= 50 ? 'Atenção' : 'Crítico';
   const r = size * 0.4;
   const c = 2 * Math.PI * r;
@@ -100,7 +105,7 @@ function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="10" />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(0,255,178,0.08)" strokeWidth="10" />
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="10"
             strokeDasharray={c} strokeDashoffset={c - (score / 100) * c}
             strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease' }} />
@@ -118,8 +123,8 @@ function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
 function TrendBadge({ value, inverted = false }: { value: number | null | undefined; inverted?: boolean }) {
   if (value === null || value === undefined) return <span style={{ fontSize: '10px', color: FG_SUBTLE }}>—</span>;
   const isGood = inverted ? value <= 0 : value >= 0;
-  const color = isGood ? '#2F7D4F' : '#DC2626';
-  const bg = isGood ? 'rgba(47,125,79,0.1)' : 'rgba(220,38,38,0.1)';
+  const color = isGood ? '#00FFB2' : '#FF3B5C';
+  const bg = isGood ? 'rgba(0,255,178,0.1)' : 'rgba(255,59,92,0.1)';
   const Arrow = value > 0 ? ArrowUpRight : value < 0 ? ArrowDownRight : Minus;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color, background: bg, padding: '2px 7px', borderRadius: '20px' }}>
@@ -170,12 +175,12 @@ function MetricCard({ metric, expanded, onToggle }: { metric: any; expanded: boo
 
 function Funnel({ data }: { data: DeepData['funnel'] }) {
   const steps = [
-    { label: 'Impressões', value: data.impressions.toLocaleString('pt-BR'), color: '#2563EB', width: 100 },
+    { label: 'Impressões', value: data.impressions.toLocaleString('pt-BR'), color: '#00BFFF', width: 100 },
     { label: `CTR ${data.ctr.toFixed(2)}%`, value: null, color: BORDER, width: 0, arrow: true },
     { label: 'Cliques', value: data.clicks.toLocaleString('pt-BR'), color: GREEN, width: data.impressions > 0 ? Math.max(12, (data.clicks / data.impressions) * 100 * 10) : 50 },
     { label: `Conv. ${data.clickToLeadRate.toFixed(1)}%`, value: null, color: BORDER, width: 0, arrow: true },
-    { label: 'Leads', value: data.leads.toLocaleString('pt-BR'), color: '#2F7D4F', width: data.clicks > 0 ? Math.max(8, (data.leads / data.clicks) * 100 * 10) : 30 },
-    { label: 'Receita Est.', value: data.revenueEst > 0 ? `R$ ${data.revenueEst.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}` : '—', color: '#7C3AED', width: data.leads > 0 ? Math.max(6, (data.leads / data.clicks) * 80) : 20 },
+    { label: 'Leads', value: data.leads.toLocaleString('pt-BR'), color: '#00FFB2', width: data.clicks > 0 ? Math.max(8, (data.leads / data.clicks) * 100 * 10) : 30 },
+    { label: 'Receita Est.', value: data.revenueEst > 0 ? `R$ ${data.revenueEst.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}` : '—', color: '#BD00FF', width: data.leads > 0 ? Math.max(6, (data.leads / data.clicks) * 80) : 20 },
   ];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -217,8 +222,8 @@ function SummaryKpi({ label, value, sub, change, inverted }: { label: string; va
 }
 
 function ActionCard({ action, rank }: { action: any; rank: number }) {
-  const color = PRIORITY_COLOR[action.priority] || '#6B7280';
-  const rankColors = ['#DC2626', '#D97706', '#2563EB', '#2F7D4F', '#7C3AED'];
+  const color = PRIORITY_COLOR[action.priority] || FG_SUBTLE;
+  const rankColors = ['#FF3B5C', '#FFB800', '#00BFFF', '#00FFB2', '#BD00FF'];
   return (
     <div style={{ display: 'flex', gap: '14px', padding: '14px 16px', borderRadius: '12px', background: `${color}08`, border: `1px solid ${color}25`, alignItems: 'flex-start' }}>
       <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${rankColors[rank] || color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '13px', fontWeight: 800, color: rankColors[rank] || color }}>
@@ -239,7 +244,7 @@ function ActionCard({ action, rank }: { action: any; rank: number }) {
 }
 
 function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: number }) {
-  const scoreColor = c.score >= 75 ? '#2F7D4F' : c.score >= 50 ? '#D97706' : '#DC2626';
+  const scoreColor = c.score >= 75 ? '#00FFB2' : c.score >= 50 ? '#FFB800' : '#FF3B5C';
   const barWidth = maxSpend > 0 ? Math.max(4, (c.score / 100) * 100) : 4;
   return (
     <div style={{ padding: '12px 0', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -260,9 +265,9 @@ function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: numbe
       </div>
       <div style={{ flex: '0 0 auto', textAlign: 'right', minWidth: '70px' }}>
         <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>CPL</p>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_cpa > 150 ? '#DC2626' : c.avg_cpa > 60 ? '#D97706' : c.avg_cpa > 0 ? '#2F7D4F' : FG_SUBTLE }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_cpa > 150 ? '#FF3B5C' : c.avg_cpa > 60 ? '#FFB800' : c.avg_cpa > 0 ? '#00FFB2' : FG_SUBTLE }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
         <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '4px', marginBottom: '1px' }}>ROAS</p>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? '#2F7D4F' : c.avg_roas > 0 ? '#D97706' : FG_SUBTLE }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? '#00FFB2' : c.avg_roas > 0 ? '#FFB800' : FG_SUBTLE }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
       </div>
     </div>
   );
@@ -326,7 +331,7 @@ export default function Professor() {
       const s = metricsRes?.data?.summary;
       if (s && (Number(s.spend) > 0 || Number(s.leads) > 0)) {
         const roi = Number(s.roas) > 0 ? (Number(s.roas) - 1) * 100 : 0;
-        buildMetrics(Number(s.cpa) || 0, Number(s.roas) || 0, Number(s.ctr) || 0, Number(s.cpc) || 0, roi);
+        buildMetrics(Number(s.cpa) || 0, Number(s.roas) || 0, Number(s.ctr) || 0, Number(s.cpc) || 0, roi, Number(s.spend) || 0, Number(s.leads) || 0);
       } else {
         setNoData(true);
         setMetrics([]);
@@ -402,51 +407,85 @@ export default function Professor() {
     if (tab !== 'campanha') { setDeepData(null); setDeepError(null); }
   }, [tab, selectedCampaignId, range]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function buildMetrics(cpa: number, roas: number, ctr: number, cpc: number, roi: number) {
+  function buildMetrics(cpa: number, roas: number, ctr: number, cpc: number, roi: number, spend = 0, leads = 0) {
+    const cplFromLeads = leads > 0 && spend > 0 ? spend / leads : cpa;
+    const leadsPerDay = leads > 0 ? (leads / 7).toFixed(1) : '0';
     const raw = [
       {
-        key: 'roas', label: 'ROAS', value: roas > 0 ? `${roas.toFixed(1)}x` : '—', raw: roas,
+        key: 'roas', label: 'ROAS — Retorno sobre Gasto', value: roas > 0 ? `${roas.toFixed(1)}x` : '—', raw: roas,
         status: getStatus('roas', roas), icon: TrendingUp,
-        explanation: roas > 0 ? `Para cada R$1 investido você recupera R$${roas.toFixed(2)}. ${roas >= 3 ? 'Campanha gerando retorno real acima do custo.' : 'O retorno ainda não cobre bem os custos operacionais.'}` : 'Sem dados de ROAS.',
-        recommendation: roas >= 5 ? 'ROAS excepcional — escale 30-50% sem mexer na segmentação.' : roas >= 3 ? 'Bom ROAS. Aumente o orçamento 20% a cada 3-4 dias.' : roas >= 2 ? 'Revise a oferta e a landing page antes de escalar.' : roas > 0 ? 'Pause conjuntos ruins e revise público, criativo e oferta.' : 'Configure o pixel de conversão.',
-        impact: roas >= 3 ? 'Escalar 20% → +20% proporcional' : 'Dobrar o ROAS é possível revisando criativo e funil',
-        benchmark: 'Bom: 3x+ | Excelente: 5x+ | Escalar com segurança: 4x+',
+        explanation: roas > 0
+          ? `Para cada R$1 investido você recupera R$${roas.toFixed(2)} em valor gerado. Pense assim: se você gastou R$1.000 e gerou R$${(roas * 1000).toFixed(0)} em negócios, seu ROAS é ${roas.toFixed(1)}x. ${roas >= 3 ? 'Isso significa que a campanha está lucrativa.' : roas >= 2 ? 'A campanha cobre seus custos, mas a margem é apertada.' : 'A campanha está custando mais do que gerando — precisa de ajuste urgente.'}`
+          : 'ROAS ainda não calculado. Configure o pixel de conversão no Meta Ads para rastrear o valor dos leads.',
+        recommendation: roas >= 5 ? 'ROAS excepcional. Escale 30-50%: aumente o orçamento diário sem mexer em mais nada. O algoritmo já encontrou o padrão certo.' : roas >= 3 ? 'Bom ROAS. Aumente o orçamento 20% a cada 3-4 dias. Não mexa na segmentação enquanto a escala é gradual.' : roas >= 2 ? 'Revise a oferta e a landing page — a página de destino provavelmente perde visitantes. Instale Hotjar para ver onde as pessoas saem.' : roas > 0 ? 'Pause os conjuntos com ROAS < 1. Revise público (lookalike funciona melhor que interesse frio) e mude o criativo.' : 'Configure o pixel do Meta Ads via Events Manager. Sem rastreamento, não há ROAS.',
+        impact: roas >= 3 ? 'Escalar +20% no orçamento → +20% de retorno proporcional' : 'Dobrar o ROAS é possível revisando criativo e funil de conversão',
+        benchmark: 'Crítico: < 1x | Atenção: 1-2x | Bom: 2-3x | Excelente: 3-5x | Escala: 4x+',
       },
       {
-        key: 'cpa', label: 'CPA (Custo por Lead)', value: cpa > 0 ? `R$ ${cpa.toFixed(2)}` : '—', raw: cpa,
+        key: 'cpa', label: 'CPL — Custo por Lead', value: cpa > 0 ? `R$ ${cpa.toFixed(2)}` : '—', raw: cpa,
         status: getStatus('cpa', cpa), icon: Target,
-        explanation: cpa > 0 ? `Você paga R$${cpa.toFixed(2)} por lead. Com R$1.000 de orçamento: ~${Math.round(1000 / cpa)} leads.` : 'Sem conversões ainda.',
-        recommendation: cpa <= 30 ? 'CPA excelente — escale com confiança.' : cpa <= 50 ? `Pause anúncios acima de R$${(cpa * 1.5).toFixed(0)}.` : 'Revise headline, prova social, CTA e velocidade da LP.',
-        impact: cpa <= 50 ? '−10% no CPA = +10% mais leads' : `Chegar a R$50: +${cpa > 0 ? Math.round((cpa / 50 - 1) * 100) : 0}% mais leads`,
-        benchmark: 'Excelente: < R$30 | Bom: R$30-50 | Atenção: R$50-80 | Crítico: > R$80',
+        explanation: cpa > 0
+          ? `Você paga R$${cpa.toFixed(2)} para conseguir cada lead (contato interessado). Com R$1.000 de orçamento você obtém aproximadamente ${Math.round(1000 / cpa)} leads. ${cpa <= 50 ? 'Esse CPL permite escalar com margem.' : cpa <= 100 ? 'Aceitável para mercados de alto ticket. Verifique a qualidade dos leads.' : 'CPL alto — cada lead está custando caro. Prioridade: revisar o funil.'}`
+          : 'Nenhuma conversão registrada ainda. Verifique se o pixel do Meta está configurado corretamente.',
+        recommendation: cpa <= 30 ? 'CPL excelente! Escale com confiança — aumente o orçamento 25% hoje.' : cpa <= 50 ? `Muito bom. Identifique os anúncios com CPL abaixo de R$${(cpa * 0.8).toFixed(0)} e duplique o orçamento neles. Pause os acima de R$${(cpa * 1.5).toFixed(0)}.` : cpa <= 100 ? 'Revise sua landing page: headline, prova social (depoimentos), CTA e velocidade (ideal: < 3 segundos). Cada segundo a mais perde 10% dos visitantes.' : 'Pause campanhas com CPL > R$150. Revise o público (tente lookalike 1% de clientes existentes), o criativo e a oferta.',
+        impact: cpa <= 50 ? `Com −10% no CPL você obtém +${Math.round(10 / (1 - 0.1))}% mais leads` : `Chegar a R$60: ${cpa > 0 ? '+' + Math.round((cpa / 60 - 1) * 100) + '% mais leads' : 'configure o pixel'}`,
+        benchmark: 'Excelente: < R$30 | Bom: R$30-50 | Aceitável: R$50-100 | Crítico: > R$100',
       },
       {
-        key: 'ctr', label: 'CTR (Taxa de Cliques)', value: ctr > 0 ? `${ctr.toFixed(2)}%` : '—', raw: ctr,
+        key: 'ctr', label: 'CTR — Taxa de Cliques no Anúncio', value: ctr > 0 ? `${ctr.toFixed(2)}%` : '—', raw: ctr,
         status: getStatus('ctr', ctr), icon: Activity,
-        explanation: ctr > 0 ? `${Math.round(ctr * 10)} em cada 1.000 pessoas clicam no seu anúncio.` : 'Sem dados de CTR ainda.',
-        recommendation: ctr >= 3 ? 'CTR excelente — salve esse criativo e teste variações.' : ctr >= 1.5 ? 'Saudável. Teste 2-3 variações.' : 'Teste vídeo vs imagem, headline com pergunta e público mais específico.',
-        impact: ctr < 1.5 ? 'Dobrar o CTR pode reduzir o CPC em até 40%' : 'CTR alto = algoritmo favorece no leilão',
-        benchmark: 'Bom: 1.5%+ | Excelente: 3%+ | Crítico: < 0.8%',
+        explanation: ctr > 0
+          ? `A cada 1.000 pessoas que veem seu anúncio, ${Math.round(ctr * 10)} clicam. CTR mede a força do criativo: quanto mais alto, mais atraente é o anúncio para o público. ${ctr >= 3 ? 'Esse CTR indica que o criativo está muito alinhado com o público.' : ctr >= 1.5 ? 'CTR saudável. O anúncio está cumprindo seu papel.' : 'CTR baixo = o anúncio não está chamando a atenção. Possíveis causas: público errado, imagem genérica ou headline sem urgência.'}`
+          : 'Dados de CTR ainda não disponíveis.',
+        recommendation: ctr >= 3 ? 'CTR excepcional! Salve esse criativo como "modelo". Crie 2-3 variações mudando apenas a headline ou a cor do botão para descobrir o que exatamente funciona.' : ctr >= 1.5 ? 'CTR saudável. Teste vídeos curtos (15s) que mostram o problema → solução. Vídeos tipicamente geram 2-3x mais CTR que imagens estáticas.' : 'Ação imediata: 1) Troque a imagem por um vídeo de 15s. 2) Use headline com pergunta (ex: "Você ainda paga R$X por...?"). 3) Segmente público mais específico.',
+        impact: ctr < 1.5 ? 'Dobrar o CTR de 0.8% para 1.6% pode reduzir o CPC em até 40%' : 'CTR alto = o algoritmo entrega para mais pessoas pelo mesmo custo',
+        benchmark: 'Crítico: < 0.8% | Atenção: 0.8-1.5% | Bom: 1.5-3% | Excelente: > 3%',
       },
       {
-        key: 'cpc', label: 'CPC (Custo por Clique)', value: cpc > 0 ? `R$ ${cpc.toFixed(2)}` : '—', raw: cpc,
+        key: 'cpc', label: 'CPC — Custo por Clique', value: cpc > 0 ? `R$ ${cpc.toFixed(2)}` : '—', raw: cpc,
         status: getStatus('cpc', cpc), icon: DollarSign,
-        explanation: cpc > 0 ? `Cada clique custa R$${cpc.toFixed(2)}.` : 'Sem dados de CPC ainda.',
-        recommendation: cpc <= 1 ? 'CPC excelente — escale.' : cpc <= 2.5 ? 'Competitivo. Melhore CTR.' : 'Revise sobreposição de audiências e relevância.',
-        impact: cpc > 2.5 ? `Chegar a R$2: +${cpc > 0 ? Math.round((cpc / 2 - 1) * 100) : 0}% mais cliques` : 'CPC baixo = mais cliques pelo mesmo investimento',
+        explanation: cpc > 0
+          ? `Cada vez que alguém clica no seu anúncio, você paga R$${cpc.toFixed(2)}. Esse valor é determinado pelo leilão do Meta Ads: criativo relevante + público certo = CPC mais barato. ${cpc <= 2 ? 'CPC competitivo — você está pagando pouco por cada visita.' : cpc <= 5 ? 'CPC aceitável. Há espaço para otimizar.' : 'CPC alto indica que o algoritmo não está encontrando o público certo, ou que há muita concorrência no seu segmento.'}`
+          : 'Dados de CPC ainda não disponíveis.',
+        recommendation: cpc <= 1 ? 'CPC excelente! Escale sem hesitar.' : cpc <= 2.5 ? 'Competitivo. Melhore o CTR para baixar ainda mais o CPC (existe relação direta).' : cpc <= 5 ? 'Revise sobreposição de audiências (no Audience Insights), use exclusões de público e verifique se há campanhas suas competindo entre si.' : 'CPC crítico. Possíveis soluções: 1) Ampliar o público (muito restrito = leilão caro). 2) Melhorar relevância do criativo. 3) Testar horários e dias diferentes.',
+        impact: cpc > 2.5 ? `Chegar a R$2: +${cpc > 0 ? Math.round((cpc / 2 - 1) * 100) : 0}% mais cliques pelo mesmo orçamento` : 'CPC baixo = mais cliques pelo mesmo investimento',
         benchmark: 'Excelente: < R$1 | Bom: R$1-2.50 | Atenção: R$2.50-5 | Crítico: > R$5',
       },
       {
-        key: 'roi', label: 'ROI (Retorno sobre Investimento)', value: roi > 0 ? `${roi.toFixed(0)}%` : '—', raw: roi,
+        key: 'roi', label: 'ROI — Retorno sobre Investimento', value: roi > 0 ? `${roi.toFixed(0)}%` : '—', raw: roi,
         status: getStatus('roi', roi), icon: BarChart3,
-        explanation: roi > 0 ? `Para cada R$100 investidos você obtém R$${(100 + roi).toFixed(0)} de retorno.` : 'ROI aparece após os primeiros dados de receita.',
-        recommendation: roi >= 300 ? 'ROI excepcional — escale.' : roi >= 150 ? 'ROI saudável. Aumente 20%/semana.' : 'Analise onde o funil perde leads.',
-        impact: roi >= 150 ? 'Replique em novos mercados' : 'Cada +10% na conversão aumenta o ROI proporcionalmente',
-        benchmark: 'Positivo: > 0% | Bom: 150%+ | Excelente: 300%+',
+        explanation: roi > 0
+          ? `Para cada R$100 investidos você obtém R$${(100 + roi).toFixed(0)} de retorno líquido, ou seja, um lucro de R$${roi.toFixed(0)} por cada R$100 gasto. ${roi >= 300 ? 'Excelente rentabilidade — cada real trabalha para você.' : roi >= 100 ? 'ROI positivo, campanha lucrativa.' : 'ROI ainda baixo — o negócio existe, mas a margem é apertada.'}`
+          : 'ROI calculado a partir do ROAS. Configure o valor médio de um cliente para tornar esse dado mais preciso.',
+        recommendation: roi >= 300 ? 'ROI excepcional! Duplique o investimento gradualmente (20%/semana) e replique a estratégia em novos públicos.' : roi >= 150 ? 'ROI saudável. Aumente 20% por semana e acompanhe se o ROI se mantém. Automatize relatórios semanais.' : roi > 0 ? 'Analise onde o funil perde: da impressão ao clique (CTR), do clique ao lead (taxa de conversão da LP) e do lead ao cliente (velocidade de atendimento).' : 'Instale rastreamento de conversão. Sem dados de receita, o ROI fica zerado mesmo com boa performance.',
+        impact: roi >= 150 ? 'Com ROI de 150%+, escalar duplica os lucros em semanas' : 'Cada +10% na taxa de conversão da LP aumenta o ROI proporcionalmente',
+        benchmark: 'Negativo: < 0% | Aceitável: 0-100% | Bom: 100-200% | Excelente: 200%+',
+      },
+      {
+        key: 'leads', label: 'Volume de Leads', value: leads > 0 ? String(leads) : '—', raw: leads,
+        status: leads >= 50 ? 'excellent' : leads >= 20 ? 'good' : leads >= 5 ? 'warning' : 'critical',
+        icon: Users,
+        explanation: leads > 0
+          ? `Você gerou ${leads} leads no período. Isso equivale a ~${leadsPerDay} leads/dia. ${leads >= 50 ? 'Volume consistente — suficiente para o algoritmo otimizar bem.' : leads >= 20 ? 'Volume razoável, mas abaixo do ideal para aprendizado do Meta Ads.' : 'Volume baixo. O algoritmo precisa de pelo menos 50 conversões/semana por conjunto para otimizar com precisão.'}`
+          : 'Nenhum lead registrado. Verifique o pixel de conversão e certifique-se que o evento "Lead" está disparando na página de obrigado.',
+        recommendation: leads >= 50 ? `Excelente volume! Com ${Math.round(leads / 7)} leads/dia, o algoritmo está em fase de aprendizado acelerado. Mantenha o orçamento estável por pelo menos 7 dias.` : leads >= 20 ? 'Volume abaixo do ideal para o algoritmo do Meta. Tente consolidar conjuntos similares em um único conjunto com maior orçamento (meta: 50+ leads/semana por conjunto).' : leads > 0 ? 'Volume crítico para aprendizado. Ações: 1) Expanda o público-alvo. 2) Aumente o orçamento diário. 3) Simplifique o formulário de lead (menos campos = mais conversões).' : 'Configure o pixel corretamente. Crie um evento "Lead" no Gerenciador de Eventos do Meta e teste com a ferramenta de teste de eventos.',
+        impact: leads < 50 ? 'Atingir 50 leads/semana ativa o aprendizado acelerado do Meta Ads' : `A cada +10 leads, o algoritmo refina 5% a precisão da segmentação`,
+        benchmark: 'Crítico: < 5/semana | Atenção: 5-20/semana | Bom: 20-50/semana | Excelente: 50+/semana',
+      },
+      {
+        key: 'spend', label: 'Distribuição do Orçamento', value: spend > 0 ? `R$ ${spend.toLocaleString('pt-BR')}` : '—', raw: spend,
+        status: spend >= 1000 ? 'excellent' : spend >= 300 ? 'good' : spend >= 50 ? 'warning' : 'critical',
+        icon: DollarSign,
+        explanation: spend > 0
+          ? `Você investiu R$${spend.toLocaleString('pt-BR')} no período. ${cplFromLeads > 0 ? `Cada real gasto gerou R$${(leads / spend).toFixed(3)} em leads — ou seja, ${leads} leads por R$${spend.toLocaleString('pt-BR')}.` : ''} ${spend >= 1000 ? 'Orçamento suficiente para testes robustos e otimização.' : spend >= 300 ? 'Orçamento moderado. Concentre em poucos conjuntos de alta performance.' : 'Orçamento baixo. Com menos de R$50/dia, o algoritmo do Meta tem dificuldade de sair da fase de aprendizado.'}`
+          : 'Nenhum gasto registrado no período. Verifique se as campanhas estão ativas.',
+        recommendation: spend >= 1000 ? 'Bom volume de investimento. Distribua 70% do orçamento nos conjuntos com melhor CPL e 30% em testes de novos públicos/criativos.' : spend >= 300 ? 'Concentre o orçamento em 1-2 conjuntos de melhor performance. Evite distribuir em muitos conjuntos com pouco orçamento — isso prejudica o aprendizado.' : 'Com orçamento limitado: 1) Use 1 único conjunto otimizado. 2) Segmentação ampla + criativo forte. 3) Meta de R$50/dia para sair do aprendizado em 7 dias.',
+        impact: spend < 300 ? 'Dobrar o orçamento de R$100 para R$200/dia pode triplicar o volume de leads' : 'Regra: nunca aumente mais de 20% por vez para não resetar o aprendizado',
+        benchmark: 'Crítico: < R$50 total | Atenção: R$50-300 | Bom: R$300-1.000 | Escala: R$1.000+',
       },
     ];
     setMetrics(raw);
-    const w: Record<string, number> = { roas: 30, cpa: 25, ctr: 20, cpc: 15, roi: 10 };
+    const w: Record<string, number> = { roas: 25, cpa: 25, ctr: 20, cpc: 15, roi: 10, leads: 3, spend: 2 };
     const s: Record<string, number> = { excellent: 100, good: 75, warning: 40, critical: 10 };
     let total = 0, wSum = 0;
     raw.forEach((m) => { const ww = w[m.key] || 10; total += (s[m.status] || 50) * ww; wSum += ww; });
@@ -490,7 +529,7 @@ export default function Professor() {
               ['campanha',      'Por Campanha'],
               ['pausadas',      pausedCampaigns.length > 0 ? `Pausadas (${pausedCampaigns.length})` : 'Pausadas'],
             ] as const).map(([t, lbl]) => (
-              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'ia' ? `${GREEN}15` : t === 'apresentacao' ? 'rgba(124,58,237,0.1)' : BG_CARD) : 'transparent', color: tab === t ? (t === 'ia' ? GREEN : t === 'apresentacao' ? '#7C3AED' : FG) : FG_MUTED, boxShadow: tab === t ? SHADOW : 'none' }}>
+              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'apresentacao' ? 'rgba(189,0,255,0.1)' : 'rgba(0,255,178,0.1)') : 'transparent', color: tab === t ? (t === 'apresentacao' ? '#BD00FF' : GREEN) : FG_MUTED, boxShadow: 'none' }}>
                 {lbl}
               </button>
             ))}
@@ -509,14 +548,14 @@ export default function Professor() {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {aiData && (
-                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: `1px solid ${BORDER}`, background: BG_CARD, color: FG_MUTED, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', boxShadow: SHADOW }}>
+                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: `1px solid ${BORDER_ACTIVE}`, background: 'rgba(0,255,178,0.06)', color: GREEN, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   ↓ Exportar PDF
                 </button>
               )}
               <button
                 onClick={async () => { setAiLoading(true); setAiError(null); try { const r = await aiApi.professor(range.from, range.to); setAiData(r.data); } catch (e: any) { setAiError(e?.response?.data?.error?.message || 'Erro ao gerar análise'); } finally { setAiLoading(false); } }}
                 disabled={aiLoading}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: aiLoading ? `${GREEN}20` : GREEN, color: '#fff', fontSize: '13px', fontWeight: 700, cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: aiLoading ? `${GREEN}20` : GREEN, color: '#000', fontSize: '13px', fontWeight: 700, cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'inherit' }}
               >
                 {aiLoading ? '⟳ Analisando...' : aiData ? '↺ Nova Análise' : '✦ Analisar Agora'}
               </button>
@@ -524,8 +563,8 @@ export default function Professor() {
           </div>
 
           {aiError && (
-            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', marginBottom: '16px' }}>
-              <p style={{ fontSize: '13px', color: '#DC2626', fontWeight: 600 }}>{aiError}</p>
+            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', marginBottom: '16px' }}>
+              <p style={{ fontSize: '13px', color: RED, fontWeight: 600 }}>{aiError}</p>
               {aiError.includes('ANTHROPIC_API_KEY') && (
                 <p style={{ fontSize: '12px', color: FG_MUTED, marginTop: '6px' }}>
                   Acesse <strong style={{ color: GREEN }}>console.anthropic.com</strong> → API Keys → crie uma chave → adicione como <code style={{ background: `${BORDER}`, padding: '1px 6px', borderRadius: '4px' }}>ANTHROPIC_API_KEY</code> no Easypanel.
@@ -577,10 +616,10 @@ export default function Professor() {
 
               {/* Alerta crítico */}
               {aiData.analysis.alerta_critico && (
-                <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: '14px', padding: '16px 20px', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                  <AlertTriangle size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', borderRadius: '14px', padding: '16px 20px', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <AlertTriangle size={18} color={RED} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#DC2626', marginBottom: '4px' }}>ALERTA CRÍTICO</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: RED, marginBottom: '4px' }}>ALERTA CRÍTICO</p>
                     <p style={{ fontSize: '13px', color: FG_MUTED }}>{aiData.analysis.alerta_critico}</p>
                   </div>
                 </div>
@@ -589,11 +628,11 @@ export default function Professor() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }} className="grid-ai-2col">
                 {/* O que está funcionando */}
                 {aiData.analysis.o_que_esta_funcionando?.length > 0 && (
-                  <div style={{ background: BG_CARD, border: '1px solid rgba(47,125,79,0.2)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
-                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#2F7D4F', marginBottom: '12px' }}>✓ O QUE ESTÁ FUNCIONANDO</p>
+                  <div style={{ background: BG_CARD, border: '1px solid rgba(0,255,178,0.2)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: GREEN, marginBottom: '12px' }}>✓ O QUE ESTÁ FUNCIONANDO</p>
                     {aiData.analysis.o_que_esta_funcionando.map((item: string, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
-                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#2F7D4F', flexShrink: 0, marginTop: '7px' }} />
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: GREEN, flexShrink: 0, marginTop: '7px' }} />
                         <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.5' }}>{item}</p>
                       </div>
                     ))}
@@ -601,11 +640,11 @@ export default function Professor() {
                 )}
                 {/* O que precisa melhorar */}
                 {aiData.analysis.o_que_nao_esta_funcionando?.length > 0 && (
-                  <div style={{ background: BG_CARD, border: '1px solid rgba(220,38,38,0.2)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
-                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#DC2626', marginBottom: '12px' }}>✗ O QUE PRECISA MELHORAR</p>
+                  <div style={{ background: BG_CARD, border: '1px solid rgba(255,59,92,0.2)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: RED, marginBottom: '12px' }}>✗ O QUE PRECISA MELHORAR</p>
                     {aiData.analysis.o_que_nao_esta_funcionando.map((item: string, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
-                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#DC2626', flexShrink: 0, marginTop: '7px' }} />
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: RED, flexShrink: 0, marginTop: '7px' }} />
                         <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.5' }}>{item}</p>
                       </div>
                     ))}
@@ -618,7 +657,7 @@ export default function Professor() {
                 <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: SHADOW }}>
                   <p style={{ fontSize: '14px', fontWeight: 700, color: FG, marginBottom: '16px' }}>Ações Prioritárias</p>
                   {aiData.analysis.acoes_prioritarias.map((a: any, i: number) => {
-                    const pc = a.prioridade === 'URGENTE' ? '#DC2626' : a.prioridade === 'ALTA' ? '#EA580C' : '#D97706';
+                    const pc = a.prioridade === 'URGENTE' ? '#FF3B5C' : a.prioridade === 'ALTA' ? '#FF3B5C' : '#FFB800';
                     return (
                       <div key={i} style={{ display: 'flex', gap: '14px', padding: '14px 16px', borderRadius: '12px', background: `${pc}06`, border: `1px solid ${pc}18`, marginBottom: '10px', alignItems: 'flex-start' }}>
                         <span style={{ fontSize: '10px', fontWeight: 800, color: pc, background: `${pc}15`, padding: '3px 9px', borderRadius: '20px', flexShrink: 0, marginTop: '2px' }}>{a.prioridade}</span>
@@ -626,7 +665,7 @@ export default function Professor() {
                           <p style={{ fontSize: '14px', fontWeight: 700, color: FG, marginBottom: '4px' }}>{a.titulo}</p>
                           <p style={{ fontSize: '12px', color: FG_MUTED, lineHeight: '1.8', marginBottom: '6px', whiteSpace: 'pre-line' }}>{a.descricao}</p>
                           {a.impacto_esperado && (
-                            <p style={{ fontSize: '11px', color: '#2F7D4F', fontWeight: 600 }}>↑ {a.impacto_esperado}</p>
+                            <p style={{ fontSize: '11px', color: '#00FFB2', fontWeight: 600 }}>↑ {a.impacto_esperado}</p>
                           )}
                           {a.campanha_ou_conjunto && a.campanha_ou_conjunto !== 'Geral' && (
                             <span style={{ fontSize: '11px', color: FG_SUBTLE, marginTop: '4px', display: 'block' }}>Campanha/Conjunto: {a.campanha_ou_conjunto}</span>
@@ -644,7 +683,7 @@ export default function Professor() {
                   <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
                     <p style={{ fontSize: '14px', fontWeight: 700, color: FG, marginBottom: '14px' }}>Por Campanha</p>
                     {aiData.analysis.analise_por_campanha.map((c: any, i: number) => {
-                      const rc = c.recomendacao === 'ESCALAR' ? '#2F7D4F' : c.recomendacao === 'PAUSAR' ? '#DC2626' : c.recomendacao === 'OTIMIZAR' ? '#D97706' : '#2563EB';
+                      const rc = c.recomendacao === 'ESCALAR' ? '#00FFB2' : c.recomendacao === 'PAUSAR' ? '#FF3B5C' : c.recomendacao === 'OTIMIZAR' ? '#FFB800' : '#00BFFF';
                       return (
                         <div key={i} style={{ padding: '12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -671,7 +710,7 @@ export default function Professor() {
                   <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
                     <p style={{ fontSize: '14px', fontWeight: 700, color: FG, marginBottom: '14px' }}>Por Conjunto de Anúncios</p>
                     {aiData.analysis.analise_conjuntos.map((a: any, i: number) => {
-                      const ac = a.acao === 'ESCALAR' ? '#2F7D4F' : a.acao === 'PAUSAR' ? '#DC2626' : '#D97706';
+                      const ac = a.acao === 'ESCALAR' ? '#00FFB2' : a.acao === 'PAUSAR' ? '#FF3B5C' : '#FFB800';
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '6px' }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -742,10 +781,10 @@ export default function Professor() {
               {/* Row 2: Metrics row 2 */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }} className="grid-resumo-kpis">
                 {[
-                  { label: 'Taxa de Cliques — CTR', abbr: 'De cada 100 que viram, quantas clicaram', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: summaryData.overview.avg_ctr >= 2.5 ? '✅ Excelente (≥ 2,5%)' : summaryData.overview.avg_ctr >= 1 ? '⚠️ Aceitável (≥ 1%)' : summaryData.overview.avg_ctr > 0 ? '❌ Baixo (< 1%)' : 'cliques ÷ impressões', color: summaryData.overview.avg_ctr >= 2.5 ? '#2F7D4F' : summaryData.overview.avg_ctr >= 1 ? '#D97706' : summaryData.overview.avg_ctr > 0 ? '#DC2626' : FG_SUBTLE },
-                  { label: 'Custo por Clique — CPC', abbr: 'Quanto custa cada visita ao site', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: summaryData.overview.avg_cpc <= 5 ? '✅ Bom (≤ R$5)' : summaryData.overview.avg_cpc <= 15 ? '⚠️ Médio (≤ R$15)' : summaryData.overview.avg_cpc > 0 ? '❌ Caro (> R$15)' : 'gasto ÷ cliques', color: summaryData.overview.avg_cpc <= 5 ? '#2F7D4F' : summaryData.overview.avg_cpc <= 15 ? '#D97706' : summaryData.overview.avg_cpc > 0 ? '#DC2626' : FG_SUBTLE },
+                  { label: 'Taxa de Cliques — CTR', abbr: 'De cada 100 que viram, quantas clicaram', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: summaryData.overview.avg_ctr >= 2.5 ? '✅ Excelente (≥ 2,5%)' : summaryData.overview.avg_ctr >= 1 ? '⚠️ Aceitável (≥ 1%)' : summaryData.overview.avg_ctr > 0 ? '❌ Baixo (< 1%)' : 'cliques ÷ impressões', color: summaryData.overview.avg_ctr >= 2.5 ? '#00FFB2' : summaryData.overview.avg_ctr >= 1 ? '#FFB800' : summaryData.overview.avg_ctr > 0 ? '#FF3B5C' : FG_SUBTLE },
+                  { label: 'Custo por Clique — CPC', abbr: 'Quanto custa cada visita ao site', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: summaryData.overview.avg_cpc <= 5 ? '✅ Bom (≤ R$5)' : summaryData.overview.avg_cpc <= 15 ? '⚠️ Médio (≤ R$15)' : summaryData.overview.avg_cpc > 0 ? '❌ Caro (> R$15)' : 'gasto ÷ cliques', color: summaryData.overview.avg_cpc <= 5 ? '#00FFB2' : summaryData.overview.avg_cpc <= 15 ? '#FFB800' : summaryData.overview.avg_cpc > 0 ? '#FF3B5C' : FG_SUBTLE },
                   { label: 'Total de Cliques', abbr: 'Pessoas que clicaram no anúncio', value: summaryData.overview.total_clicks > 0 ? summaryData.overview.total_clicks.toLocaleString('pt-BR') : '—', sub: 'no período selecionado', color: GREEN },
-                  { label: 'Impressões — Alcance', abbr: 'Vezes que o anúncio apareceu na tela', value: summaryData.overview.total_impressions > 1000 ? `${(summaryData.overview.total_impressions / 1000).toFixed(1)}k` : summaryData.overview.total_impressions.toLocaleString('pt-BR'), sub: 'total de exibições', color: '#7C3AED' },
+                  { label: 'Impressões — Alcance', abbr: 'Vezes que o anúncio apareceu na tela', value: summaryData.overview.total_impressions > 1000 ? `${(summaryData.overview.total_impressions / 1000).toFixed(1)}k` : summaryData.overview.total_impressions.toLocaleString('pt-BR'), sub: 'total de exibições', color: '#BD00FF' },
                 ].map((item) => (
                   <div key={item.label} style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '14px 16px', boxShadow: SHADOW }}>
                     <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '2px', letterSpacing: '0.03em', fontWeight: 600 }}>{item.label}</p>
@@ -803,9 +842,9 @@ export default function Professor() {
                         {summaryData.projection.days_remaining} dias restantes no mês
                       </p>
                       {[
-                        { label: 'Gasto Projetado', value: `R$ ${summaryData.projection.projected_spend.toLocaleString('pt-BR')}`, color: '#2563EB' },
-                        { label: 'Leads Projetados', value: summaryData.projection.projected_leads.toLocaleString('pt-BR'), color: '#2F7D4F' },
-                        { label: 'CPA Projetado', value: summaryData.projection.projected_cpa > 0 ? `R$ ${summaryData.projection.projected_cpa}` : '—', color: summaryData.projection.projected_cpa > 60 ? '#DC2626' : '#2F7D4F' },
+                        { label: 'Gasto Projetado', value: `R$ ${summaryData.projection.projected_spend.toLocaleString('pt-BR')}`, color: '#00BFFF' },
+                        { label: 'Leads Projetados', value: summaryData.projection.projected_leads.toLocaleString('pt-BR'), color: '#00FFB2' },
+                        { label: 'CPA Projetado', value: summaryData.projection.projected_cpa > 0 ? `R$ ${summaryData.projection.projected_cpa}` : '—', color: summaryData.projection.projected_cpa > 60 ? '#FF3B5C' : '#00FFB2' },
                       ].map((item) => (
                         <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '8px' }}>
                           <span style={{ fontSize: '12px', color: FG_MUTED }}>{item.label}</span>
@@ -840,11 +879,11 @@ export default function Professor() {
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
                     {summaryData.campaigns.map((c) => {
-                      const scoreColor = c.score >= 75 ? '#2F7D4F' : c.score >= 50 ? '#D97706' : '#DC2626';
+                      const scoreColor = c.score >= 75 ? '#00FFB2' : c.score >= 50 ? '#FFB800' : '#FF3B5C';
                       const scoreEmoji = c.score >= 75 ? '🟢' : c.score >= 50 ? '🟡' : '🔴';
-                      const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? '#2F7D4F' : c.avg_cpa <= 150 ? '#D97706' : '#DC2626';
+                      const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? '#00FFB2' : c.avg_cpa <= 150 ? '#FFB800' : '#FF3B5C';
                       const cplLabel = c.avg_cpa <= 0 ? '—' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
-                      const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? '#2F7D4F' : c.avg_ctr >= 1 ? '#D97706' : '#DC2626';
+                      const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? '#00FFB2' : c.avg_ctr >= 1 ? '#FFB800' : '#FF3B5C';
                       const ctrLabel = c.avg_ctr <= 0 ? '—' : c.avg_ctr >= 2.5 ? '✅ Excelente' : c.avg_ctr >= 1 ? '⚠️ Aceitável' : '❌ Baixo';
                       const diag = c.total_leads === 0 && c.total_spend > 0
                         ? 'Investimento sem leads — verifique o pixel e a landing page.'
@@ -889,8 +928,8 @@ export default function Professor() {
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '10px' }}>
                             {[
                               { lbl: 'Investido', val: `R$ ${c.total_spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
-                              { lbl: 'Leads', val: String(c.total_leads), color: '#2F7D4F' },
-                              { lbl: 'ROAS', val: c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—', color: c.avg_roas >= 3 ? '#2F7D4F' : c.avg_roas >= 2 ? '#D97706' : '#DC2626' },
+                              { lbl: 'Leads', val: String(c.total_leads), color: '#00FFB2' },
+                              { lbl: 'ROAS', val: c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—', color: c.avg_roas >= 3 ? '#00FFB2' : c.avg_roas >= 2 ? '#FFB800' : '#FF3B5C' },
                             ].map(({ lbl, val, color }) => (
                               <div key={lbl} style={{ textAlign: 'center', padding: '7px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
                                 <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '2px' }}>{lbl}</p>
@@ -931,7 +970,7 @@ export default function Professor() {
                                   <div style={{ marginBottom: '12px' }}>
                                     <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, marginBottom: '8px', letterSpacing: '0.05em' }}>CONJUNTOS DE ANÚNCIOS ({deep.adSets.length})</p>
                                     {deep.adSets.map((as) => {
-                                      const asColor = as.score >= 75 ? '#2F7D4F' : as.score >= 50 ? '#D97706' : '#DC2626';
+                                      const asColor = as.score >= 75 ? '#00FFB2' : as.score >= 50 ? '#FFB800' : '#FF3B5C';
                                       const isActive = as.status === 'active';
                                       const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
                                       return (
@@ -948,8 +987,8 @@ export default function Professor() {
                                           {isActive && (
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
                                               {[
-                                                { lbl: 'CPL', val: as.cpa > 0 ? `R$${as.cpa.toFixed(0)}` : '—', color: as.cpa <= 60 ? '#2F7D4F' : as.cpa <= 150 ? '#D97706' : '#DC2626' },
-                                                { lbl: 'CTR', val: as.ctr > 0 ? `${as.ctr.toFixed(1)}%` : '—', color: as.ctr >= 2.5 ? '#2F7D4F' : as.ctr >= 1 ? '#D97706' : '#DC2626' },
+                                                { lbl: 'CPL', val: as.cpa > 0 ? `R$${as.cpa.toFixed(0)}` : '—', color: as.cpa <= 60 ? '#00FFB2' : as.cpa <= 150 ? '#FFB800' : '#FF3B5C' },
+                                                { lbl: 'CTR', val: as.ctr > 0 ? `${as.ctr.toFixed(1)}%` : '—', color: as.ctr >= 2.5 ? '#00FFB2' : as.ctr >= 1 ? '#FFB800' : '#FF3B5C' },
                                                 { lbl: 'Leads', val: String(as.leads), color: FG },
                                                 { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
                                               ].map(({ lbl, val, color }) => (
@@ -971,7 +1010,7 @@ export default function Professor() {
                                   <div>
                                     <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, marginBottom: '8px', letterSpacing: '0.05em' }}>ANÚNCIOS INDIVIDUAIS ({deep.ads.length})</p>
                                     {deep.ads.map((ad) => {
-                                      const adColor = ad.score >= 75 ? '#2F7D4F' : ad.score >= 50 ? '#D97706' : '#DC2626';
+                                      const adColor = ad.score >= 75 ? '#00FFB2' : ad.score >= 50 ? '#FFB800' : '#FF3B5C';
                                       const isActive = ad.status === 'active';
                                       const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
                                       return (
@@ -989,10 +1028,10 @@ export default function Professor() {
                                           {isActive && (
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginTop: '6px' }}>
                                               {[
-                                                { lbl: 'CPL', val: ad.cpa > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#2F7D4F' : Number(ad.cpa) <= 150 ? '#D97706' : '#DC2626' },
-                                                { lbl: 'CTR', val: ad.ctr > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#2F7D4F' : Number(ad.ctr) >= 1 ? '#D97706' : '#DC2626' },
+                                                { lbl: 'CPL', val: ad.cpa > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#00FFB2' : Number(ad.cpa) <= 150 ? '#FFB800' : '#FF3B5C' },
+                                                { lbl: 'CTR', val: ad.ctr > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#00FFB2' : Number(ad.ctr) >= 1 ? '#FFB800' : '#FF3B5C' },
                                                 { lbl: 'CPC', val: ad.cpc > 0 ? `R$${Number(ad.cpc).toFixed(2)}` : '—', color: FG_MUTED },
-                                                { lbl: 'Leads', val: String(ad.leads), color: '#2F7D4F' },
+                                                { lbl: 'Leads', val: String(ad.leads), color: '#00FFB2' },
                                                 { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
                                               ].map(({ lbl, val, color }) => (
                                                 <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: BG_SUBTLE }}>
@@ -1056,11 +1095,11 @@ export default function Professor() {
                   <div style={{ width: '100%', borderTop: `1px solid ${BORDER}`, paddingTop: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ fontSize: '12px', color: FG_MUTED }}>Críticas</span>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: criticalCount > 0 ? '#DC2626' : '#2F7D4F' }}>{criticalCount}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: criticalCount > 0 ? '#FF3B5C' : '#00FFB2' }}>{criticalCount}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '12px', color: FG_MUTED }}>Atenção</span>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: warningCount > 0 ? '#D97706' : '#2F7D4F' }}>{warningCount}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: warningCount > 0 ? '#FFB800' : '#00FFB2' }}>{warningCount}</span>
                     </div>
                   </div>
                 </div>
@@ -1102,7 +1141,7 @@ export default function Professor() {
               <select
                 value={selectedCampaignId}
                 onChange={(e) => setSelectedCampaignId(e.target.value)}
-                style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', color: FG, padding: '8px 14px', fontSize: '13px', fontFamily: 'inherit', outline: 'none', minWidth: '220px', cursor: 'pointer', boxShadow: SHADOW }}
+                style={{ background: '#0A0D16', border: `1px solid ${BORDER}`, borderRadius: '10px', color: FG, padding: '8px 14px', fontSize: '13px', fontFamily: 'inherit', outline: 'none', minWidth: '220px', cursor: 'pointer', boxShadow: SHADOW }}
               >
                 {campaigns.length === 0 && <option value="">Nenhuma campanha — sincronize o Meta Ads</option>}
                 {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1125,8 +1164,8 @@ export default function Professor() {
           )}
 
           {!deepLoading && deepError && (
-            <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', marginBottom: '16px' }}>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: '#DC2626', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', marginBottom: '16px' }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#FF3B5C', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AlertTriangle size={14} /> Erro ao carregar análise
               </p>
               <p style={{ fontSize: '12px', color: FG_MUTED, marginBottom: '10px' }}>{deepError}</p>
@@ -1158,14 +1197,14 @@ export default function Professor() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                   {[
-                    { label: 'Gasto', value: `R$ ${deepData.summary.spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#2563EB' },
-                    { label: 'Leads', value: deepData.summary.leads.toLocaleString('pt-BR'), color: '#2F7D4F' },
-                    { label: 'CPA Médio', value: deepData.summary.cpa > 0 ? `R$ ${deepData.summary.cpa.toFixed(0)}` : '—', color: deepData.summary.cpa > 60 ? '#DC2626' : '#2F7D4F' },
-                    { label: 'ROAS', value: deepData.summary.roas > 0 ? `${deepData.summary.roas.toFixed(1)}x` : '—', color: deepData.summary.roas >= 3 ? '#2F7D4F' : deepData.summary.roas >= 2 ? '#D97706' : '#DC2626' },
-                    { label: 'CTR Médio', value: deepData.summary.ctr > 0 ? `${deepData.summary.ctr.toFixed(2)}%` : '—', color: deepData.summary.ctr >= 1.5 ? '#2F7D4F' : '#D97706' },
+                    { label: 'Gasto', value: `R$ ${deepData.summary.spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#00BFFF' },
+                    { label: 'Leads', value: deepData.summary.leads.toLocaleString('pt-BR'), color: '#00FFB2' },
+                    { label: 'CPA Médio', value: deepData.summary.cpa > 0 ? `R$ ${deepData.summary.cpa.toFixed(0)}` : '—', color: deepData.summary.cpa > 60 ? '#FF3B5C' : '#00FFB2' },
+                    { label: 'ROAS', value: deepData.summary.roas > 0 ? `${deepData.summary.roas.toFixed(1)}x` : '—', color: deepData.summary.roas >= 3 ? '#00FFB2' : deepData.summary.roas >= 2 ? '#FFB800' : '#FF3B5C' },
+                    { label: 'CTR Médio', value: deepData.summary.ctr > 0 ? `${deepData.summary.ctr.toFixed(2)}%` : '—', color: deepData.summary.ctr >= 1.5 ? '#00FFB2' : '#FFB800' },
                     { label: 'CPC Médio', value: deepData.summary.cpc > 0 ? `R$ ${deepData.summary.cpc.toFixed(2)}` : '—', color: FG },
                     { label: 'Cliques', value: deepData.summary.clicks.toLocaleString('pt-BR'), color: GREEN },
-                    { label: 'Impressões', value: deepData.summary.impressions > 1000 ? `${(deepData.summary.impressions / 1000).toFixed(1)}k` : deepData.summary.impressions.toLocaleString('pt-BR'), color: '#7C3AED' },
+                    { label: 'Impressões', value: deepData.summary.impressions > 1000 ? `${(deepData.summary.impressions / 1000).toFixed(1)}k` : deepData.summary.impressions.toLocaleString('pt-BR'), color: '#BD00FF' },
                   ].map((item) => (
                     <div key={item.label} style={{ textAlign: 'center' }}>
                       <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '4px' }}>{item.label}</p>
@@ -1193,15 +1232,15 @@ export default function Professor() {
                     <ResponsiveContainer width="100%" height={180}>
                       <AreaChart data={deepData.daily}>
                         <defs>
-                          <linearGradient id="dBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563EB" stopOpacity={0.2} /><stop offset="100%" stopColor="#2563EB" stopOpacity={0} /></linearGradient>
-                          <linearGradient id="dGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2F7D4F" stopOpacity={0.2} /><stop offset="100%" stopColor="#2F7D4F" stopOpacity={0} /></linearGradient>
+                          <linearGradient id="dBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00BFFF" stopOpacity={0.2} /><stop offset="100%" stopColor="#00BFFF" stopOpacity={0} /></linearGradient>
+                          <linearGradient id="dGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00FFB2" stopOpacity={0.2} /><stop offset="100%" stopColor="#00FFB2" stopOpacity={0} /></linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
                         <XAxis dataKey="label" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
                         <YAxis hide />
-                        <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', fontSize: '11px', color: FG }} />
-                        <Area type="monotone" dataKey="spend" name="Gasto (R$)" stroke="#2563EB" strokeWidth={2} fill="url(#dBlue)" dot={false} />
-                        <Area type="monotone" dataKey="leads" name="Leads" stroke="#2F7D4F" strokeWidth={2} fill="url(#dGreen)" dot={false} />
+                        <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', fontSize: '11px', color: FG }} />
+                        <Area type="monotone" dataKey="spend" name="Gasto (R$)" stroke="#00BFFF" strokeWidth={2} fill="url(#dBlue)" dot={false} />
+                        <Area type="monotone" dataKey="leads" name="Leads" stroke="#00FFB2" strokeWidth={2} fill="url(#dGreen)" dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   )}
@@ -1229,22 +1268,22 @@ export default function Professor() {
                       </thead>
                       <tbody>
                         {deepData.adSets.map((as) => {
-                          const scoreColor = as.score >= 75 ? '#2F7D4F' : as.score >= 55 ? '#2563EB' : as.score >= 35 ? '#D97706' : '#DC2626';
+                          const scoreColor = as.score >= 75 ? '#00FFB2' : as.score >= 55 ? '#00BFFF' : as.score >= 35 ? '#FFB800' : '#FF3B5C';
                           return (
                             <tr key={as.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
                               <td style={{ padding: '12px 14px', color: FG, fontWeight: 500, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{as.name}</td>
                               <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: as.status === 'active' ? '#2F7D4F' : '#D97706', margin: '0 auto' }} />
+                                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: as.status === 'active' ? '#00FFB2' : '#FFB800', margin: '0 auto' }} />
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 700, color: scoreColor }}>{as.score}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.ctr) >= 1.5 ? '#2F7D4F' : Number(as.ctr) >= 1 ? '#D97706' : Number(as.ctr) > 0 ? '#DC2626' : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.ctr) >= 1.5 ? '#00FFB2' : Number(as.ctr) >= 1 ? '#FFB800' : Number(as.ctr) > 0 ? '#FF3B5C' : FG_SUBTLE, fontWeight: 600 }}>
                                 {Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—'}
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', color: FG_MUTED }}>{Number(as.cpc) > 0 ? `R$${Number(as.cpc).toFixed(2)}` : '—'}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.cpa) > 60 ? '#DC2626' : Number(as.cpa) > 0 ? '#2F7D4F' : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.cpa) > 60 ? '#FF3B5C' : Number(as.cpa) > 0 ? '#00FFB2' : FG_SUBTLE, fontWeight: 600 }}>
                                 {Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—'}
                               </td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.roas) >= 3 ? '#2F7D4F' : Number(as.roas) >= 2 ? '#D97706' : Number(as.roas) > 0 ? '#DC2626' : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.roas) >= 3 ? '#00FFB2' : Number(as.roas) >= 2 ? '#FFB800' : Number(as.roas) > 0 ? '#FF3B5C' : FG_SUBTLE, fontWeight: 600 }}>
                                 {Number(as.roas) > 0 ? `${Number(as.roas).toFixed(1)}x` : '—'}
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', color: '#fff' }}>{as.leads}</td>
@@ -1284,7 +1323,7 @@ export default function Professor() {
                     </div>
                   ))}
                   {deepData.analysis.issues.length === 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2F7D4F' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00FFB2' }}>
                       <CheckCircle size={16} />
                       <span style={{ fontSize: '13px' }}>Campanha sem problemas críticos detectados.</span>
                     </div>
@@ -1296,9 +1335,9 @@ export default function Professor() {
                     <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarDays size={15} color={GREEN} /> Projeção de Fim de Mês</p>
                     <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '16px' }}>{deepData.projection.daysRemaining} dias restantes</p>
                     {[
-                      { label: 'Total Gasto Est.', value: `R$ ${deepData.projection.projectedTotalSpend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#2563EB' },
-                      { label: 'Total Leads Est.', value: deepData.projection.projectedTotalLeads.toLocaleString('pt-BR'), color: '#2F7D4F' },
-                      { label: 'CPA Projetado', value: deepData.projection.projectedCpa > 0 ? `R$ ${deepData.projection.projectedCpa.toFixed(0)}` : '—', color: deepData.projection.projectedCpa > 60 ? '#DC2626' : '#2F7D4F' },
+                      { label: 'Total Gasto Est.', value: `R$ ${deepData.projection.projectedTotalSpend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#00BFFF' },
+                      { label: 'Total Leads Est.', value: deepData.projection.projectedTotalLeads.toLocaleString('pt-BR'), color: '#00FFB2' },
+                      { label: 'CPA Projetado', value: deepData.projection.projectedCpa > 0 ? `R$ ${deepData.projection.projectedCpa.toFixed(0)}` : '—', color: deepData.projection.projectedCpa > 60 ? '#FF3B5C' : '#00FFB2' },
                     ].map((item) => (
                       <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '8px' }}>
                         <span style={{ fontSize: '12px', color: FG_MUTED }}>{item.label}</span>
@@ -1338,9 +1377,9 @@ export default function Professor() {
                 {c.total_spend > 0 && (
                   <div style={{ display: 'flex', gap: '20px', padding: '12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '12px' }}>
                     {[
-                      { l: 'CPA', v: `R$ ${c.avg_cpa.toFixed(0)}`, color: c.avg_cpa > 60 ? '#DC2626' : '#2F7D4F' },
-                      { l: 'ROAS', v: `${c.avg_roas.toFixed(1)}x`, color: c.avg_roas >= 3 ? '#2F7D4F' : c.avg_roas >= 2 ? '#D97706' : '#DC2626' },
-                      { l: 'CTR', v: `${c.avg_ctr.toFixed(1)}%`, color: c.avg_ctr >= 1.5 ? '#2F7D4F' : '#D97706' },
+                      { l: 'CPA', v: `R$ ${c.avg_cpa.toFixed(0)}`, color: c.avg_cpa > 60 ? '#FF3B5C' : '#00FFB2' },
+                      { l: 'ROAS', v: `${c.avg_roas.toFixed(1)}x`, color: c.avg_roas >= 3 ? '#00FFB2' : c.avg_roas >= 2 ? '#FFB800' : '#FF3B5C' },
+                      { l: 'CTR', v: `${c.avg_ctr.toFixed(1)}%`, color: c.avg_ctr >= 1.5 ? '#00FFB2' : '#FFB800' },
                       { l: 'Leads', v: String(c.total_leads), color: FG },
                     ].map((item) => (
                       <div key={item.l}>
@@ -1365,7 +1404,7 @@ export default function Professor() {
         <div id="apresentacao-report">
           {!aiData?.analysis ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '20px', background: BG_CARD, borderRadius: '20px', border: `1px dashed ${BORDER}`, boxShadow: SHADOW }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(189,0,255,0.08)', border: '1px solid rgba(189,0,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
                 📊
               </div>
               <p style={{ fontSize: '16px', fontWeight: 700, color: FG }}>Gere a análise primeiro</p>
@@ -1374,7 +1413,7 @@ export default function Professor() {
               </p>
               <button
                 onClick={() => setTab('ia')}
-                style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: 'rgba(124,58,237,0.1)', color: '#7C3AED', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: 'rgba(189,0,255,0.1)', color: '#BD00FF', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 Ir para Análise IA →
               </button>
@@ -1392,7 +1431,7 @@ export default function Professor() {
               </div>
 
               {/* CABEÇALHO DO RELATÓRIO */}
-              <div style={{ background: `linear-gradient(135deg, ${GREEN}0A, rgba(124,58,237,0.05))`, border: `1px solid ${GREEN}20`, borderRadius: '20px', padding: '32px', marginBottom: '16px', boxShadow: SHADOW }}>
+              <div style={{ background: `linear-gradient(135deg, ${GREEN}0A, rgba(189,0,255,0.05))`, border: `1px solid ${GREEN}20`, borderRadius: '20px', padding: '32px', marginBottom: '16px', boxShadow: SHADOW }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                   <div>
                     <p style={{ fontSize: '11px', color: FG_MUTED, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '6px' }}>Relatório de Performance</p>
@@ -1413,10 +1452,10 @@ export default function Professor() {
               {aiData.input_summary && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }} className="grid-apres-kpis">
                   {[
-                    { label: 'Total Investido', value: `R$ ${Number(aiData.input_summary.total_spend).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '💰', color: '#2563EB', desc: 'Quanto foi gasto no período' },
-                    { label: 'Leads Gerados', value: String(aiData.input_summary.total_leads), icon: '🎯', color: '#2F7D4F', desc: 'Pessoas que demonstraram interesse' },
-                    { label: 'Campanhas Ativas', value: String(aiData.input_summary.campaigns), icon: '📣', color: '#7C3AED', desc: 'Campanhas com investimento' },
-                    { label: 'Conjuntos', value: String(aiData.input_summary.ad_sets), icon: '🗂️', color: '#D97706', desc: 'Grupos de anúncios analisados' },
+                    { label: 'Total Investido', value: `R$ ${Number(aiData.input_summary.total_spend).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '💰', color: '#00BFFF', desc: 'Quanto foi gasto no período' },
+                    { label: 'Leads Gerados', value: String(aiData.input_summary.total_leads), icon: '🎯', color: '#00FFB2', desc: 'Pessoas que demonstraram interesse' },
+                    { label: 'Campanhas Ativas', value: String(aiData.input_summary.campaigns), icon: '📣', color: '#BD00FF', desc: 'Campanhas com investimento' },
+                    { label: 'Conjuntos', value: String(aiData.input_summary.ad_sets), icon: '🗂️', color: '#FFB800', desc: 'Grupos de anúncios analisados' },
                   ].map((item) => (
                     <div key={item.label} style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px', textAlign: 'center', boxShadow: SHADOW }}>
                       <div style={{ fontSize: '24px', marginBottom: '8px' }}>{item.icon}</div>
@@ -1430,10 +1469,10 @@ export default function Professor() {
 
               {/* ALERTA CRÍTICO */}
               {aiData.analysis.alerta_critico && (
-                <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.25)', borderRadius: '14px', padding: '18px 22px', marginBottom: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.25)', borderRadius: '14px', padding: '18px 22px', marginBottom: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '22px', flexShrink: 0 }}>🚨</span>
                   <div>
-                    <p style={{ fontSize: '13px', fontWeight: 800, color: '#DC2626', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Atenção Imediata Necessária</p>
+                    <p style={{ fontSize: '13px', fontWeight: 800, color: '#FF3B5C', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Atenção Imediata Necessária</p>
                     <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.6', whiteSpace: 'pre-line' }}>{aiData.analysis.alerta_critico}</p>
                   </div>
                 </div>
@@ -1442,26 +1481,26 @@ export default function Professor() {
               {/* O QUE ESTÁ FUNCIONANDO / MELHORAR */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }} className="grid-ai-2col">
                 {aiData.analysis.o_que_esta_funcionando?.length > 0 && (
-                  <div style={{ background: 'rgba(47,125,79,0.06)', border: '1px solid rgba(47,125,79,0.2)', borderRadius: '16px', padding: '22px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#2F7D4F', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ background: 'rgba(0,255,178,0.06)', border: '1px solid rgba(0,255,178,0.2)', borderRadius: '16px', padding: '22px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#00FFB2', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       ✅ O QUE ESTÁ FUNCIONANDO
                     </p>
                     {aiData.analysis.o_que_esta_funcionando.map((item: string, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start' }}>
-                        <span style={{ color: '#2F7D4F', flexShrink: 0, fontWeight: 700 }}>✓</span>
+                        <span style={{ color: '#00FFB2', flexShrink: 0, fontWeight: 700 }}>✓</span>
                         <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.6' }}>{item}</p>
                       </div>
                     ))}
                   </div>
                 )}
                 {aiData.analysis.o_que_nao_esta_funcionando?.length > 0 && (
-                  <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: '16px', padding: '22px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#DC2626', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', borderRadius: '16px', padding: '22px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#FF3B5C', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       🔧 O QUE PRECISA MELHORAR
                     </p>
                     {aiData.analysis.o_que_nao_esta_funcionando.map((item: string, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start' }}>
-                        <span style={{ color: '#DC2626', flexShrink: 0, fontWeight: 700 }}>!</span>
+                        <span style={{ color: '#FF3B5C', flexShrink: 0, fontWeight: 700 }}>!</span>
                         <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.6' }}>{item}</p>
                       </div>
                     ))}
@@ -1476,7 +1515,7 @@ export default function Professor() {
                     ⚡ Próximas Ações — O Que Fazer Agora
                   </p>
                   {aiData.analysis.acoes_prioritarias.map((a: any, i: number) => {
-                    const pc = a.prioridade === 'URGENTE' ? '#DC2626' : a.prioridade === 'ALTA' ? '#EA580C' : '#D97706';
+                    const pc = a.prioridade === 'URGENTE' ? '#FF3B5C' : a.prioridade === 'ALTA' ? '#FF3B5C' : '#FFB800';
                     const num = ['①', '②', '③', '④', '⑤', '⑥'][i] || `${i+1}.`;
                     return (
                       <div key={i} style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '12px', background: `${pc}05`, border: `1px solid ${pc}18`, marginBottom: '12px', alignItems: 'flex-start' }}>
@@ -1488,9 +1527,9 @@ export default function Professor() {
                           <p style={{ fontSize: '15px', fontWeight: 700, color: FG, marginBottom: '8px' }}>{a.titulo}</p>
                           <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.8', marginBottom: '10px', whiteSpace: 'pre-line' }}>{a.descricao}</p>
                           {a.impacto_esperado && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(47,125,79,0.06)', border: '1px solid rgba(47,125,79,0.15)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(0,255,178,0.06)', border: '1px solid rgba(0,255,178,0.15)' }}>
                               <span style={{ fontSize: '14px' }}>📈</span>
-                              <p style={{ fontSize: '12px', color: '#2F7D4F', fontWeight: 600 }}>{a.impacto_esperado}</p>
+                              <p style={{ fontSize: '12px', color: '#00FFB2', fontWeight: 600 }}>{a.impacto_esperado}</p>
                             </div>
                           )}
                           {a.campanha_ou_conjunto && a.campanha_ou_conjunto !== 'Geral' && (
@@ -1509,7 +1548,7 @@ export default function Professor() {
                   <p style={{ fontSize: '15px', fontWeight: 700, color: FG, marginBottom: '18px' }}>📣 Análise por Campanha</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {aiData.analysis.analise_por_campanha.map((c: any, i: number) => {
-                      const rc = c.recomendacao === 'ESCALAR' ? '#2F7D4F' : c.recomendacao === 'PAUSAR' ? '#DC2626' : c.recomendacao === 'OTIMIZAR' ? '#D97706' : '#2563EB';
+                      const rc = c.recomendacao === 'ESCALAR' ? '#00FFB2' : c.recomendacao === 'PAUSAR' ? '#FF3B5C' : c.recomendacao === 'OTIMIZAR' ? '#FFB800' : '#00BFFF';
                       const rcEmoji = c.recomendacao === 'ESCALAR' ? '🚀' : c.recomendacao === 'PAUSAR' ? '⏸️' : c.recomendacao === 'OTIMIZAR' ? '⚙️' : '👀';
                       return (
                         <div key={i} style={{ border: `1px solid ${rc}20`, borderRadius: '14px', overflow: 'hidden' }}>

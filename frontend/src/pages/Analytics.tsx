@@ -3,20 +3,24 @@ import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, Cell, ReferenceLine,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Users, Target, Zap, MousePointerClick, Eye, Layers } from 'lucide-react';
+import { DollarSign, Users, Target, Zap, MousePointerClick, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { metricsApi, campaignsApi, analyzeApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-const GREEN = '#2F7D4F';
-const BG = '#F6F7F9';
-const BG_CARD = '#FFFFFF';
-const BG_SUBTLE = '#F9FAFB';
-const FG = '#111827';
-const FG_MUTED = '#6B7280';
-const FG_SUBTLE = '#9CA3AF';
-const BORDER = '#E5E7EB';
-const SHADOW = '0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.05)';
+const BG = '#080B14';
+const BG_CARD = '#0D1117';
+const BG_SUBTLE = '#111520';
+const NEON = '#00FFB2';
+const BLUE = '#00BFFF';
+const FG = '#C9D1D9';
+const FG_MUTED = 'rgba(201,209,217,0.55)';
+const FG_SUBTLE = 'rgba(201,209,217,0.3)';
+const BORDER = 'rgba(0,255,178,0.1)';
+const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
+const RED = '#FF3B5C';
+const AMBER = '#FFB800';
+const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
 
 interface Summary {
   spend: number; leads: number; cpa: number; roas: number;
@@ -35,10 +39,10 @@ interface CampaignRow {
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  active:    { label: 'Ativa',      color: '#2F7D4F', bg: 'rgba(47,125,79,0.08)' },
-  paused:    { label: 'Pausada',    color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
-  draft:     { label: 'Rascunho',   color: '#6B7280', bg: 'rgba(107,114,128,0.08)' },
-  completed: { label: 'Concluída',  color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
+  active:    { label: 'Ativa',      color: NEON,  bg: 'rgba(0,255,178,0.08)' },
+  paused:    { label: 'Pausada',    color: AMBER, bg: 'rgba(255,184,0,0.08)' },
+  draft:     { label: 'Rascunho',   color: FG_MUTED, bg: 'rgba(201,209,217,0.06)' },
+  completed: { label: 'Concluída',  color: BLUE,  bg: 'rgba(0,191,255,0.08)' },
 };
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -53,7 +57,7 @@ function KpiCard({ label, value, icon: Icon, iconColor, sub, subColor }: any) {
       borderRadius: '16px',
       padding: '18px 20px',
       position: 'relative',
-      boxShadow: SHADOW,
+      boxShadow: GLOW,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
         <div style={{
@@ -68,8 +72,8 @@ function KpiCard({ label, value, icon: Icon, iconColor, sub, subColor }: any) {
             fontSize: '10px', fontWeight: 700,
             padding: '3px 8px', borderRadius: '20px',
             color: subColor || FG_MUTED,
-            background: subColor ? `${subColor}12` : BG_SUBTLE,
-            border: `1px solid ${subColor ? subColor + '25' : BORDER}`,
+            background: subColor ? `${subColor}18` : BG_SUBTLE,
+            border: `1px solid ${subColor ? subColor + '30' : BORDER}`,
             maxWidth: '130px', textAlign: 'right', lineHeight: 1.3,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
@@ -90,7 +94,7 @@ function ChartCard({ title, desc, children }: { title: string; desc: string; chi
       border: `1px solid ${BORDER}`,
       borderRadius: '16px',
       padding: '20px 22px',
-      boxShadow: SHADOW,
+      boxShadow: GLOW,
     }}>
       <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '3px' }}>{title}</p>
       <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '18px', lineHeight: 1.5 }}>{desc}</p>
@@ -102,7 +106,7 @@ function ChartCard({ title, desc, children }: { title: string; desc: string; chi
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '10px 14px', boxShadow: SHADOW }}>
+    <div style={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', padding: '10px 14px', fontSize: '11px', color: FG }}>
       <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '6px' }}>{label}</p>
       {payload.map((p: any) => (
         <p key={p.name} style={{ fontSize: '12px', fontWeight: 600, color: p.color, marginBottom: '2px' }}>
@@ -187,17 +191,22 @@ export default function Analytics() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: BG }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: `2px solid ${GREEN}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: `3px solid ${NEON}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
+
+  const totalImpressions = weekly.reduce((s, d) => s + d.impressions, 0);
+  const totalClicks = weekly.reduce((s, d) => s + d.clicks, 0);
+  const cpm = totalImpressions > 0 ? ((summary?.spend || 0) / totalImpressions) * 1000 : 0;
+  const convRate = totalClicks > 0 ? ((summary?.leads || 0) / totalClicks) * 100 : 0;
 
   const kpis = [
     {
       label: 'Investimento Total',
       value: `R$ ${(summary?.spend || 0).toLocaleString('pt-BR')}`,
       icon: DollarSign,
-      iconColor: '#2563EB',
+      iconColor: BLUE,
       sub: 'Soma de todos os anúncios',
       subColor: undefined,
     },
@@ -205,64 +214,89 @@ export default function Analytics() {
       label: 'Leads Gerados',
       value: (summary?.leads || 0).toLocaleString('pt-BR'),
       icon: Users,
-      iconColor: '#2F7D4F',
+      iconColor: NEON,
       sub: 'Contatos qualificados',
-      subColor: '#2F7D4F',
+      subColor: NEON,
     },
     {
       label: 'Custo por Lead — CPL',
       value: summary?.cpa ? `R$ ${Number(summary.cpa).toFixed(2)}` : '—',
       icon: Target,
-      iconColor: '#D97706',
+      iconColor: AMBER,
       sub: summary?.cpa
         ? (Number(summary.cpa) <= 60 ? '✅ Ótimo' : Number(summary.cpa) <= 150 ? '⚠️ Aceitável' : '❌ Alto')
         : 'Quanto você paga por lead',
       subColor: summary?.cpa
-        ? (Number(summary.cpa) <= 60 ? '#2F7D4F' : Number(summary.cpa) <= 150 ? '#D97706' : '#DC2626')
+        ? (Number(summary.cpa) <= 60 ? NEON : Number(summary.cpa) <= 150 ? AMBER : RED)
         : undefined,
     },
     {
       label: 'Retorno sobre Gasto — ROAS',
       value: summary?.roas ? `${Number(summary.roas).toFixed(1)}x` : '—',
       icon: Zap,
-      iconColor: '#7C3AED',
+      iconColor: '#A855F7',
       sub: summary?.roas
         ? (Number(summary.roas) >= 3 ? '✅ Ótimo' : Number(summary.roas) >= 2 ? '⚠️ Aceitável' : '❌ Baixo')
         : 'R$ de retorno por R$ gasto',
       subColor: summary?.roas
-        ? (Number(summary.roas) >= 3 ? '#2F7D4F' : Number(summary.roas) >= 2 ? '#D97706' : '#DC2626')
+        ? (Number(summary.roas) >= 3 ? NEON : Number(summary.roas) >= 2 ? AMBER : RED)
         : undefined,
     },
     {
       label: 'Taxa de Cliques — CTR',
       value: summary?.ctr ? `${Number(summary.ctr).toFixed(2)}%` : '—',
       icon: MousePointerClick,
-      iconColor: GREEN,
+      iconColor: NEON,
       sub: summary?.ctr
         ? (Number(summary.ctr) >= 2.5 ? '✅ Excelente' : Number(summary.ctr) >= 1 ? '⚠️ Aceitável' : '❌ Baixo')
         : '% de quem viu e clicou',
       subColor: summary?.ctr
-        ? (Number(summary.ctr) >= 2.5 ? '#2F7D4F' : Number(summary.ctr) >= 1 ? '#D97706' : '#DC2626')
+        ? (Number(summary.ctr) >= 2.5 ? NEON : Number(summary.ctr) >= 1 ? AMBER : RED)
         : undefined,
     },
     {
       label: 'Custo por Clique — CPC',
       value: summary?.cpc ? `R$ ${Number(summary.cpc).toFixed(2)}` : '—',
       icon: Eye,
-      iconColor: '#2563EB',
+      iconColor: BLUE,
       sub: summary?.cpc
         ? (Number(summary.cpc) <= 5 ? '✅ Bom' : Number(summary.cpc) <= 15 ? '⚠️ Médio' : '❌ Caro')
         : 'Preço de cada visita ao site',
       subColor: summary?.cpc
-        ? (Number(summary.cpc) <= 5 ? '#2F7D4F' : Number(summary.cpc) <= 15 ? '#D97706' : '#DC2626')
+        ? (Number(summary.cpc) <= 5 ? NEON : Number(summary.cpc) <= 15 ? AMBER : RED)
         : undefined,
     },
+    {
+      label: 'CPM — Custo por Mil Imp.',
+      value: cpm > 0 ? `R$ ${cpm.toFixed(2)}` : '—',
+      icon: Eye,
+      iconColor: '#BD00FF',
+      sub: cpm > 0
+        ? (cpm <= 15 ? '✅ Barato' : cpm <= 40 ? '⚠️ Médio' : '❌ Caro')
+        : 'R$ por 1.000 exibições do anúncio',
+      subColor: cpm > 0 ? (cpm <= 15 ? NEON : cpm <= 40 ? AMBER : RED) : undefined,
+    },
+    {
+      label: 'Taxa de Conversão — CTL',
+      value: convRate > 0 ? `${convRate.toFixed(1)}%` : '—',
+      icon: Target,
+      iconColor: NEON,
+      sub: convRate > 0
+        ? (convRate >= 5 ? '✅ Excelente' : convRate >= 2 ? '⚠️ Aceitável' : '❌ Baixo')
+        : '% dos cliques que viraram leads',
+      subColor: convRate > 0 ? (convRate >= 5 ? NEON : convRate >= 2 ? AMBER : RED) : undefined,
+    },
+    {
+      label: 'Campanhas no Período',
+      value: String(summary?.campaigns || campaigns.length || 0),
+      icon: Zap,
+      iconColor: BLUE,
+      sub: campaigns.filter((c) => c.status === 'active').length > 0
+        ? `${campaigns.filter((c) => c.status === 'active').length} ativas · ${campaigns.filter((c) => c.status === 'paused').length} pausadas`
+        : 'Total de campanhas analisadas',
+      subColor: undefined,
+    },
   ];
-
-  const bestDay = weekly.length > 0 ? weekly.reduce((b, d) => d.leads > b.leads ? d : b, weekly[0]) : null;
-  const worstDay = weekly.length > 0 ? weekly.reduce((w, d) => (d.cpa || 0) > (w.cpa || 0) ? d : w, weekly[0]) : null;
-  const totalWeekSpend = weekly.reduce((s, d) => s + (d.spend || 0), 0);
-  const avgWeekCTR = weekly.filter((d) => d.ctr > 0).reduce((s, d, _, a) => s + d.ctr / a.length, 0);
 
   return (
     <div className="page-pad" style={{ minHeight: '100vh', background: BG, padding: '28px 32px' }}>
@@ -290,13 +324,13 @@ export default function Analytics() {
           <DateRangePicker value={range} onChange={setRange} />
         </div>
         {noData && (
-          <div style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#D97706', padding: '6px 14px', borderRadius: '8px', background: 'rgba(217,119,6,0.06)', border: '1px solid rgba(217,119,6,0.2)' }}>
+          <div style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: AMBER, padding: '6px 14px', borderRadius: '8px', background: `${AMBER}0F`, border: `1px solid ${AMBER}33` }}>
             Nenhum dado para este período — sincronize o Meta Ads em Configurações para ver seus números reais.
           </div>
         )}
       </div>
 
-      {/* KPIs — 6 cards in 2 rows of 3 */}
+      {/* KPIs — 9 cards in 3 rows of 3 */}
       <div
         style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}
         className="grid-kpis-analytics"
@@ -312,21 +346,21 @@ export default function Analytics() {
             <AreaChart data={weekly}>
               <defs>
                 <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563EB" stopOpacity={0.18} />
-                  <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+                  <stop offset="0%" stopColor={BLUE} stopOpacity={0.25} />
+                  <stop offset="100%" stopColor={BLUE} stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2F7D4F" stopOpacity={0.18} />
-                  <stop offset="100%" stopColor="#2F7D4F" stopOpacity={0} />
+                  <stop offset="0%" stopColor={NEON} stopOpacity={0.2} />
+                  <stop offset="100%" stopColor={NEON} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="day" stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
               <Legend wrapperStyle={{ fontSize: '11px', color: FG_MUTED, paddingTop: '10px' }} />
-              <Area type="monotone" dataKey="spend" name="Gasto (R$)" stroke="#2563EB" strokeWidth={2} fill="url(#gBlue)" dot={false} />
-              <Area type="monotone" dataKey="leads" name="Leads" stroke="#2F7D4F" strokeWidth={2} fill="url(#gGreen)" dot={false} />
+              <Area type="monotone" dataKey="spend" name="Gasto (R$)" stroke={BLUE} strokeWidth={2} fill="url(#gBlue)" dot={false} />
+              <Area type="monotone" dataKey="leads" name="Leads" stroke={NEON} strokeWidth={2} fill="url(#gGreen)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -334,12 +368,12 @@ export default function Analytics() {
         <ChartCard title="Taxa de Cliques (CTR) e Custo por Clique (CPC) por Dia" desc="CTR (verde) = % que clicou. CPC (roxo) = preço de cada clique. CTR alto + CPC baixo = anúncio eficiente.">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={weekly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="day" stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="ctr" name="CTR" stroke={GREEN} strokeWidth={2} dot={{ fill: GREEN, r: 3 }} activeDot={{ r: 5 }} />
-              <Line type="monotone" dataKey="cpc" name="CPC" stroke="#7C3AED" strokeWidth={2} dot={{ fill: '#7C3AED', r: 3 }} activeDot={{ r: 5 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+              <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
+              <Line type="monotone" dataKey="ctr" name="CTR" stroke={NEON} strokeWidth={2} dot={{ fill: NEON, r: 3 }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="cpc" name="CPC" stroke="#A855F7" strokeWidth={2} dot={{ fill: '#A855F7', r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -351,15 +385,15 @@ export default function Analytics() {
         <ChartCard title="Custo por Lead (CPL) por Dia" desc="Verde = ótimo (abaixo de R$60) · Amarelo = aceitável (R$60–R$150) · Vermelho = alto (acima de R$150). Linhas tracejadas mostram os limites de benchmark.">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weekly} barSize={26}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="day" stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <ReferenceLine y={60} stroke="#2F7D4F" strokeDasharray="4 4" label={{ value: 'Bom R$60', fill: '#2F7D4F', fontSize: 10, position: 'right' }} />
-              <ReferenceLine y={150} stroke="#DC2626" strokeDasharray="4 4" label={{ value: 'Alto R$150', fill: '#DC2626', fontSize: 10, position: 'right' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
+              <ReferenceLine y={60} stroke={NEON} strokeDasharray="4 4" label={{ value: 'Bom R$60', fill: NEON, fontSize: 10, position: 'right' }} />
+              <ReferenceLine y={150} stroke={RED} strokeDasharray="4 4" label={{ value: 'Alto R$150', fill: RED, fontSize: 10, position: 'right' }} />
               <Bar dataKey="cpa" name="Custo por Lead (R$)" radius={[6, 6, 0, 0]}>
                 {weekly.map((entry, index) => (
-                  <Cell key={`cpa-${index}`} fill={entry.cpa <= 60 ? '#2F7D4F' : entry.cpa <= 150 ? '#D97706' : '#DC2626'} />
+                  <Cell key={`cpa-${index}`} fill={entry.cpa <= 60 ? NEON : entry.cpa <= 150 ? AMBER : RED} />
                 ))}
               </Bar>
             </BarChart>
@@ -371,129 +405,25 @@ export default function Analytics() {
             <AreaChart data={weekly}>
               <defs>
                 <linearGradient id="gCyan" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={GREEN} stopOpacity={0.18} />
-                  <stop offset="100%" stopColor={GREEN} stopOpacity={0} />
+                  <stop offset="0%" stopColor={NEON} stopOpacity={0.2} />
+                  <stop offset="100%" stopColor={NEON} stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gPurp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#A855F7" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="#A855F7" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="day" stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
               <Legend wrapperStyle={{ fontSize: '11px', color: FG_MUTED, paddingTop: '10px' }} />
-              <Area type="monotone" dataKey="clicks" name="Cliques" stroke={GREEN} strokeWidth={2} fill="url(#gCyan)" dot={false} />
-              <Area type="monotone" dataKey="impressions" name="Impressões" stroke="#7C3AED" strokeWidth={2} fill="url(#gPurp)" dot={false} />
+              <Area type="monotone" dataKey="clicks" name="Cliques" stroke={NEON} strokeWidth={2} fill="url(#gCyan)" dot={false} />
+              <Area type="monotone" dataKey="impressions" name="Impressões" stroke="#A855F7" strokeWidth={2} fill="url(#gPurp)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
       </div>
-
-      {/* Campaign comparison table */}
-      {campaigns.length > 0 && (
-        <div style={{
-          background: BG_CARD,
-          border: `1px solid ${BORDER}`,
-          borderRadius: '16px',
-          marginBottom: '20px',
-          overflow: 'hidden',
-          boxShadow: SHADOW,
-        }}>
-          <div style={{
-            padding: '18px 22px',
-            borderBottom: `1px solid ${BORDER}`,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          }}>
-            <div>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '2px' }}>Comparativo de Campanhas</p>
-              <p style={{ fontSize: '11px', color: FG_MUTED }}>Métricas acumuladas por campanha no período</p>
-            </div>
-            <button
-              onClick={() => navigate('/campanhas')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '7px 14px', borderRadius: '8px',
-                border: `1px solid rgba(47,125,79,0.2)`, background: 'rgba(47,125,79,0.06)',
-                color: GREEN, fontSize: '12px', fontWeight: 600,
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              <Layers size={13} /> Ver conjuntos
-            </button>
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  {[
-                    { key: 'Campanha', label: 'Campanha', title: '' },
-                    { key: 'Plataforma', label: 'Plataforma', title: '' },
-                    { key: 'Status', label: 'Status', title: '' },
-                    { key: 'Gasto', label: 'Total Investido', title: 'Quanto foi gasto nesta campanha no período selecionado' },
-                    { key: 'Leads', label: 'Leads', title: 'Número de contatos qualificados gerados por esta campanha' },
-                    { key: 'CPA', label: 'CPL', title: 'CPL — quanto custou em média cada lead gerado. Bom: abaixo de R$60. Aceitável: até R$150' },
-                    { key: 'ROAS', label: 'ROAS', title: 'ROAS — para cada R$1 investido, quanto voltou em receita. Acima de 3x é ótimo' },
-                    { key: 'CTR', label: 'CTR', title: 'CTR — % de pessoas que viram o anúncio e clicaram. Acima de 2,5% é ótimo; acima de 1% é aceitável' },
-                    { key: 'CPC', label: 'CPC', title: 'CPC — quanto custou cada clique individual no anúncio. Bom: abaixo de R$5' },
-                  ].map((h) => (
-                    <th
-                      key={h.key}
-                      title={h.title || undefined}
-                      style={{
-                        padding: '11px 18px',
-                        textAlign: h.key === 'Campanha' ? 'left' : 'right',
-                        fontSize: '10px', fontWeight: 700,
-                        color: FG_SUBTLE,
-                        textTransform: 'uppercase', letterSpacing: '0.06em',
-                        whiteSpace: 'nowrap',
-                        cursor: h.title ? 'help' : 'default',
-                      }}
-                    >
-                      {h.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {campaigns.map((c) => {
-                  const badge = STATUS_BADGE[c.status] || STATUS_BADGE.draft;
-                  return (
-                    <tr
-                      key={c.id}
-                      style={{ borderBottom: `1px solid ${BORDER}`, cursor: 'pointer', transition: 'background 0.12s' }}
-                      onClick={() => navigate('/campanhas')}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = BG_SUBTLE)}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <td style={{ padding: '13px 18px', color: FG, fontWeight: 600, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right', color: FG_MUTED, fontSize: '12px' }}>{PLATFORM_LABEL[c.platform] || c.platform}</td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', color: badge.color, background: badge.bg }}>{badge.label}</span>
-                      </td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right', color: FG, fontWeight: 700 }}>R$ {Number(c.total_spend).toLocaleString('pt-BR')}</td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right', color: FG, fontWeight: 500 }}>{Number(c.total_leads).toLocaleString('pt-BR')}</td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right', color: c.avg_cpa > 60 ? '#DC2626' : c.avg_cpa > 0 ? '#2F7D4F' : FG_SUBTLE, fontWeight: 700 }}>
-                        {c.avg_cpa > 0 ? `R$ ${Number(c.avg_cpa).toFixed(0)}` : '—'}
-                      </td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right', color: c.avg_roas >= 3 ? '#2F7D4F' : c.avg_roas >= 2 ? '#D97706' : c.avg_roas > 0 ? '#DC2626' : FG_SUBTLE, fontWeight: 700 }}>
-                        {c.avg_roas > 0 ? `${Number(c.avg_roas).toFixed(1)}x` : '—'}
-                      </td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right', color: c.avg_ctr >= 1.5 ? '#2F7D4F' : c.avg_ctr >= 1 ? '#D97706' : c.avg_ctr > 0 ? '#DC2626' : FG_SUBTLE, fontWeight: 700 }}>
-                        {c.avg_ctr > 0 ? `${Number(c.avg_ctr).toFixed(2)}%` : '—'}
-                      </td>
-                      <td style={{ padding: '13px 18px', textAlign: 'right', color: FG_MUTED, fontSize: '12px' }}>
-                        {c.avg_cpc > 0 ? `R$ ${Number(c.avg_cpc).toFixed(2)}` : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {/* Individual campaign analysis */}
       {campaigns.length > 0 && (
@@ -503,15 +433,15 @@ export default function Analytics() {
           borderRadius: '16px',
           padding: '22px 24px',
           marginBottom: '16px',
-          boxShadow: SHADOW,
+          boxShadow: GLOW,
         }}>
           <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '4px' }}>Análise Individual por Campanha</p>
           <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '20px' }}>Cada campanha avaliada com semáforo de saúde baseado nos benchmarks B2B.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px' }}>
             {campaigns.map((c) => {
-              const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? '#2F7D4F' : c.avg_cpa <= 150 ? '#D97706' : '#DC2626';
+              const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? NEON : c.avg_cpa <= 150 ? AMBER : RED;
               const cplLabel = c.avg_cpa <= 0 ? 'Sem dados' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
-              const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? '#2F7D4F' : c.avg_ctr >= 1 ? '#D97706' : '#DC2626';
+              const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? NEON : c.avg_ctr >= 1 ? AMBER : RED;
               const ctrLabel = c.avg_ctr <= 0 ? 'Sem dados' : c.avg_ctr >= 2.5 ? '✅ Excelente' : c.avg_ctr >= 1 ? '⚠️ Aceitável' : '❌ Baixo';
               const badge = STATUS_BADGE[c.status] || STATUS_BADGE.draft;
               const healthScore = [
@@ -519,10 +449,10 @@ export default function Analytics() {
                 c.avg_ctr >= 2.5 ? 30 : c.avg_ctr >= 1 ? 20 : c.avg_ctr > 0 ? 5 : 15,
                 c.avg_cpc > 0 && c.avg_cpc <= 5 ? 30 : c.avg_cpc > 0 && c.avg_cpc <= 15 ? 20 : c.avg_cpc > 0 ? 5 : 15,
               ].reduce((a, b) => a + b, 0);
-              const healthColor = healthScore >= 70 ? '#2F7D4F' : healthScore >= 45 ? '#D97706' : '#DC2626';
+              const healthColor = healthScore >= 70 ? NEON : healthScore >= 45 ? AMBER : RED;
               const healthEmoji = healthScore >= 70 ? '🟢' : healthScore >= 45 ? '🟡' : '🔴';
               return (
-                <div key={c.id} style={{ background: BG_SUBTLE, border: `1px solid ${healthColor}20`, borderRadius: '14px', padding: '16px' }}>
+                <div key={c.id} style={{ background: BG_SUBTLE, border: `1px solid ${healthColor}25`, borderRadius: '14px', padding: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
@@ -537,12 +467,12 @@ export default function Analytics() {
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${cplColor}08`, border: `1px solid ${cplColor}18` }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${cplColor}08`, border: `1px solid ${cplColor}25` }}>
                       <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '2px' }}>Custo por Lead (CPL)</p>
                       <p style={{ fontSize: '15px', fontWeight: 700, color: cplColor }}>{c.avg_cpa > 0 ? `R$ ${Number(c.avg_cpa).toFixed(0)}` : '—'}</p>
                       <p style={{ fontSize: '10px', color: cplColor }}>{cplLabel}</p>
                     </div>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${ctrColor}08`, border: `1px solid ${ctrColor}18` }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${ctrColor}08`, border: `1px solid ${ctrColor}25` }}>
                       <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '2px' }}>Taxa de Cliques (CTR)</p>
                       <p style={{ fontSize: '15px', fontWeight: 700, color: ctrColor }}>{c.avg_ctr > 0 ? `${Number(c.avg_ctr).toFixed(2)}%` : '—'}</p>
                       <p style={{ fontSize: '10px', color: ctrColor }}>{ctrLabel}</p>
@@ -555,11 +485,11 @@ export default function Analytics() {
                     </div>
                     <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
                       <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>Leads</p>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: '#2F7D4F' }}>{Number(c.total_leads)}</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: NEON }}>{Number(c.total_leads)}</p>
                     </div>
                     <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
                       <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>ROAS</p>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? '#2F7D4F' : c.avg_roas >= 2 ? '#D97706' : FG_SUBTLE }}>{c.avg_roas > 0 ? `${Number(c.avg_roas).toFixed(1)}x` : '—'}</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? NEON : c.avg_roas >= 2 ? AMBER : FG_SUBTLE }}>{c.avg_roas > 0 ? `${Number(c.avg_roas).toFixed(1)}x` : '—'}</p>
                     </div>
                   </div>
                   <div style={{ marginTop: '10px', padding: '8px 10px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${healthColor}` }}>
@@ -579,9 +509,9 @@ export default function Analytics() {
                     onClick={() => loadCampaignDeep(c.id)}
                     style={{
                       marginTop: '10px', width: '100%', padding: '7px', borderRadius: '8px',
-                      border: `1px solid ${BORDER}`,
-                      background: expandedCampaignId === c.id ? 'rgba(47,125,79,0.06)' : BG_CARD,
-                      color: expandedCampaignId === c.id ? GREEN : FG_MUTED,
+                      border: `1px solid ${expandedCampaignId === c.id ? BORDER_ACTIVE : BORDER}`,
+                      background: expandedCampaignId === c.id ? `${NEON}0F` : BG_CARD,
+                      color: expandedCampaignId === c.id ? NEON : FG_MUTED,
                       fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                       transition: 'background 0.15s, color 0.15s',
                     }}
@@ -597,11 +527,11 @@ export default function Analytics() {
                           <div style={{ marginBottom: '10px' }}>
                             <p style={{ fontSize: '10px', fontWeight: 700, color: FG_SUBTLE, marginBottom: '6px', letterSpacing: '0.05em' }}>CONJUNTOS ({deep.adSets.length})</p>
                             {deep.adSets.map((as: any) => {
-                              const asColor = as.score >= 75 ? '#2F7D4F' : as.score >= 50 ? '#D97706' : '#DC2626';
+                              const asColor = as.score >= 75 ? NEON : as.score >= 50 ? AMBER : RED;
                               const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
                               const isActive = as.status === 'active';
                               return (
-                                <div key={as.id} style={{ padding: '8px 10px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${asColor}18`, marginBottom: '4px' }}>
+                                <div key={as.id} style={{ padding: '8px 10px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${asColor}20`, marginBottom: '4px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isActive ? '5px' : 0 }}>
                                     <p style={{ fontSize: '11px', fontWeight: 600, color: isActive ? FG : FG_SUBTLE, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '6px' }}>{statusDot} {as.name}</p>
                                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
@@ -612,8 +542,8 @@ export default function Analytics() {
                                   {isActive && (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
                                       {[
-                                        { lbl: 'CPL', val: Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—', color: Number(as.cpa) <= 60 ? '#2F7D4F' : Number(as.cpa) <= 150 ? '#D97706' : '#DC2626' },
-                                        { lbl: 'CTR', val: Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—', color: Number(as.ctr) >= 2.5 ? '#2F7D4F' : Number(as.ctr) >= 1 ? '#D97706' : '#DC2626' },
+                                        { lbl: 'CPL', val: Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—', color: Number(as.cpa) <= 60 ? NEON : Number(as.cpa) <= 150 ? AMBER : RED },
+                                        { lbl: 'CTR', val: Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—', color: Number(as.ctr) >= 2.5 ? NEON : Number(as.ctr) >= 1 ? AMBER : RED },
                                         { lbl: 'Leads', val: String(as.leads), color: FG },
                                         { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
                                       ].map(({ lbl, val, color }) => (
@@ -634,7 +564,7 @@ export default function Analytics() {
                           <div>
                             <p style={{ fontSize: '10px', fontWeight: 700, color: FG_SUBTLE, marginBottom: '6px', letterSpacing: '0.05em' }}>ANÚNCIOS ({deep.ads.length})</p>
                             {deep.ads.map((ad: any) => {
-                              const adColor = ad.score >= 75 ? '#2F7D4F' : ad.score >= 50 ? '#D97706' : '#DC2626';
+                              const adColor = ad.score >= 75 ? NEON : ad.score >= 50 ? AMBER : RED;
                               const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
                               const isActive = ad.status === 'active';
                               return (
@@ -652,9 +582,9 @@ export default function Analytics() {
                                   {isActive && (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px', marginTop: '4px' }}>
                                       {[
-                                        { lbl: 'CPL', val: Number(ad.cpa) > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#2F7D4F' : Number(ad.cpa) <= 150 ? '#D97706' : '#DC2626' },
-                                        { lbl: 'CTR', val: Number(ad.ctr) > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#2F7D4F' : Number(ad.ctr) >= 1 ? '#D97706' : '#DC2626' },
-                                        { lbl: 'Leads', val: String(ad.leads), color: '#2F7D4F' },
+                                        { lbl: 'CPL', val: Number(ad.cpa) > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? NEON : Number(ad.cpa) <= 150 ? AMBER : RED },
+                                        { lbl: 'CTR', val: Number(ad.ctr) > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? NEON : Number(ad.ctr) >= 1 ? AMBER : RED },
+                                        { lbl: 'Leads', val: String(ad.leads), color: NEON },
                                         { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
                                       ].map(({ lbl, val, color }) => (
                                         <div key={lbl} style={{ textAlign: 'center', padding: '2px', borderRadius: '4px', background: BG_SUBTLE }}>
@@ -683,47 +613,14 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* Period highlights */}
-      <div style={{
-        background: BG_CARD,
-        border: `1px solid ${BORDER}`,
-        borderRadius: '16px',
-        padding: '22px 24px',
-        boxShadow: SHADOW,
-      }}>
-        <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '4px' }}>Destaques do Período</p>
-        <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '20px' }}>Análise automática dos dados do período selecionado.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }} className="grid-insights">
-          {[
-            { icon: TrendingDown, color: '#2F7D4F', title: 'Melhor dia (mais leads)', value: bestDay ? bestDay.day : '—', desc: bestDay ? `${bestDay.leads} leads gerados` : 'Sem dados no período' },
-            { icon: TrendingUp, color: '#D97706', title: 'Dia mais caro (CPL alto)', value: worstDay ? worstDay.day : '—', desc: worstDay?.cpa ? `Custo por Lead: R$ ${Number(worstDay.cpa).toFixed(0)}` : '—' },
-            { icon: DollarSign, color: '#2563EB', title: 'Total investido no período', value: `R$ ${totalWeekSpend.toLocaleString('pt-BR')}`, desc: 'Soma de todas as campanhas' },
-            { icon: MousePointerClick, color: GREEN, title: 'Taxa de Cliques média (CTR)', value: avgWeekCTR > 0 ? `${avgWeekCTR.toFixed(2)}%` : '—', desc: avgWeekCTR >= 2.5 ? '✅ Excelente — acima de 2,5%' : avgWeekCTR >= 1 ? '⚠️ Aceitável — acima de 1%' : avgWeekCTR > 0 ? '❌ Baixo — revise os criativos' : 'Sincronize para ver' },
-          ].map(({ icon: Icon, color, title, value, desc }) => (
-            <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
-              <div style={{ width: '34px', height: '34px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: `${color}12` }}>
-                <Icon size={16} color={color} />
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '2px' }}>{title}</p>
-                <p style={{ fontSize: '18px', fontWeight: 700, color: FG, lineHeight: 1.2 }}>{value}</p>
-                <p style={{ fontSize: '11px', color: FG_SUBTLE, marginTop: '2px' }}>{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 900px) {
           .grid-kpis-analytics { grid-template-columns: repeat(2, 1fr) !important; }
           .grid-charts { grid-template-columns: 1fr !important; }
-          .grid-insights { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 600px) {
           .grid-kpis-analytics { grid-template-columns: 1fr !important; }
-          .grid-insights { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

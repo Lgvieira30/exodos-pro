@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Calendar } from 'lucide-react';
 
-const CYAN = '#3DB8E8';
+const NEON = '#00FFB2';
+const BG_CARD = '#0D1117';
+const FG = '#C9D1D9';
+const FG_MUTED = 'rgba(201,209,217,0.55)';
+const BORDER = 'rgba(0,255,178,0.1)';
+const BORDER_ACTIVE = 'rgba(0,255,178,0.3)';
+const BG_INPUT = '#0A0D16';
 
 export interface DateRange {
   from: string;
@@ -9,11 +15,11 @@ export interface DateRange {
 }
 
 const PRESETS = [
-  { label: 'Hoje',    days: 0, offset: 0 },
-  { label: 'Ontem',  days: 0, offset: 1 },
-  { label: '7 dias', days: 6, offset: 0 },
-  { label: '14 dias', days: 13, offset: 0 },
-  { label: '30 dias', days: 29, offset: 0 },
+  { label: 'Hoje',     days: 0,  offset: 0 },
+  { label: 'Ontem',   days: 0,  offset: 1 },
+  { label: '7d',      days: 6,  offset: 0 },
+  { label: '14d',     days: 13, offset: 0 },
+  { label: '30d',     days: 29, offset: 0 },
 ];
 
 function fmt(d: Date) {
@@ -29,7 +35,7 @@ export function getPresetRange(days: number, offset = 0): DateRange {
 }
 
 export function defaultRange(): DateRange {
-  return getPresetRange(6); // last 7 days
+  return getPresetRange(6);
 }
 
 interface Props {
@@ -65,81 +71,93 @@ export function DateRangePicker({ value, onChange }: Props) {
     return `${value.from.split('-').reverse().join('/')} → ${value.to.split('-').reverse().join('/')}`;
   })();
 
+  const inputStyle: React.CSSProperties = {
+    background: BG_INPUT,
+    border: `1px solid ${BORDER}`,
+    borderRadius: '8px',
+    color: FG,
+    padding: '6px 10px',
+    fontSize: '13px',
+    fontFamily: 'inherit',
+    outline: 'none',
+    colorScheme: 'dark',
+  };
+
   return (
     <div style={{ position: 'relative' }}>
       <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-        {PRESETS.map((p) => (
-          <button
-            key={p.label}
-            onClick={() => selectPreset(p.days, (p as any).offset)}
-            style={{
-              padding: '5px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-              fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
-              background: isPresetActive(p.days, (p as any).offset) ? CYAN : 'rgba(255,255,255,0.06)',
-              color: isPresetActive(p.days, (p as any).offset) ? '#000' : 'rgba(255,255,255,0.5)',
-              transition: 'all 0.15s',
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
+        {PRESETS.map((p) => {
+          const active = isPresetActive(p.days, (p as any).offset);
+          return (
+            <button
+              key={p.label}
+              onClick={() => selectPreset(p.days, (p as any).offset)}
+              style={{
+                padding: '5px 11px', borderRadius: '7px', cursor: 'pointer',
+                fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
+                border: active ? `1px solid ${BORDER_ACTIVE}` : `1px solid ${BORDER}`,
+                background: active ? `rgba(0,255,178,0.12)` : 'rgba(0,255,178,0.03)',
+                color: active ? NEON : FG_MUTED,
+                transition: 'all 0.15s',
+              }}
+            >
+              {p.label}
+            </button>
+          );
+        })}
         <button
           onClick={() => setCustomOpen((o) => !o)}
           style={{
             display: 'flex', alignItems: 'center', gap: '5px',
-            padding: '5px 12px', borderRadius: '8px', cursor: 'pointer',
+            padding: '5px 11px', borderRadius: '7px', cursor: 'pointer',
             fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
-            background: customOpen ? `${CYAN}20` : 'rgba(255,255,255,0.06)',
-            border: customOpen ? `1px solid ${CYAN}50` : '1px solid transparent',
-            color: customOpen ? CYAN : 'rgba(255,255,255,0.5)',
+            border: customOpen ? `1px solid ${BORDER_ACTIVE}` : `1px solid ${BORDER}`,
+            background: customOpen ? 'rgba(0,255,178,0.12)' : 'rgba(0,255,178,0.03)',
+            color: customOpen ? NEON : FG_MUTED,
             transition: 'all 0.15s',
           }}
         >
           <Calendar size={12} />
-          {!PRESETS.some((p) => isPresetActive(p.days, (p as any).offset)) ? displayLabel : 'Personalizado'}
+          {!PRESETS.some((p) => isPresetActive(p.days, (p as any).offset)) ? displayLabel : 'Período'}
         </button>
       </div>
 
       {customOpen && (
         <div style={{
-          position: 'absolute', top: '100%', right: 0, marginTop: '8px', zIndex: 100,
-          background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px',
-          padding: '16px', display: 'flex', gap: '12px', alignItems: 'flex-end', boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 200,
+          background: BG_CARD,
+          border: `1px solid ${BORDER_ACTIVE}`,
+          borderRadius: '12px',
+          padding: '16px',
+          display: 'flex', gap: '12px', alignItems: 'flex-end',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,255,178,0.08)',
         }}>
           <div>
-            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>DE</p>
+            <p style={{ fontSize: '10px', color: NEON, marginBottom: '4px', letterSpacing: '0.08em', fontWeight: 700 }}>DE</p>
             <input
               type="date"
               value={draft.from}
               max={draft.to}
               onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))}
-              style={{
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px', color: '#fff', padding: '6px 10px', fontSize: '13px',
-                fontFamily: 'inherit', outline: 'none',
-              }}
+              style={inputStyle}
             />
           </div>
           <div>
-            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>ATÉ</p>
+            <p style={{ fontSize: '10px', color: NEON, marginBottom: '4px', letterSpacing: '0.08em', fontWeight: 700 }}>ATÉ</p>
             <input
               type="date"
               value={draft.to}
               min={draft.from}
               max={fmt(new Date())}
               onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))}
-              style={{
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px', color: '#fff', padding: '6px 10px', fontSize: '13px',
-                fontFamily: 'inherit', outline: 'none',
-              }}
+              style={inputStyle}
             />
           </div>
           <button
             onClick={applyCustom}
             style={{
               padding: '7px 16px', borderRadius: '8px', border: 'none',
-              background: CYAN, color: '#000', fontSize: '12px', fontWeight: 700,
+              background: NEON, color: '#000', fontSize: '12px', fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
