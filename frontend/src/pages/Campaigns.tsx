@@ -5,15 +5,21 @@ import {
 } from 'lucide-react';
 import { campaignsApi, adSetsApi, syncApi } from '../lib/api';
 
-const GREEN = '#2F7D4F';
-const BG = '#F6F7F9';
-const BG_CARD = '#FFFFFF';
-const BG_SUBTLE = '#F9FAFB';
-const FG = '#111827';
-const FG_MUTED = '#6B7280';
-const FG_SUBTLE = '#9CA3AF';
-const BORDER = '#E5E7EB';
-const SHADOW = '0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.05)';
+const NEON = '#00FFB2';
+const GREEN = NEON;
+const BG = '#080B14';
+const BG_CARD = '#0D1117';
+const BG_SUBTLE = '#111520';
+const FG = '#C9D1D9';
+const FG_MUTED = 'rgba(201,209,217,0.55)';
+const FG_SUBTLE = 'rgba(201,209,217,0.3)';
+const BORDER = 'rgba(0,255,178,0.1)';
+const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
+const RED = '#FF3B5C';
+const AMBER = '#FFB800';
+const BLUE = '#00BFFF';
+const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
+const SHADOW = GLOW;
 
 interface Campaign {
   id: string; name: string; platform: string; status: string; meta_id?: string;
@@ -35,12 +41,12 @@ interface DailyRow {
 }
 
 const S: Record<string, { label: string; color: string; bg: string }> = {
-  active:    { label: 'Ativa',     color: '#2F7D4F', bg: 'rgba(47,125,79,0.08)' },
-  paused:    { label: 'Pausada',   color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
-  deleted:   { label: 'Excluída',  color: '#DC2626', bg: 'rgba(220,38,38,0.08)' },
-  unknown:   { label: 'Inativo',   color: '#6B7280', bg: 'rgba(107,114,128,0.08)' },
-  draft:     { label: 'Rascunho',  color: '#6B7280', bg: 'rgba(107,114,128,0.08)' },
-  completed: { label: 'Concluída', color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
+  active:    { label: 'Ativa',     color: NEON,  bg: 'rgba(0,255,178,0.08)' },
+  paused:    { label: 'Pausada',   color: AMBER, bg: 'rgba(255,184,0,0.08)' },
+  deleted:   { label: 'Excluída',  color: RED,   bg: 'rgba(255,59,92,0.08)' },
+  unknown:   { label: 'Inativo',   color: FG_SUBTLE, bg: 'rgba(201,209,217,0.06)' },
+  draft:     { label: 'Rascunho',  color: FG_SUBTLE, bg: 'rgba(201,209,217,0.06)' },
+  completed: { label: 'Concluída', color: BLUE,  bg: 'rgba(0,191,255,0.08)' },
 };
 function scfg(s: string) { return S[s] || S.unknown; }
 
@@ -56,20 +62,20 @@ function score(cpa: number, ctr: number, roas: number): number {
 }
 
 function action(sc: number, cpa: number, ctr: number): { label: string; color: string; bg: string; why: string } {
-  if (sc >= 75) return { label: 'Escalar', color: '#2F7D4F', bg: 'rgba(47,125,79,0.08)', why: 'Métricas saudáveis — aumente o orçamento 20%.' };
-  if (sc >= 55) return { label: 'Monitorar', color: '#2563EB', bg: 'rgba(37,99,235,0.08)', why: 'Aguarde 3 dias antes de escalar.' };
+  if (sc >= 75) return { label: 'Escalar', color: NEON, bg: 'rgba(0,255,178,0.08)', why: 'Métricas saudáveis — aumente o orçamento 20%.' };
+  if (sc >= 55) return { label: 'Monitorar', color: BLUE, bg: 'rgba(0,191,255,0.08)', why: 'Aguarde 3 dias antes de escalar.' };
   if (sc >= 35) return {
-    label: 'Revisar', color: '#D97706', bg: 'rgba(217,119,6,0.08)',
+    label: 'Revisar', color: AMBER, bg: 'rgba(255,184,0,0.08)',
     why: ctr > 0 && ctr < 1 ? 'CTR abaixo de 1% — troque o criativo.' : cpa > 60 ? `CPL R$${cpa.toFixed(0)} alto — revise a landing page.` : 'Revise público e oferta.',
   };
   return {
-    label: 'Pausar', color: '#DC2626', bg: 'rgba(220,38,38,0.08)',
+    label: 'Pausar', color: RED, bg: 'rgba(255,59,92,0.08)',
     why: cpa > 150 ? `CPL R$${cpa.toFixed(0)} crítico — pause imediatamente.` : 'Métricas críticas — pause e reformule.',
   };
 }
 
-function cplColor(v: number) { return v <= 0 ? FG_SUBTLE : v <= 60 ? '#2F7D4F' : v <= 150 ? '#D97706' : '#DC2626'; }
-function ctrColor(v: number) { return v <= 0 ? FG_SUBTLE : v >= 2.5 ? '#2F7D4F' : v >= 1 ? '#D97706' : '#DC2626'; }
+function cplColor(v: number) { return v <= 0 ? FG_SUBTLE : v <= 60 ? NEON : v <= 150 ? AMBER : RED; }
+function ctrColor(v: number) { return v <= 0 ? FG_SUBTLE : v >= 2.5 ? NEON : v >= 1 ? AMBER : RED; }
 
 function Kpi({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
@@ -105,7 +111,7 @@ function DailyTable({ daily }: { daily: DailyRow[] }) {
                 <td style={{ padding: '6px 10px', textAlign: 'right', color: FG_MUTED }}>{n(d.clicks) > 0 ? n(d.clicks).toLocaleString('pt-BR') : '—'}</td>
                 <td style={{ padding: '6px 10px', textAlign: 'right', color: ctrColor(dt), fontWeight: 600 }}>{dt > 0 ? `${dt.toFixed(1)}%` : '—'}</td>
                 <td style={{ padding: '6px 10px', textAlign: 'right', color: FG_MUTED }}>{n(d.cpc) > 0 ? `R$${n(d.cpc).toFixed(2)}` : '—'}</td>
-                <td style={{ padding: '6px 10px', textAlign: 'right', color: '#2F7D4F', fontWeight: 600 }}>{n(d.leads) > 0 ? String(n(d.leads)) : '—'}</td>
+                <td style={{ padding: '6px 10px', textAlign: 'right', color: NEON, fontWeight: 600 }}>{n(d.leads) > 0 ? String(n(d.leads)) : '—'}</td>
                 <td style={{ padding: '6px 10px', textAlign: 'right', color: cplColor(dc), fontWeight: 600 }}>{dc > 0 ? `R$${dc.toFixed(0)}` : '—'}</td>
               </tr>
             );
@@ -139,7 +145,7 @@ function AdRow({ ad, adSetId }: { ad: Ad; adSetId: string; isBest: boolean }) {
   }
 
   return (
-    <div style={{ borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${isActive ? BORDER : '#F3F4F6'}`, marginBottom: '6px', overflow: 'hidden', opacity: isActive ? 1 : 0.5 }}>
+    <div style={{ borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${isActive ? BORDER : 'rgba(201,209,217,0.06)'}`, marginBottom: '6px', overflow: 'hidden', opacity: isActive ? 1 : 0.5 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
           <Image size={12} color={FG_SUBTLE} style={{ flexShrink: 0 }} />
@@ -157,7 +163,7 @@ function AdRow({ ad, adSetId }: { ad: Ad; adSetId: string; isBest: boolean }) {
             <Kpi label="CTR" value={ctr > 0 ? `${ctr.toFixed(1)}%` : '—'} />
             <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} />
             <Kpi label="Gasto" value={spend > 0 ? `R$${spend.toFixed(0)}` : '—'} />
-            <button onClick={toggleDaily} style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${showDaily ? GREEN + '40' : BORDER}`, background: showDaily ? 'rgba(47,125,79,0.06)' : BG_CARD, color: showDaily ? GREEN : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            <button onClick={toggleDaily} style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${showDaily ? BORDER_ACTIVE : BORDER}`, background: showDaily ? 'rgba(0,255,178,0.06)' : BG_CARD, color: showDaily ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <BarChart3 size={9} />{loadingDaily ? '...' : '7 dias'}
             </button>
           </div>
@@ -208,7 +214,7 @@ function AdSetBlock({ adSet }: { adSet: AdSet; isBest: boolean }) {
   }
 
   return (
-    <div style={{ borderRadius: '12px', background: 'rgba(0,0,0,0.015)', border: `1px solid ${isActive ? BORDER : '#F3F4F6'}`, marginBottom: '8px', overflow: 'hidden', opacity: isActive ? 1 : 0.55 }}>
+    <div style={{ borderRadius: '12px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${isActive ? BORDER : 'rgba(201,209,217,0.06)'}`, marginBottom: '8px', overflow: 'hidden', opacity: isActive ? 1 : 0.55 }}>
       {/* Ad set header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
@@ -230,10 +236,10 @@ function AdSetBlock({ adSet }: { adSet: AdSet; isBest: boolean }) {
             <Kpi label="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '—'} />
             <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} />
             <Kpi label="Gasto" value={spend > 0 ? `R$${spend.toFixed(0)}` : '—'} />
-            <button onClick={toggleDaily} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${showDaily ? GREEN + '40' : BORDER}`, background: showDaily ? 'rgba(47,125,79,0.06)' : BG_CARD, color: showDaily ? GREEN : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            <button onClick={toggleDaily} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${showDaily ? BORDER_ACTIVE : BORDER}`, background: showDaily ? 'rgba(0,255,178,0.06)' : BG_CARD, color: showDaily ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <BarChart3 size={11} />{loadingDaily ? '...' : '7 dias'}
             </button>
-            <button onClick={loadAds} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${adsExpanded ? GREEN + '40' : BORDER}`, background: adsExpanded ? 'rgba(47,125,79,0.05)' : BG_CARD, color: adsExpanded ? GREEN : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            <button onClick={loadAds} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${adsExpanded ? BORDER_ACTIVE : BORDER}`, background: adsExpanded ? 'rgba(0,255,178,0.05)' : BG_CARD, color: adsExpanded ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               {adsExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}{loadingAds ? '...' : 'anúncios'}
             </button>
           </div>
@@ -291,7 +297,7 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
   const criticals = activeAdSets.filter((a) => score(n(a.cpa), n(a.ctr), n(a.roas)) < 35).length;
 
   return (
-    <div style={{ background: BG_CARD, border: `2px solid ${isActive ? 'rgba(47,125,79,0.15)' : BORDER}`, borderRadius: '18px', marginBottom: '16px', overflow: 'hidden', boxShadow: SHADOW }}>
+    <div style={{ background: BG_CARD, border: `2px solid ${isActive ? 'rgba(0,255,178,0.15)' : BORDER}`, borderRadius: '18px', marginBottom: '16px', overflow: 'hidden', boxShadow: SHADOW }}>
 
       {/* Campaign header */}
       <div
@@ -299,7 +305,7 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', cursor: 'pointer', gap: '16px' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'rgba(47,125,79,0.08)', border: '1px solid rgba(47,125,79,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'rgba(0,255,178,0.08)', border: '1px solid rgba(0,255,178,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Megaphone size={18} color={GREEN} />
           </div>
           <div style={{ minWidth: 0 }}>
@@ -317,12 +323,12 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
                 </span>
               )}
               {criticals > 0 && (
-                <span style={{ fontSize: '11px', color: '#DC2626', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ fontSize: '11px', color: RED, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
                   <AlertTriangle size={11} />{criticals} crítico{criticals > 1 ? 's' : ''}
                 </span>
               )}
               {criticals === 0 && activeAdSets.length > 0 && (
-                <span style={{ fontSize: '11px', color: '#2F7D4F', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ fontSize: '11px', color: NEON, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
                   <CheckCircle size={11} />Saudável
                 </span>
               )}
@@ -336,7 +342,7 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
             <>
               <Kpi label="CPL Médio" value={avgCPA > 0 ? `R$${avgCPA.toFixed(0)}` : '—'} color={cplColor(avgCPA)} />
               <Kpi label="CTR Médio" value={avgCTR > 0 ? `${avgCTR.toFixed(1)}%` : '—'} color={ctrColor(avgCTR)} />
-              <Kpi label="Leads 7d" value={String(totalLeads)} color="#2F7D4F" />
+              <Kpi label="Leads 7d" value={String(totalLeads)} color={NEON} />
               <Kpi label="Gasto 7d" value={`R$${totalSpend.toFixed(0)}`} />
             </>
           )}
@@ -433,7 +439,7 @@ export default function Campaigns() {
         </div>
         <button
           onClick={handleSync} disabled={syncing}
-          style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 20px', borderRadius: '12px', border: 'none', cursor: syncing ? 'wait' : 'pointer', background: syncing ? BG_SUBTLE : GREEN, color: syncing ? FG_MUTED : '#fff', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 20px', borderRadius: '12px', border: 'none', cursor: syncing ? 'wait' : 'pointer', background: syncing ? BG_SUBTLE : NEON, color: syncing ? FG_MUTED : '#000', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit' }}
         >
           <RefreshCw size={15} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
           {syncing ? 'Sincronizando...' : 'Sincronizar Meta Ads'}
@@ -444,8 +450,8 @@ export default function Campaigns() {
       {campaigns.length > 0 && (
         <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
           {[
-            { label: 'Ativas', value: active.length, color: '#2F7D4F' },
-            { label: 'Pausadas', value: paused.length, color: '#D97706' },
+            { label: 'Ativas', value: active.length, color: NEON },
+            { label: 'Pausadas', value: paused.length, color: AMBER },
             { label: 'Total', value: campaigns.length, color: FG_MUTED },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', background: BG_CARD, border: `1px solid ${BORDER}`, boxShadow: SHADOW }}>
@@ -458,7 +464,7 @@ export default function Campaigns() {
 
       {/* Sync message */}
       {syncMsg && (
-        <div style={{ padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', background: syncMsg.includes('Erro') ? 'rgba(220,38,38,0.06)' : 'rgba(47,125,79,0.06)', border: `1px solid ${syncMsg.includes('Erro') ? 'rgba(220,38,38,0.2)' : 'rgba(47,125,79,0.2)'}`, fontSize: '13px', color: syncMsg.includes('Erro') ? '#DC2626' : '#2F7D4F', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', background: syncMsg.includes('Erro') ? 'rgba(255,59,92,0.06)' : 'rgba(0,255,178,0.06)', border: `1px solid ${syncMsg.includes('Erro') ? 'rgba(255,59,92,0.2)' : 'rgba(0,255,178,0.2)'}`, fontSize: '13px', color: syncMsg.includes('Erro') ? RED : NEON, display: 'flex', alignItems: 'center', gap: '8px' }}>
           {syncMsg.includes('Erro') ? <AlertTriangle size={14} /> : <CheckCircle size={14} />}
           {syncMsg}
         </div>
@@ -468,7 +474,7 @@ export default function Campaigns() {
         <div style={{ textAlign: 'center', padding: '80px 20px', color: FG_MUTED }}>
           <Megaphone size={48} style={{ margin: '0 auto 20px', opacity: 0.15 }} />
           <p style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: FG_MUTED }}>Nenhuma campanha encontrada</p>
-          <p style={{ fontSize: '13px' }}>Conecte o Meta Ads em <strong style={{ color: GREEN }}>Configurações</strong> e clique em Sincronizar.</p>
+          <p style={{ fontSize: '13px' }}>Conecte o Meta Ads em <strong style={{ color: NEON }}>Configurações</strong> e clique em Sincronizar.</p>
         </div>
       ) : (
         <>

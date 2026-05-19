@@ -12,15 +12,20 @@ import { useNavigate } from 'react-router-dom';
 import { campaignsApi, metricsApi, syncApi, analyzeApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-const GREEN = '#2F7D4F';
-const BG = '#F6F7F9';
-const BG_CARD = '#FFFFFF';
-const BG_SUBTLE = '#F9FAFB';
-const FG = '#111827';
-const FG_MUTED = '#6B7280';
-const FG_SUBTLE = '#9CA3AF';
-const BORDER = '#E5E7EB';
-const SHADOW = '0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.05)';
+// ── Cyberpunk design tokens ──────────────────────────────────────────────────
+const BG = '#080B14';
+const BG_CARD = '#0D1117';
+const BG_SUBTLE = '#111520';
+const NEON = '#00FFB2';     // primary - Matrix teal-green
+const BLUE = '#00BFFF';     // secondary - cyber blue
+const FG = '#C9D1D9';
+const FG_MUTED = 'rgba(201,209,217,0.55)';
+const FG_SUBTLE = 'rgba(201,209,217,0.3)';
+const BORDER = 'rgba(0,255,178,0.1)';
+const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
+const RED = '#FF3B5C';
+const AMBER = '#FFB800';
+const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface Campaign {
@@ -49,46 +54,46 @@ function n(v: unknown) { return Number(v) || 0; }
 
 function cplStatus(v: number) {
   if (v <= 0) return { label: '—', color: FG_SUBTLE };
-  if (v <= 60) return { label: 'Excelente', color: '#2F7D4F' };
-  if (v <= 150) return { label: 'Aceitável', color: '#D97706' };
-  return { label: 'Alto', color: '#DC2626' };
+  if (v <= 60) return { label: 'Excelente', color: NEON };
+  if (v <= 150) return { label: 'Aceitável', color: AMBER };
+  return { label: 'Alto', color: RED };
 }
 function ctrStatus(v: number) {
   if (v <= 0) return { label: '—', color: FG_SUBTLE };
-  if (v >= 2.5) return { label: 'Excelente', color: '#2F7D4F' };
-  if (v >= 1) return { label: 'Aceitável', color: '#D97706' };
-  return { label: 'Baixo', color: '#DC2626' };
+  if (v >= 2.5) return { label: 'Excelente', color: NEON };
+  if (v >= 1) return { label: 'Aceitável', color: AMBER };
+  return { label: 'Baixo', color: RED };
 }
 function roasStatus(v: number) {
   if (v <= 0) return { label: '—', color: FG_SUBTLE };
-  if (v >= 3) return { label: 'Excelente', color: '#2F7D4F' };
-  if (v >= 1.5) return { label: 'Aceitável', color: '#D97706' };
-  return { label: 'Baixo', color: '#DC2626' };
+  if (v >= 3) return { label: 'Excelente', color: NEON };
+  if (v >= 1.5) return { label: 'Aceitável', color: AMBER };
+  return { label: 'Baixo', color: RED };
 }
 function healthDot(cpa: number, ctr: number) {
   if (cpa <= 0 && ctr <= 0) return { dot: '⚪', label: 'Sem dados', color: FG_SUBTLE };
-  if ((cpa > 0 && cpa <= 60) && ctr >= 1) return { dot: '🟢', label: 'Saudável', color: '#2F7D4F' };
-  if (cpa > 0 && cpa <= 150) return { dot: '🟡', label: 'Atenção', color: '#D97706' };
-  if (ctr >= 1) return { dot: '🟡', label: 'Atenção', color: '#D97706' };
-  return { dot: '🔴', label: 'Crítico', color: '#DC2626' };
+  if ((cpa > 0 && cpa <= 60) && ctr >= 1) return { dot: '🟢', label: 'Saudável', color: NEON };
+  if (cpa > 0 && cpa <= 150) return { dot: '🟡', label: 'Atenção', color: AMBER };
+  if (ctr >= 1) return { dot: '🟡', label: 'Atenção', color: AMBER };
+  return { dot: '🔴', label: 'Crítico', color: RED };
 }
 
 const PRIORITY: Record<string, { label: string; color: string; bg: string }> = {
-  alta:  { label: 'URGENTE', color: '#DC2626', bg: 'rgba(220,38,38,0.08)' },
-  media: { label: 'ALTA',    color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
-  baixa: { label: 'MÉDIA',   color: '#2F7D4F', bg: 'rgba(47,125,79,0.08)' },
+  alta:  { label: 'URGENTE', color: RED,  bg: 'rgba(255,59,92,0.08)' },
+  media: { label: 'ALTA',    color: AMBER, bg: 'rgba(255,184,0,0.08)' },
+  baixa: { label: 'MÉDIA',   color: NEON, bg: 'rgba(0,255,178,0.08)' },
 };
 const VERDICT: Record<string, { label: string; color: string; bg: string }> = {
-  reativar:             { label: 'Reativar',           color: '#2F7D4F', bg: 'rgba(47,125,79,0.08)' },
-  reativar_com_cautela: { label: 'Revisar e Reativar', color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
-  manter_pausada:       { label: 'Manter Pausada',     color: '#DC2626', bg: 'rgba(220,38,38,0.08)' },
+  reativar:             { label: 'Reativar',           color: NEON,  bg: 'rgba(0,255,178,0.08)' },
+  reativar_com_cautela: { label: 'Revisar e Reativar', color: AMBER, bg: 'rgba(255,184,0,0.08)' },
+  manter_pausada:       { label: 'Manter Pausada',     color: RED,   bg: 'rgba(255,59,92,0.08)' },
 };
 const PLATFORM: Record<string, string> = { meta: 'Meta', google: 'Google', linkedin: 'LinkedIn' };
 const STATUS_CHIP: Record<string, { label: string; color: string }> = {
-  active:    { label: 'Ativa',      color: '#2F7D4F' },
-  paused:    { label: 'Pausada',    color: '#D97706' },
+  active:    { label: 'Ativa',      color: NEON },
+  paused:    { label: 'Pausada',    color: AMBER },
   draft:     { label: 'Rascunho',   color: FG_MUTED },
-  completed: { label: 'Concluída',  color: '#2563EB' },
+  completed: { label: 'Concluída',  color: BLUE },
 };
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
@@ -100,7 +105,7 @@ function KpiCard({
   icon: React.ElementType; iconColor: string;
 }) {
   return (
-    <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: SHADOW }}>
+    <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: GLOW }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: `${iconColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={17} color={iconColor} />
@@ -108,7 +113,7 @@ function KpiCard({
         <span style={{ fontSize: '10px', fontWeight: 700, color: subColor, background: `${subColor}15`, padding: '2px 8px', borderRadius: '10px' }}>{sub}</span>
       </div>
       <div>
-        <p style={{ fontSize: '26px', fontWeight: 800, color: FG, lineHeight: 1, marginBottom: '4px' }}>{value}</p>
+        <p style={{ fontSize: '26px', fontWeight: 800, color: NEON, lineHeight: 1, marginBottom: '4px' }}>{value}</p>
         <p style={{ fontSize: '12px', color: FG_MUTED, fontWeight: 500 }}>
           {label}{abbr ? <span style={{ color: FG_SUBTLE, marginLeft: '4px' }}>— {abbr}</span> : null}
         </p>
@@ -121,7 +126,7 @@ function KpiCard({
 function ChartTip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '10px 14px', fontSize: '12px', boxShadow: SHADOW }}>
+    <div style={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', padding: '10px 14px', fontSize: '11px', color: FG }}>
       <p style={{ color: FG_MUTED, marginBottom: '6px' }}>{label}</p>
       {payload.map((p: any) => (
         <p key={p.name} style={{ color: p.color, fontWeight: 700 }}>
@@ -191,7 +196,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: BG }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: `2px solid ${GREEN}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: `3px solid ${NEON}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -202,7 +207,7 @@ export default function Dashboard() {
   const roas = n(summary?.roas);
   const avgCtr = campaigns.filter(c => c.avg_ctr > 0).reduce((a, c, _, arr) => a + n(c.avg_ctr) / arr.length, 0);
 
-  const scoreColor = !analysis ? FG_SUBTLE : analysis.score >= 75 ? '#2F7D4F' : analysis.score >= 50 ? '#D97706' : '#DC2626';
+  const scoreColor = !analysis ? FG_SUBTLE : analysis.score >= 75 ? NEON : analysis.score >= 50 ? AMBER : RED;
   const scoreLabel = !analysis ? '—' : analysis.score >= 75 ? 'Saudável' : analysis.score >= 50 ? 'Atenção' : 'Crítico';
   const radius = 38; const circ = 2 * Math.PI * radius;
   const arc = analysis ? (analysis.score / 100) * circ : 0;
@@ -210,7 +215,7 @@ export default function Dashboard() {
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '28px 32px' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:${BG_SUBTLE}!important}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:rgba(0,255,178,0.03)!important}`}</style>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -218,21 +223,21 @@ export default function Dashboard() {
           <h1 style={{ fontSize: '20px', fontWeight: 800, color: FG, letterSpacing: '-0.02em' }}>Dashboard</h1>
           <p style={{ fontSize: '12px', color: FG_MUTED, marginTop: '2px' }}>
             {activeCampaigns.length} campanha{activeCampaigns.length !== 1 ? 's' : ''} ativa{activeCampaigns.length !== 1 ? 's' : ''}
-            {pausedCampaigns.length > 0 && <span style={{ color: '#D97706' }}> · {pausedCampaigns.length} pausada{pausedCampaigns.length !== 1 ? 's' : ''}</span>}
+            {pausedCampaigns.length > 0 && <span style={{ color: AMBER }}> · {pausedCampaigns.length} pausada{pausedCampaigns.length !== 1 ? 's' : ''}</span>}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <DateRangePicker value={range} onChange={setRange} />
           {syncMsg && (
-            <span style={{ fontSize: '11px', color: syncMsg.includes('Erro') ? '#DC2626' : '#2F7D4F', padding: '5px 10px', borderRadius: '8px', background: syncMsg.includes('Erro') ? 'rgba(220,38,38,0.08)' : 'rgba(47,125,79,0.08)', fontWeight: 600 }}>
+            <span style={{ fontSize: '11px', color: syncMsg.includes('Erro') ? RED : NEON, padding: '5px 10px', borderRadius: '8px', background: syncMsg.includes('Erro') ? 'rgba(255,59,92,0.08)' : 'rgba(0,255,178,0.08)', fontWeight: 600 }}>
               {syncMsg}
             </span>
           )}
-          <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: `1px solid rgba(47,125,79,0.2)`, background: 'rgba(47,125,79,0.06)', color: GREEN, fontSize: '12px', fontWeight: 600, cursor: syncing ? 'not-allowed' : 'pointer', opacity: syncing ? 0.6 : 1, fontFamily: 'inherit' }}>
+          <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: `1px solid ${BORDER_ACTIVE}`, background: 'rgba(0,255,178,0.08)', color: NEON, fontSize: '12px', fontWeight: 600, cursor: syncing ? 'not-allowed' : 'pointer', opacity: syncing ? 0.6 : 1, fontFamily: 'inherit' }}>
             <RefreshCw size={13} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
             {syncing ? 'Sincronizando…' : 'Sincronizar'}
           </button>
-          <button onClick={() => navigate('/wizard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: 'none', background: FG, color: '#fff', fontSize: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => navigate('/wizard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: 'none', background: NEON, color: '#000', fontSize: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
             <Plus size={13} /> Nova Campanha
           </button>
         </div>
@@ -240,37 +245,37 @@ export default function Dashboard() {
 
       {/* ── Sync status ────────────────────────────────────────────────────── */}
       {lastSync.status === 'error' && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
-          <AlertTriangle size={14} color="#DC2626" />
-          <span style={{ fontSize: '12px', color: '#DC2626', fontWeight: 600 }}>Última sincronização falhou</span>
-          <span style={{ fontSize: '11px', color: FG_MUTED }}>— Token Meta expirado. Renove em{' '}<span onClick={() => navigate('/settings')} style={{ color: GREEN, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.</span>
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,59,92,0.06)', border: `1px solid rgba(255,59,92,0.2)` }}>
+          <AlertTriangle size={14} color={RED} />
+          <span style={{ fontSize: '12px', color: RED, fontWeight: 600 }}>Última sincronização falhou</span>
+          <span style={{ fontSize: '11px', color: FG_MUTED }}>— Token Meta expirado. Renove em{' '}<span onClick={() => navigate('/settings')} style={{ color: NEON, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.</span>
           {lastSync.at && <span style={{ marginLeft: 'auto', fontSize: '10px', color: FG_SUBTLE }}>{new Date(lastSync.at).toLocaleString('pt-BR')}</span>}
         </div>
       )}
       {lastSync.status === 'success' && lastSync.at && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(47,125,79,0.05)', border: '1px solid rgba(47,125,79,0.12)' }}>
-          <CheckCircle size={12} color="#2F7D4F" />
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(0,255,178,0.05)', border: `1px solid rgba(0,255,178,0.12)` }}>
+          <CheckCircle size={12} color={NEON} />
           <span style={{ fontSize: '11px', color: FG_MUTED }}>
             Sincronizado em <strong style={{ color: FG }}>{new Date(lastSync.at).toLocaleString('pt-BR')}</strong>
           </span>
         </div>
       )}
       {!lastSync.status && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(217,119,6,0.05)', border: '1px solid rgba(217,119,6,0.12)' }}>
-          <AlertTriangle size={12} color="#D97706" />
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(255,184,0,0.05)', border: `1px solid rgba(255,184,0,0.12)` }}>
+          <AlertTriangle size={12} color={AMBER} />
           <span style={{ fontSize: '11px', color: FG_MUTED }}>
-            Meta Ads não sincronizado. Configure em{' '}<span onClick={() => navigate('/settings')} style={{ color: GREEN, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.
+            Meta Ads não sincronizado. Configure em{' '}<span onClick={() => navigate('/settings')} style={{ color: NEON, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.
           </span>
         </div>
       )}
 
       {/* ── KPI Row ────────────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }}>
-        <KpiCard label="Total Investido" value={sp > 0 ? `R$ ${sp.toLocaleString('pt-BR')}` : '--'} sub="no período" subColor={FG_SUBTLE} icon={DollarSign} iconColor="#2563EB" />
-        <KpiCard label="Leads Gerados" value={lds > 0 ? lds.toLocaleString('pt-BR') : '--'} sub={lds > 0 ? 'contatos' : 'sem dados'} subColor={lds > 0 ? '#2F7D4F' : FG_SUBTLE} icon={Users} iconColor="#2F7D4F" />
-        <KpiCard label="Custo por Lead" abbr="CPL" value={cpl > 0 ? `R$ ${cpl.toFixed(0)}` : '--'} sub={cplStatus(cpl).label} subColor={cplStatus(cpl).color} icon={Target} iconColor="#D97706" />
-        <KpiCard label="Taxa de Cliques" abbr="CTR" value={avgCtr > 0 ? `${avgCtr.toFixed(2)}%` : '--'} sub={ctrStatus(avgCtr).label} subColor={ctrStatus(avgCtr).color} icon={MousePointer2} iconColor="#7C3AED" />
-        <KpiCard label="Retorno s/ Gasto" abbr="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '--'} sub={roasStatus(roas).label} subColor={roasStatus(roas).color} icon={Zap} iconColor={GREEN} />
+        <KpiCard label="Total Investido" value={sp > 0 ? `R$ ${sp.toLocaleString('pt-BR')}` : '--'} sub="no período" subColor={FG_SUBTLE} icon={DollarSign} iconColor={BLUE} />
+        <KpiCard label="Leads Gerados" value={lds > 0 ? lds.toLocaleString('pt-BR') : '--'} sub={lds > 0 ? 'contatos' : 'sem dados'} subColor={lds > 0 ? NEON : FG_SUBTLE} icon={Users} iconColor={NEON} />
+        <KpiCard label="Custo por Lead" abbr="CPL" value={cpl > 0 ? `R$ ${cpl.toFixed(0)}` : '--'} sub={cplStatus(cpl).label} subColor={cplStatus(cpl).color} icon={Target} iconColor={AMBER} />
+        <KpiCard label="Taxa de Cliques" abbr="CTR" value={avgCtr > 0 ? `${avgCtr.toFixed(2)}%` : '--'} sub={ctrStatus(avgCtr).label} subColor={ctrStatus(avgCtr).color} icon={MousePointer2} iconColor={BLUE} />
+        <KpiCard label="Retorno s/ Gasto" abbr="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '--'} sub={roasStatus(roas).label} subColor={roasStatus(roas).color} icon={Zap} iconColor={NEON} />
       </div>
 
       {/* ── Main Grid ──────────────────────────────────────────────────────── */}
@@ -280,7 +285,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Chart card */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 24px', boxShadow: SHADOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 24px', boxShadow: GLOW }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
                 <p style={{ fontSize: '14px', fontWeight: 700, color: FG }}>Evolução no Período</p>
@@ -291,7 +296,7 @@ export default function Dashboard() {
               {/* Toggle leads/spend */}
               <div style={{ display: 'flex', gap: '4px', background: BG_SUBTLE, borderRadius: '8px', padding: '3px' }}>
                 {(['leads', 'spend'] as const).map(m => (
-                  <button key={m} onClick={() => setChartMetric(m)} style={{ padding: '4px 12px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: chartMetric === m ? GREEN : 'transparent', color: chartMetric === m ? '#fff' : FG_MUTED, transition: 'all 0.15s' }}>
+                  <button key={m} onClick={() => setChartMetric(m)} style={{ padding: '4px 12px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: chartMetric === m ? NEON : 'transparent', color: chartMetric === m ? '#000' : FG_MUTED, transition: 'all 0.15s' }}>
                     {m === 'leads' ? 'Leads' : 'Investimento'}
                   </button>
                 ))}
@@ -302,18 +307,18 @@ export default function Dashboard() {
                 <AreaChart data={weekly} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={chartMetric === 'leads' ? GREEN : FG_MUTED} stopOpacity={0.2} />
-                      <stop offset="100%" stopColor={chartMetric === 'leads' ? GREEN : FG_MUTED} stopOpacity={0} />
+                      <stop offset="0%" stopColor={chartMetric === 'leads' ? NEON : BLUE} stopOpacity={0.25} />
+                      <stop offset="100%" stopColor={chartMetric === 'leads' ? NEON : BLUE} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#F3F4F6" vertical={false} />
-                  <XAxis dataKey="day" stroke="transparent" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid stroke="rgba(0,255,178,0.04)" vertical={false} />
+                  <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip content={<ChartTip />} />
                   <Area
                     type="monotone"
                     dataKey={chartMetric}
-                    stroke={chartMetric === 'leads' ? GREEN : FG_MUTED}
+                    stroke={chartMetric === 'leads' ? NEON : BLUE}
                     strokeWidth={2}
                     fill="url(#grad)"
                     dot={false}
@@ -330,7 +335,7 @@ export default function Dashboard() {
           </div>
 
           {/* Campaign table */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', overflow: 'hidden', boxShadow: SHADOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', overflow: 'hidden', boxShadow: GLOW }}>
             {/* Table header */}
             <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, display: 'grid', gridTemplateColumns: '24px 1fr 70px 80px 70px 70px 70px', gap: '0 12px', alignItems: 'center' }}>
               <span />
@@ -345,7 +350,7 @@ export default function Dashboard() {
             {campaigns.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center' }}>
                 <p style={{ color: FG_MUTED, fontSize: '13px', marginBottom: '12px' }}>Nenhuma campanha ainda.</p>
-                <button onClick={() => navigate('/wizard')} style={{ background: GREEN, border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar campanha</button>
+                <button onClick={() => navigate('/wizard')} style={{ background: NEON, border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar campanha</button>
               </div>
             ) : (
               campaigns.map((c) => {
@@ -365,7 +370,7 @@ export default function Dashboard() {
                     <p style={{ fontSize: '13px', fontWeight: 700, color: FG, textAlign: 'right' }}>
                       {n(c.total_spend) > 0 ? `R$${n(c.total_spend).toLocaleString('pt-BR')}` : '—'}
                     </p>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: n(c.total_leads) > 0 ? '#2F7D4F' : FG_SUBTLE, textAlign: 'right' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: n(c.total_leads) > 0 ? NEON : FG_SUBTLE, textAlign: 'right' }}>
                       {n(c.total_leads) > 0 ? n(c.total_leads) : '—'}
                     </p>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: cplStatus(cpaV).color, textAlign: 'right' }}>
@@ -385,7 +390,7 @@ export default function Dashboard() {
             {/* Paused campaigns toggle */}
             {pausedCampaigns.length > 0 && (
               <div>
-                <button onClick={() => setShowPaused(p => !p)} style={{ width: '100%', padding: '12px 20px', background: 'rgba(217,119,6,0.04)', border: 'none', borderTop: `1px solid rgba(217,119,6,0.12)`, display: 'flex', alignItems: 'center', gap: '8px', color: '#D97706', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={() => setShowPaused(p => !p)} style={{ width: '100%', padding: '12px 20px', background: 'rgba(255,184,0,0.04)', border: 'none', borderTop: `1px solid rgba(255,184,0,0.12)`, display: 'flex', alignItems: 'center', gap: '8px', color: AMBER, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   <PauseCircle size={14} />
                   {pausedCampaigns.length} campanha{pausedCampaigns.length !== 1 ? 's' : ''} pausada{pausedCampaigns.length !== 1 ? 's' : ''}
                   {showPaused ? <ChevronUp size={13} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={13} style={{ marginLeft: 'auto' }} />}
@@ -393,7 +398,7 @@ export default function Dashboard() {
                 {showPaused && pausedCampaigns.map((c) => {
                   const vc = VERDICT[c.verdict]; const h = healthDot(n(c.avg_cpa), n(c.avg_ctr));
                   return (
-                    <div key={c.id} style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(217,119,6,0.02)' }}>
+                    <div key={c.id} style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(255,184,0,0.02)' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '14px' }}>{h.dot}</span>
@@ -425,12 +430,12 @@ export default function Dashboard() {
             const days = Math.max(1, Math.round((dateTo.getTime() - dateFrom.getTime()) / 86400000) + 1);
             const avgDailySpend = sp / days;
             return (
-              <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: SHADOW }}>
+              <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: GLOW }}>
                 <p style={{ fontSize: '11px', fontWeight: 700, color: FG_SUBTLE, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '14px' }}>Destaques do Período</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   <div style={{ padding: '12px 14px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
                     <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '6px', fontWeight: 600 }}>Gasto médio/dia</p>
-                    <p style={{ fontSize: '18px', fontWeight: 800, color: FG }}>{avgDailySpend > 0 ? `R$${avgDailySpend.toFixed(0)}` : '—'}</p>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: BLUE }}>{avgDailySpend > 0 ? `R$${avgDailySpend.toFixed(0)}` : '—'}</p>
                     <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '3px' }}>{days} dias no período</p>
                   </div>
                   <div style={{ padding: '12px 14px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
@@ -442,7 +447,7 @@ export default function Dashboard() {
                   </div>
                   <div style={{ padding: '12px 14px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
                     <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '6px', fontWeight: 600 }}>Mais leads</p>
-                    <p style={{ fontSize: '18px', fontWeight: 800, color: n(bestLeads?.total_leads) > 0 ? '#2F7D4F' : FG_SUBTLE }}>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: n(bestLeads?.total_leads) > 0 ? NEON : FG_SUBTLE }}>
                       {n(bestLeads?.total_leads) > 0 ? n(bestLeads!.total_leads) : '—'}
                     </p>
                     <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bestLeads?.name ?? 'sem dados'}</p>
@@ -450,7 +455,7 @@ export default function Dashboard() {
                 </div>
                 {analysis && analysis.actions.length > 0 && (
                   <div style={{ marginTop: '14px', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <Brain size={13} color={GREEN} style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <Brain size={13} color={NEON} style={{ flexShrink: 0, marginTop: '1px' }} />
                     <p style={{ fontSize: '12px', color: FG_MUTED, lineHeight: '1.55' }}>
                       <strong style={{ color: FG }}>IA: </strong>{analysis.actions[0].acao} — {analysis.actions[0].motivo}
                     </p>
@@ -465,7 +470,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Score card */}
-          <div style={{ background: BG_CARD, border: `1px solid ${scoreColor}25`, borderRadius: '16px', padding: '20px', boxShadow: SHADOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${scoreColor}25`, borderRadius: '16px', padding: '20px', boxShadow: GLOW }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Brain size={15} color={scoreColor} />
               <p style={{ fontSize: '13px', fontWeight: 700, color: FG }}>Saúde da Conta</p>
@@ -473,7 +478,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '14px' }}>
               <div style={{ position: 'relative', width: '88px', height: '88px', flexShrink: 0 }}>
                 <svg width="88" height="88" viewBox="0 0 88 88">
-                  <circle cx="44" cy="44" r={radius} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="6" />
+                  <circle cx="44" cy="44" r={radius} fill="none" stroke="rgba(0,255,178,0.08)" strokeWidth="6" />
                   <circle cx="44" cy="44" r={radius} fill="none" stroke={scoreColor} strokeWidth="6"
                     strokeDasharray={`${arc} ${circ}`} strokeLinecap="round"
                     transform="rotate(-90 44 44)"
@@ -518,23 +523,23 @@ export default function Dashboard() {
               </>
             )}
 
-            <button onClick={() => navigate('/professor')} style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '8px', background: 'none', border: 'none', color: GREEN, fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+            <button onClick={() => navigate('/professor')} style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '8px', background: 'none', border: 'none', color: NEON, fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
               Análise completa no Professor <ArrowRight size={12} />
             </button>
           </div>
 
           {/* Benchmark reference card */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: SHADOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: GLOW }}>
             <p style={{ fontSize: '12px', fontWeight: 700, color: FG_MUTED, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px' }}>Referência B2B — Meta Ads</p>
             {[
-              { abbr: 'CPL', label: 'Custo por Lead', zones: ['≤ R$60 Excelente', 'R$60–150 Aceitável', '> R$150 Alto'], colors: ['#2F7D4F', '#D97706', '#DC2626'] },
-              { abbr: 'CTR', label: 'Taxa de Cliques', zones: ['< 1% Baixo', '1–2.5% Aceitável', '> 2.5% Excelente'], colors: ['#DC2626', '#D97706', '#2F7D4F'] },
-              { abbr: 'CPC', label: 'Custo por Clique', zones: ['≤ R$5 Excelente', 'R$5–15 Aceitável', '> R$15 Alto'], colors: ['#2F7D4F', '#D97706', '#DC2626'] },
-              { abbr: 'ROAS', label: 'Retorno s/ Gasto', zones: ['< 1.5x Baixo', '1.5–3x Aceitável', '> 3x Excelente'], colors: ['#DC2626', '#D97706', '#2F7D4F'] },
+              { abbr: 'CPL', label: 'Custo por Lead', zones: ['≤ R$60 Excelente', 'R$60–150 Aceitável', '> R$150 Alto'], colors: [NEON, AMBER, RED] },
+              { abbr: 'CTR', label: 'Taxa de Cliques', zones: ['< 1% Baixo', '1–2.5% Aceitável', '> 2.5% Excelente'], colors: [RED, AMBER, NEON] },
+              { abbr: 'CPC', label: 'Custo por Clique', zones: ['≤ R$5 Excelente', 'R$5–15 Aceitável', '> R$15 Alto'], colors: [NEON, AMBER, RED] },
+              { abbr: 'ROAS', label: 'Retorno s/ Gasto', zones: ['< 1.5x Baixo', '1.5–3x Aceitável', '> 3x Excelente'], colors: [RED, AMBER, NEON] },
             ].map(({ abbr, label, zones, colors }) => (
               <div key={abbr} style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '5px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: GREEN }}>{abbr}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: NEON }}>{abbr}</span>
                   <span style={{ fontSize: '10px', color: FG_MUTED }}>{label}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '3px' }}>
@@ -550,21 +555,21 @@ export default function Dashboard() {
 
           {/* Problems / OK */}
           {analysis && analysis.issues.length > 0 && (
-            <div style={{ background: BG_CARD, border: '1px solid rgba(217,119,6,0.15)', borderRadius: '16px', padding: '16px 18px', boxShadow: SHADOW }}>
+            <div style={{ background: BG_CARD, border: `1px solid rgba(255,184,0,0.15)`, borderRadius: '16px', padding: '16px 18px', boxShadow: GLOW }}>
               <p style={{ fontSize: '12px', fontWeight: 700, color: FG, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <AlertTriangle size={13} color="#D97706" /> Pontos de atenção
+                <AlertTriangle size={13} color={AMBER} /> Pontos de atenção
               </p>
               {analysis.issues.map((issue, i) => (
                 <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '7px' }}>
-                  <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#D97706', flexShrink: 0, marginTop: '5px' }} />
+                  <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: AMBER, flexShrink: 0, marginTop: '5px' }} />
                   <p style={{ fontSize: '11px', color: FG_MUTED, lineHeight: '1.5' }}>{issue}</p>
                 </div>
               ))}
             </div>
           )}
           {analysis && analysis.issues.length === 0 && (
-            <div style={{ background: 'rgba(47,125,79,0.05)', border: '1px solid rgba(47,125,79,0.15)', borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
-              <CheckCircle size={22} color="#2F7D4F" style={{ margin: '0 auto 6px' }} />
+            <div style={{ background: 'rgba(0,255,178,0.05)', border: `1px solid rgba(0,255,178,0.15)`, borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
+              <CheckCircle size={22} color={NEON} style={{ margin: '0 auto 6px' }} />
               <p style={{ fontSize: '12px', fontWeight: 600, color: FG, marginBottom: '3px' }}>Tudo saudável</p>
               <p style={{ fontSize: '11px', color: FG_MUTED }}>Métricas dentro do esperado para B2B.</p>
             </div>
