@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Eye, EyeOff, RefreshCw, CheckCircle, Unlink, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Save, Eye, EyeOff, RefreshCw, CheckCircle, Unlink, Plus, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 import { integrationsApi, syncApi } from '../lib/api';
+
+const BG_CARD = 'rgba(10,16,30,0.95)';
 
 const CYAN = '#3DB8E8';
 
@@ -89,19 +91,24 @@ export default function Settings() {
     } finally { setSyncing(false); }
   }
 
-  const card: React.CSSProperties = { background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px', marginBottom: '16px' };
-  const input: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
-  const label: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' };
+  const card: React.CSSProperties = { background: BG_CARD, border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '24px', marginBottom: '16px' };
+  const input: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+  const label: React.CSSProperties = { display: 'block', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '7px' };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', padding: '32px', maxWidth: '640px' }}>
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Configuracoes</h1>
-        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Conecte suas plataformas de anuncio para sincronizar dados reais</p>
+    <div style={{ minHeight: '100vh', background: '#000', padding: '28px 32px', maxWidth: '680px' }}>
+      <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(61,184,232,0.1)', border: '1px solid rgba(61,184,232,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Settings2 size={18} color="#3DB8E8" />
+        </div>
+        <div>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>Configurações</h1>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>Conecte suas plataformas de anúncio para sincronizar dados reais</p>
+        </div>
       </div>
 
       {msg && (
-        <div style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, color: msg.ok ? '#10b981' : '#ef4444', background: msg.ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${msg.ok ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}` }}>
+        <div style={{ marginBottom: '16px', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', fontWeight: 600, color: msg.ok ? '#10b981' : '#ef4444', background: msg.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${msg.ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
           {msg.text}
         </div>
       )}
@@ -221,7 +228,7 @@ export default function Settings() {
               <label style={label}>ID da Conta de Anuncios</label>
               <input style={input} value={form.account_id} onChange={(e) => setForm((f) => ({ ...f, account_id: e.target.value }))} placeholder="1709125303555669" />
             </div>
-            <button onClick={handleSave} disabled={saving} style={{ padding: '10px', borderRadius: '10px', border: 'none', background: `linear-gradient(135deg, ${CYAN}, #1a8ab8)`, color: '#000', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <button onClick={handleSave} disabled={saving} style={{ padding: '11px', borderRadius: '11px', border: 'none', background: `linear-gradient(135deg, ${CYAN}, #1a8ab8)`, color: '#000', fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: saving ? 0.7 : 1 }}>
               <Save size={14} /> {saving ? 'Salvando...' : 'Salvar e ativar'}
             </button>
           </div>
@@ -229,7 +236,7 @@ export default function Settings() {
       </div>
 
       {/* Google Ads - em breve */}
-      <div style={{ ...card, opacity: 0.5 }}>
+      <div style={{ ...card, opacity: 0.45 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(66,133,244,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color: '#4285f4' }}>G</div>
           <div>

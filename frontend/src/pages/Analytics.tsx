@@ -6,8 +6,9 @@ import {
 import { TrendingUp, TrendingDown, DollarSign, Users, Target, Zap, MousePointerClick, Eye, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { metricsApi, campaignsApi, analyzeApi } from '../lib/api';
-import { Tooltip as MetricTooltip } from '../components/Tooltip';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
+
+const BG_CARD = 'rgba(10,16,30,0.95)';
 
 const CYAN = '#3DB8E8';
 
@@ -39,92 +40,32 @@ const PLATFORM_LABEL: Record<string, string> = {
   meta: 'Meta Ads', google: 'Google Ads', linkedin: 'LinkedIn',
 };
 
-function KpiCard({ label, value, tooltip, icon: Icon, gradient, glow, sub }: any) {
+function KpiCard({ label, value, icon: Icon, gradient, glow, sub }: any) {
+  const subColor = sub?.startsWith('✅') ? '#10b981' : sub?.startsWith('⚠️') ? '#f59e0b' : sub?.startsWith('❌') ? '#ef4444' : '#64748b';
   return (
-    <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
-        <div style={{ width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(135deg, ${gradient[0]}, ${gradient[1]})`, boxShadow: `0 0 14px ${glow}` }}>
-          <Icon size={18} color="#fff" />
+    <div style={{ background: BG_CARD, border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '18px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(135deg, ${gradient[0]}, ${gradient[1]})`, boxShadow: `0 0 10px ${glow}` }}>
+          <Icon size={17} color="#fff" />
         </div>
-        <MetricTooltip text={tooltip} />
+        {sub && <span style={{ fontSize: '10px', fontWeight: 700, color: subColor, background: `${subColor}15`, padding: '2px 8px', borderRadius: '10px', maxWidth: '120px', textAlign: 'right', lineHeight: 1.4 }}>{sub.replace(/^[✅⚠️❌]\s/, '')}</span>}
       </div>
-      <p style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>{value}</p>
-      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{label}</p>
-      {sub && <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', marginTop: '2px' }}>{sub}</p>}
+      <p style={{ fontSize: '22px', fontWeight: 800, color: '#fff', marginBottom: '3px', lineHeight: 1 }}>{value}</p>
+      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{label}</p>
     </div>
   );
 }
 
 function ChartCard({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px' }}>
-      <p style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{title}</p>
-      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>{desc}</p>
+    <div style={{ background: BG_CARD, border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '20px 22px' }}>
+      <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '3px' }}>{title}</p>
+      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '18px', lineHeight: 1.5 }}>{desc}</p>
       {children}
     </div>
   );
 }
 
-function BenchmarkStrip() {
-  return (
-    <div style={{ marginBottom: '20px', background: 'rgba(61,184,232,0.04)', border: '1px solid rgba(61,184,232,0.2)', borderRadius: '12px', padding: '14px 20px' }}>
-      <p style={{ fontSize: '10px', fontWeight: 700, color: CYAN, marginBottom: '12px', letterSpacing: '0.8px' }}>📊 REFERÊNCIA DE MERCADO — BENCHMARKS B2B META ADS</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }} className="grid-benchmark">
-        {[
-          { label: 'Custo por Lead', abbr: 'CPL', otimo: 'Abaixo de R$60', aceitavel: 'Até R$150', alto: 'Acima de R$150' },
-          { label: 'Taxa de Cliques', abbr: 'CTR', otimo: 'Acima de 2,5%', aceitavel: 'Acima de 1%', alto: 'Abaixo de 1%' },
-          { label: 'Custo por Clique', abbr: 'CPC', otimo: 'Abaixo de R$5', aceitavel: 'Até R$15', alto: 'Acima de R$15' },
-          { label: 'Retorno sobre Gasto', abbr: 'ROAS', otimo: 'Acima de 3x', aceitavel: 'Acima de 2x', alto: 'Abaixo de 2x' },
-        ].map(({ label, abbr, otimo, aceitavel, alto }) => (
-          <div key={abbr}>
-            <p style={{ fontSize: '12px', fontWeight: 600, color: '#fff', marginBottom: '6px' }}>{label} <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>({abbr})</span></p>
-            <p style={{ fontSize: '11px', color: '#10b981', marginBottom: '2px' }}>🟢 {otimo}</p>
-            <p style={{ fontSize: '11px', color: '#f59e0b', marginBottom: '2px' }}>🟡 {aceitavel}</p>
-            <p style={{ fontSize: '11px', color: '#ef4444' }}>🔴 {alto}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function GlossarySection() {
-  const [open, setOpen] = useState(false);
-  const items = [
-    { abbr: 'CPL', full: 'Custo por Lead', emoji: '💰', desc: 'Quanto você pagou em média por cada pessoa que demonstrou interesse e deixou contato. É a métrica mais importante para B2B. Benchmark: ótimo abaixo de R$60, aceitável até R$150.' },
-    { abbr: 'CTR', full: 'Taxa de Cliques', emoji: '📊', desc: 'De cada 100 pessoas que viram seu anúncio, quantas clicaram. CTR 2% = 100 viram, 2 clicaram. Indica se o criativo (imagem/vídeo) está chamando atenção. Bom: acima de 2,5%.' },
-    { abbr: 'CPC', full: 'Custo por Clique', emoji: '🖱️', desc: 'Quanto custou cada clique no anúncio. Se você gastou R$100 e teve 20 cliques, o CPC é R$5. Indica a eficiência do anúncio em atrair visitas. Bom: abaixo de R$5.' },
-    { abbr: 'ROAS', full: 'Retorno sobre Gasto em Anúncios', emoji: '📈', desc: 'Para cada R$1 investido em anúncios, quanto voltou em receita. ROAS 3x = para cada R$1 gasto, R$3 de retorno. Para serviços B2B com ticket alto, mesmo ROAS 2x pode ser lucrativo.' },
-    { abbr: 'CPM', full: 'Custo por Mil Impressões', emoji: '👁️', desc: 'Quanto custa aparecer para 1.000 pessoas. CPM de R$20 = R$20 para mostrar o anúncio 1.000 vezes. CPM alto pode indicar audiência muito disputada ou anúncio de baixa relevância.' },
-    { abbr: 'Impressões', full: 'Impressões', emoji: '🔁', desc: 'Número de vezes que o anúncio apareceu na tela de alguém. Muitas impressões + CTR baixo = o anúncio aparece mas não chama atenção suficiente para gerar cliques.' },
-  ];
-  return (
-    <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', marginTop: '16px' }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-      >
-        <div style={{ textAlign: 'left' }}>
-          <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>📚 Glossário — O que cada métrica significa</p>
-          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>Clique para {open ? 'fechar' : 'ver'} as explicações em português</p>
-        </div>
-        <span style={{ color: CYAN, fontSize: '16px', marginLeft: '16px' }}>{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '16px' }} className="grid-glossary">
-          {items.map(({ abbr, full, emoji, desc }) => (
-            <div key={abbr} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '14px' }}>
-              <p style={{ fontSize: '20px', marginBottom: '6px' }}>{emoji}</p>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>{full}</p>
-              <p style={{ fontSize: '10px', color: CYAN, marginBottom: '8px', fontWeight: 600, letterSpacing: '0.5px' }}>{abbr}</p>
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{desc}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -282,32 +223,26 @@ export default function Analytics() {
   const avgWeekCTR = weekly.filter((d) => d.ctr > 0).reduce((s, d, _, a) => s + d.ctr / a.length, 0);
 
   return (
-    <div className="page-pad" style={{ minHeight: '100vh', background: '#000', padding: '32px' }}>
+    <div className="page-pad" style={{ minHeight: '100vh', background: '#000', padding: '28px 32px' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '8px' }}>
-          <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Analytics</h1>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
-              Performance detalhada — gráficos, métricas e comparativos de campanhas.
-            </p>
-          </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '22px' }}>
+        <div>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', marginBottom: '2px' }}>Analytics</h1>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+            Performance detalhada por período, campanha e criativo
+            {fetching && <span style={{ marginLeft: '10px', color: CYAN }}>· atualizando…</span>}
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {noData && (
+            <span style={{ fontSize: '11px', color: '#f59e0b', padding: '5px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+              Sem dados — sincronize em Configurações
+            </span>
+          )}
           <DateRangePicker value={range} onChange={setRange} />
         </div>
-        {noData && (
-          <div style={{ marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#f59e0b', padding: '5px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
-            Nenhum dado para este período — sincronize o Meta Ads em Configurações para ver seus números reais.
-          </div>
-        )}
-        {fetching && (
-          <div style={{ marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', padding: '5px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)' }}>
-            Atualizando...
-          </div>
-        )}
       </div>
-
-      <BenchmarkStrip />
 
       {/* KPIs — 6 cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}
@@ -406,7 +341,7 @@ export default function Analytics() {
 
       {/* Tabela de campanhas */}
       {campaigns.length > 0 && (
-        <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
+        <div style={{ background: BG_CARD, border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>Comparativo de Campanhas</p>
@@ -479,7 +414,7 @@ export default function Analytics() {
 
       {/* Análise por campanha */}
       {campaigns.length > 0 && (
-        <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+        <div style={{ background: BG_CARD, border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '22px', marginBottom: '16px' }}>
           <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Análise Individual por Campanha</p>
           <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>Cada campanha avaliada com semáforo de saúde baseado nos benchmarks B2B.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px' }}>
@@ -652,7 +587,7 @@ export default function Analytics() {
       )}
 
       {/* Insights */}
-      <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px' }}>
+      <div style={{ background: BG_CARD, border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '20px 22px' }}>
         <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Destaques do Período</p>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px' }}>Análise automática dos dados do período selecionado.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }} className="grid-insights">
@@ -676,22 +611,16 @@ export default function Analytics() {
         </div>
       </div>
 
-      <GlossarySection />
-
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 900px) {
           .grid-kpis-analytics { grid-template-columns: repeat(2, 1fr) !important; }
           .grid-charts { grid-template-columns: 1fr !important; }
           .grid-insights { grid-template-columns: repeat(2, 1fr) !important; }
-          .grid-benchmark { grid-template-columns: repeat(2, 1fr) !important; }
-          .grid-glossary { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 600px) {
           .grid-kpis-analytics { grid-template-columns: 1fr !important; }
           .grid-insights { grid-template-columns: 1fr !important; }
-          .grid-benchmark { grid-template-columns: 1fr !important; }
-          .grid-glossary { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

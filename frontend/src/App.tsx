@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers, Database } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
@@ -15,17 +15,78 @@ import './styles/globals.css';
 
 const CYAN = '#3DB8E8';
 
-const NAV = [
+const NAV_MAIN = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { to: '/campanhas', label: 'Campanhas', icon: Layers },
   { to: '/professor', label: 'Professor IA', icon: GraduationCap },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/wizard', label: 'Nova Campanha', icon: Rocket },
-  { to: '/diagnostico', label: 'Diagnóstico', icon: Database },
-  { to: '/settings', label: 'Configuracoes', icon: Settings },
 ];
 
+const NAV_ACTIONS = [
+  { to: '/wizard', label: 'Nova Campanha', icon: Rocket },
+  { to: '/diagnostico', label: 'Diagnóstico', icon: Database },
+];
+
+const GROUP_LABEL_STYLE: React.CSSProperties = {
+  fontSize: '9px',
+  fontWeight: 700,
+  color: 'rgba(255,255,255,0.2)',
+  letterSpacing: '0.08em',
+  padding: '10px 12px 5px',
+  textTransform: 'uppercase' as const,
+};
+
+function NavItem({
+  to,
+  label,
+  icon: Icon,
+  exact,
+  onClose,
+}: {
+  to: string;
+  label: string;
+  icon: React.ElementType;
+  exact?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={exact}
+      onClick={onClose}
+      style={({ isActive }) => ({
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '9px 12px',
+        marginBottom: '2px',
+        borderRadius: '8px',
+        textDecoration: 'none',
+        fontSize: '13px',
+        fontWeight: isActive ? 600 : 400,
+        color: isActive ? '#fff' : 'rgba(255,255,255,0.4)',
+        background: isActive ? 'rgba(61,184,232,0.1)' : 'transparent',
+        borderLeft: isActive ? `2px solid ${CYAN}` : '2px solid transparent',
+        transition: 'all 0.15s',
+      })}
+      className="btn-ghost"
+    >
+      {({ isActive }) => (
+        <>
+          <Icon
+            size={16}
+            color={isActive ? CYAN : 'rgba(255,255,255,0.4)'}
+          />
+          {label}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [logoutHovered, setLogoutHovered] = useState(false);
+
   function handleLogout() {
     localStorage.removeItem('token');
     window.location.href = '/login';
@@ -39,7 +100,8 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         onClick={onClose}
         style={{
           display: 'none',
-          position: 'fixed', inset: 0,
+          position: 'fixed',
+          inset: 0,
           background: 'rgba(0,0,0,0.6)',
           zIndex: 49,
         }}
@@ -48,56 +110,144 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
       <aside
         className={`app-sidebar${open ? ' sidebar-open' : ''}`}
         style={{
-          position: 'fixed', top: 0, left: 0, bottom: 0, width: '220px',
-          background: '#0a0a0a', borderRight: '1px solid rgba(255,255,255,0.06)',
-          display: 'flex', flexDirection: 'column', zIndex: 50,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: '220px',
+          background: '#060913',
+          borderRight: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 50,
           transition: 'transform 0.25s ease',
         }}
       >
-        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* ── Logo area ── */}
+        <div
+          style={{
+            position: 'relative',
+            padding: '20px 18px 16px',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Radial glow behind logo */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '80px',
+              background: 'radial-gradient(circle at 20% 50%, rgba(61,184,232,0.12) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Logo size={38} />
             <div>
-              <div style={{ color: '#fff', fontSize: '13px', fontWeight: 700, letterSpacing: '-0.2px' }}>êxodos</div>
-              <div style={{ color: CYAN, fontSize: '10px', opacity: 0.9, letterSpacing: '0.3px' }}>conversion</div>
+              <div
+                style={{
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  letterSpacing: '-0.3px',
+                }}
+              >
+                êxodos
+              </div>
+              <div
+                style={{
+                  color: CYAN,
+                  fontSize: '9px',
+                  opacity: 0.9,
+                  letterSpacing: '0.3px',
+                }}
+              >
+                conversion
+              </div>
             </div>
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: '12px 10px' }}>
-          {NAV.map(({ to, label, icon: Icon, exact }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={exact}
-              onClick={onClose}
-              style={({ isActive }) => ({
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '9px 12px', marginBottom: '2px', borderRadius: '8px',
-                textDecoration: 'none', fontSize: '13px', fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
-                background: isActive ? `${CYAN}18` : 'transparent',
-                borderLeft: isActive ? `2px solid ${CYAN}` : '2px solid transparent',
-                transition: 'all 0.15s',
-              })}
-            >
-              <Icon size={16} />
-              {label}
-            </NavLink>
+        {/* ── Nav ── */}
+        <nav style={{ flex: 1, padding: '14px 10px', overflowY: 'auto' }}>
+          {/* Group: ANÁLISE */}
+          <div style={GROUP_LABEL_STYLE}>Análise</div>
+          {NAV_MAIN.map(({ to, label, icon, exact }) => (
+            <NavItem key={to} to={to} label={label} icon={icon} exact={exact} onClose={onClose} />
+          ))}
+
+          {/* Group: AÇÕES */}
+          <div style={{ ...GROUP_LABEL_STYLE, marginTop: '8px' }}>Ações</div>
+          {NAV_ACTIONS.map(({ to, label, icon }) => (
+            <NavItem key={to} to={to} label={label} icon={icon} onClose={onClose} />
           ))}
         </nav>
 
-        <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* ── Bottom: Configurações + Sair ── */}
+        <div
+          style={{
+            padding: '12px 10px',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <NavLink
+            to="/settings"
+            onClick={onClose}
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '9px 12px',
+              marginBottom: '4px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '13px',
+              fontWeight: isActive ? 600 : 400,
+              color: isActive ? '#fff' : 'rgba(255,255,255,0.4)',
+              background: isActive ? 'rgba(61,184,232,0.1)' : 'transparent',
+              borderLeft: isActive ? `2px solid ${CYAN}` : '2px solid transparent',
+              transition: 'all 0.15s',
+            })}
+            className="btn-ghost"
+          >
+            {({ isActive }) => (
+              <>
+                <Settings size={16} color={isActive ? CYAN : 'rgba(255,255,255,0.4)'} />
+                Configurações
+              </>
+            )}
+          </NavLink>
+
           <button
             onClick={handleLogout}
+            onMouseEnter={() => setLogoutHovered(true)}
+            onMouseLeave={() => setLogoutHovered(false)}
             style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '9px 12px', borderRadius: '8px', border: 'none',
-              background: 'transparent', color: 'rgba(255,255,255,0.35)',
-              fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '9px 12px',
+              borderRadius: '8px',
+              border: 'none',
+              background: logoutHovered ? 'rgba(239,68,68,0.08)' : 'transparent',
+              color: logoutHovered ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.3)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              transition: 'all 0.15s',
+              textAlign: 'left',
             }}
           >
-            <LogOut size={16} /> Sair
+            <LogOut
+              size={16}
+              color={logoutHovered ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.3)'}
+            />
+            Sair
           </button>
         </div>
       </aside>
