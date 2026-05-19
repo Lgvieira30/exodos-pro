@@ -123,8 +123,8 @@ function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
 function TrendBadge({ value, inverted = false }: { value: number | null | undefined; inverted?: boolean }) {
   if (value === null || value === undefined) return <span style={{ fontSize: '10px', color: FG_SUBTLE }}>—</span>;
   const isGood = inverted ? value <= 0 : value >= 0;
-  const color = isGood ? '#00FFB2' : '#FF3B5C';
-  const bg = isGood ? 'rgba(0,255,178,0.1)' : 'rgba(255,59,92,0.1)';
+  const color = isGood ? '#00C8FF' : '#FF4560';
+  const bg = isGood ? 'rgba(0,200,255,0.1)' : 'rgba(255,69,96,0.1)';
   const Arrow = value > 0 ? ArrowUpRight : value < 0 ? ArrowDownRight : Minus;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color, background: bg, padding: '2px 7px', borderRadius: '20px' }}>
@@ -175,11 +175,11 @@ function MetricCard({ metric, expanded, onToggle }: { metric: any; expanded: boo
 
 function Funnel({ data }: { data: DeepData['funnel'] }) {
   const steps = [
-    { label: 'Impressões', value: data.impressions.toLocaleString('pt-BR'), color: '#00BFFF', width: 100 },
+    { label: 'Impressões', value: data.impressions.toLocaleString('pt-BR'), color: '#3B82F6', width: 100 },
     { label: `CTR ${data.ctr.toFixed(2)}%`, value: null, color: BORDER, width: 0, arrow: true },
     { label: 'Cliques', value: data.clicks.toLocaleString('pt-BR'), color: GREEN, width: data.impressions > 0 ? Math.max(12, (data.clicks / data.impressions) * 100 * 10) : 50 },
     { label: `Conv. ${data.clickToLeadRate.toFixed(1)}%`, value: null, color: BORDER, width: 0, arrow: true },
-    { label: 'Leads', value: data.leads.toLocaleString('pt-BR'), color: '#00FFB2', width: data.clicks > 0 ? Math.max(8, (data.leads / data.clicks) * 100 * 10) : 30 },
+    { label: 'Leads', value: data.leads.toLocaleString('pt-BR'), color: '#00C8FF', width: data.clicks > 0 ? Math.max(8, (data.leads / data.clicks) * 100 * 10) : 30 },
     { label: 'Receita Est.', value: data.revenueEst > 0 ? `R$ ${data.revenueEst.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}` : '—', color: '#BD00FF', width: data.leads > 0 ? Math.max(6, (data.leads / data.clicks) * 80) : 20 },
   ];
   return (
@@ -223,7 +223,7 @@ function SummaryKpi({ label, value, sub, change, inverted }: { label: string; va
 
 function ActionCard({ action, rank }: { action: any; rank: number }) {
   const color = PRIORITY_COLOR[action.priority] || FG_SUBTLE;
-  const rankColors = ['#FF3B5C', '#FFB800', '#00BFFF', '#00FFB2', '#BD00FF'];
+  const rankColors = ['#FF4560', '#FFA520', '#3B82F6', '#00C8FF', '#BD00FF'];
   return (
     <div style={{ display: 'flex', gap: '14px', padding: '14px 16px', borderRadius: '12px', background: `${color}08`, border: `1px solid ${color}25`, alignItems: 'flex-start' }}>
       <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${rankColors[rank] || color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '13px', fontWeight: 800, color: rankColors[rank] || color }}>
@@ -244,7 +244,7 @@ function ActionCard({ action, rank }: { action: any; rank: number }) {
 }
 
 function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: number }) {
-  const scoreColor = c.score >= 75 ? '#00FFB2' : c.score >= 50 ? '#FFB800' : '#FF3B5C';
+  const scoreColor = c.score >= 75 ? '#00C8FF' : c.score >= 50 ? '#FFA520' : '#FF4560';
   const barWidth = maxSpend > 0 ? Math.max(4, (c.score / 100) * 100) : 4;
   return (
     <div style={{ padding: '12px 0', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -265,9 +265,9 @@ function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: numbe
       </div>
       <div style={{ flex: '0 0 auto', textAlign: 'right', minWidth: '70px' }}>
         <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>CPL</p>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_cpa > 150 ? '#FF3B5C' : c.avg_cpa > 60 ? '#FFB800' : c.avg_cpa > 0 ? '#00FFB2' : FG_SUBTLE }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_cpa > 150 ? '#FF4560' : c.avg_cpa > 60 ? '#FFA520' : c.avg_cpa > 0 ? '#00C8FF' : FG_SUBTLE }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
         <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '4px', marginBottom: '1px' }}>ROAS</p>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? '#00FFB2' : c.avg_roas > 0 ? '#FFB800' : FG_SUBTLE }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? '#00C8FF' : c.avg_roas > 0 ? '#FFA520' : FG_SUBTLE }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
       </div>
     </div>
   );
@@ -879,7 +879,7 @@ export default function Professor() {
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
                     {summaryData.campaigns.map((c) => {
-                      const scoreColor = c.score >= 75 ? '#00FFB2' : c.score >= 50 ? '#FFB800' : '#FF3B5C';
+                      const scoreColor = c.score >= 75 ? '#00C8FF' : c.score >= 50 ? '#FFA520' : '#FF4560';
                       const scoreEmoji = c.score >= 75 ? '🟢' : c.score >= 50 ? '🟡' : '🔴';
                       const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? '#00FFB2' : c.avg_cpa <= 150 ? '#FFB800' : '#FF3B5C';
                       const cplLabel = c.avg_cpa <= 0 ? '—' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
