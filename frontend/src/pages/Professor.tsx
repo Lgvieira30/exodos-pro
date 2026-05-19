@@ -11,19 +11,19 @@ import {
 import { metricsApi, analyzeApi, campaignsApi, aiApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-const GREEN = '#00FFB2';
-const BG = '#080B14';
-const BG_CARD = '#0D1117';
-const BG_SUBTLE = '#111520';
-const BLUE = '#00BFFF';
-const FG = '#C9D1D9';
-const FG_MUTED = 'rgba(201,209,217,0.55)';
-const FG_SUBTLE = 'rgba(201,209,217,0.3)';
-const BORDER = 'rgba(0,255,178,0.1)';
-const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
-const RED = '#FF3B5C';
-const AMBER = '#FFB800';
-const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
+const GREEN = '#00C8FF';     // was '#00FFB2' — the single accent (electric cyan)
+const BG = '#0D0D0E';
+const BG_CARD = '#161617';
+const BG_SUBTLE = '#1D1D1F';
+const BLUE = '#3B82F6';
+const FG = '#E8E8E8';
+const FG_MUTED = 'rgba(232,232,232,0.45)';
+const FG_SUBTLE = 'rgba(232,232,232,0.2)';
+const BORDER = 'rgba(255,255,255,0.07)';
+const BORDER_ACTIVE = 'rgba(0,200,255,0.18)';
+const RED = '#FF4560';
+const AMBER = '#FFA520';
+const GLOW = '0 0 0 1px rgba(255,255,255,0.04)';
 const SHADOW = GLOW;
 const PRIORITY_COLOR: Record<string, string> = { alta: RED, media: AMBER, baixa: GREEN };
 const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google: 'Google Ads', linkedin: 'LinkedIn' };
@@ -81,23 +81,23 @@ function getStatus(key: string, value: number): 'excellent' | 'good' | 'warning'
 }
 
 const STATUS_CONFIG = {
-  excellent: { color: '#00FFB2', bg: 'rgba(0,255,178,0.08)',  border: 'rgba(0,255,178,0.2)',  label: 'Excelente', icon: CheckCircle },
-  good:      { color: '#00BFFF', bg: 'rgba(0,191,255,0.08)',  border: 'rgba(0,191,255,0.2)',  label: 'Bom',       icon: TrendingUp },
-  warning:   { color: '#FFB800', bg: 'rgba(255,184,0,0.08)',  border: 'rgba(255,184,0,0.2)',  label: 'Atenção',   icon: AlertTriangle },
-  critical:  { color: '#FF3B5C', bg: 'rgba(255,59,92,0.08)',  border: 'rgba(255,59,92,0.2)',  label: 'Crítico',   icon: TrendingDown },
+  excellent: { color: '#00C8FF', bg: 'rgba(0,200,255,0.08)', border: 'rgba(0,200,255,0.2)',  label: 'Excelente', icon: CheckCircle },
+  good:      { color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', label: 'Bom',       icon: TrendingUp },
+  warning:   { color: '#FFA520', bg: 'rgba(255,165,32,0.08)', border: 'rgba(255,165,32,0.2)', label: 'Atenção',   icon: AlertTriangle },
+  critical:  { color: '#FF4560', bg: 'rgba(255,69,96,0.08)',  border: 'rgba(255,69,96,0.2)',  label: 'Crítico',   icon: TrendingDown },
 };
 
 const VERDICT_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  reativar:             { label: 'Reativar',          color: '#00FFB2', bg: 'rgba(0,255,178,0.08)',  border: 'rgba(0,255,178,0.2)' },
-  reativar_com_cautela: { label: 'Revisar e Reativar', color: '#FFB800', bg: 'rgba(255,184,0,0.08)',  border: 'rgba(255,184,0,0.2)' },
-  manter_pausada:       { label: 'Manter Pausada',    color: '#FF3B5C', bg: 'rgba(255,59,92,0.08)',  border: 'rgba(255,59,92,0.2)' },
+  reativar:             { label: 'Reativar',           color: '#00C8FF', bg: 'rgba(0,200,255,0.08)', border: 'rgba(0,200,255,0.2)' },
+  reativar_com_cautela: { label: 'Revisar e Reativar', color: '#FFA520', bg: 'rgba(255,165,32,0.08)', border: 'rgba(255,165,32,0.2)' },
+  manter_pausada:       { label: 'Manter Pausada',     color: '#FF4560', bg: 'rgba(255,69,96,0.08)',  border: 'rgba(255,69,96,0.2)' },
 };
 
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
-  const color = score >= 75 ? '#00FFB2' : score >= 50 ? '#FFB800' : '#FF3B5C';
+  const color = score >= 75 ? '#00C8FF' : score >= 50 ? '#FFA520' : '#FF4560';
   const label = score >= 75 ? 'Excelente' : score >= 50 ? 'Atenção' : 'Crítico';
   const r = size * 0.4;
   const c = 2 * Math.PI * r;
@@ -105,7 +105,7 @@ function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(0,255,178,0.08)" strokeWidth="10" />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="10"
             strokeDasharray={c} strokeDashoffset={c - (score / 100) * c}
             strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease' }} />
