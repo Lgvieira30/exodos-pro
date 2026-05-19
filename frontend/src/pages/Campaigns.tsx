@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   ChevronDown, ChevronRight, RefreshCw, AlertTriangle,
-  CheckCircle, Layers, Image, Megaphone, Star, BarChart3,
+  CheckCircle, Layers, Image, Megaphone, BarChart3,
 } from 'lucide-react';
 import { campaignsApi, adSetsApi, syncApi } from '../lib/api';
 
@@ -62,7 +62,6 @@ function action(sc: number, cpa: number, ctr: number): { label: string; color: s
 
 function cplColor(v: number) { return v <= 0 ? 'rgba(255,255,255,0.3)' : v <= 60 ? '#10b981' : v <= 150 ? '#f59e0b' : '#ef4444'; }
 function ctrColor(v: number) { return v <= 0 ? 'rgba(255,255,255,0.3)' : v >= 2.5 ? '#10b981' : v >= 1 ? '#f59e0b' : '#ef4444'; }
-function roasColor(v: number) { return v <= 0 ? 'rgba(255,255,255,0.3)' : v >= 3 ? '#10b981' : v >= 2 ? '#f59e0b' : '#ef4444'; }
 
 function Kpi({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
@@ -109,13 +108,13 @@ function DailyTable({ daily }: { daily: DailyRow[] }) {
   );
 }
 
-function AdRow({ ad, adSetId, isBest }: { ad: Ad; adSetId: string; isBest: boolean }) {
+function AdRow({ ad, adSetId }: { ad: Ad; adSetId: string; isBest: boolean }) {
   const [showDaily, setShowDaily] = useState(false);
   const [daily, setDaily] = useState<DailyRow[]>([]);
   const [loadingDaily, setLoadingDaily] = useState(false);
 
   const cfg = scfg(ad.status);
-  const cpa = n(ad.cpa); const ctr = n(ad.ctr); const cpc = n(ad.cpc);
+  const cpa = n(ad.cpa); const ctr = n(ad.ctr);
   const leads = n(ad.leads); const spend = n(ad.spend);
   const sc = score(cpa, ctr, 0);
   const act = action(sc, cpa, ctr);
@@ -140,26 +139,16 @@ function AdRow({ ad, adSetId, isBest }: { ad: Ad; adSetId: string; isBest: boole
             <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
               <p style={{ fontSize: '12px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>{ad.name}</p>
               <span style={{ fontSize: '9px', fontWeight: 700, color: cfg.color, background: cfg.bg, padding: '1px 6px', borderRadius: '6px', flexShrink: 0 }}>{cfg.label}</span>
-              {isBest && isActive && (
-                <span style={{ fontSize: '9px', fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.12)', padding: '1px 6px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <Star size={7} />Melhor anúncio
-                </span>
-              )}
+              <span style={{ fontSize: '9px', fontWeight: 700, color: act.color, background: act.bg, padding: '1px 6px', borderRadius: '5px' }}>{act.label}</span>
             </div>
-            <span style={{ fontSize: '10px', fontWeight: 700, color: act.color, background: act.bg, padding: '1px 7px', borderRadius: '5px', display: 'inline-block', marginTop: '3px' }}>
-              {act.label} — {act.why}
-            </span>
           </div>
         </div>
         {isActive && (
           <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexShrink: 0 }}>
             <Kpi label="CPL" value={cpa > 0 ? `R$${cpa.toFixed(0)}` : '—'} color={cplColor(cpa)} />
-            <Kpi label="CTR" value={ctr > 0 ? `${ctr.toFixed(1)}%` : '—'} color={ctrColor(ctr)} />
-            <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} color="#10b981" />
+            <Kpi label="CTR" value={ctr > 0 ? `${ctr.toFixed(1)}%` : '—'} />
+            <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} />
             <Kpi label="Gasto" value={spend > 0 ? `R$${spend.toFixed(0)}` : '—'} />
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: `${act.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: act.color }}>{sc}</span>
-            </div>
             <button onClick={toggleDaily} style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${showDaily ? CYAN + '40' : 'rgba(255,255,255,0.08)'}`, background: showDaily ? 'rgba(61,184,232,0.08)' : 'transparent', color: showDaily ? CYAN : 'rgba(255,255,255,0.3)', fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <BarChart3 size={9} />{loadingDaily ? '...' : '7 dias'}
             </button>
@@ -175,7 +164,7 @@ function AdRow({ ad, adSetId, isBest }: { ad: Ad; adSetId: string; isBest: boole
   );
 }
 
-function AdSetBlock({ adSet, isBest }: { adSet: AdSet; isBest: boolean }) {
+function AdSetBlock({ adSet }: { adSet: AdSet; isBest: boolean }) {
   const [adsExpanded, setAdsExpanded] = useState(false);
   const [ads, setAds] = useState<Ad[]>([]);
   const [loadingAds, setLoadingAds] = useState(false);
@@ -185,7 +174,7 @@ function AdSetBlock({ adSet, isBest }: { adSet: AdSet; isBest: boolean }) {
 
   const cfg = scfg(adSet.status);
   const cpa = n(adSet.cpa); const ctr = n(adSet.ctr); const roas = n(adSet.roas);
-  const cpc = n(adSet.cpc); const leads = n(adSet.leads); const spend = n(adSet.spend);
+  const leads = n(adSet.leads); const spend = n(adSet.spend);
   const budget = n(adSet.daily_budget);
   const sc = score(cpa, ctr, roas);
   const act = action(sc, cpa, ctr);
@@ -220,30 +209,19 @@ function AdSetBlock({ adSet, isBest }: { adSet: AdSet; isBest: boolean }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
               <p style={{ fontSize: '13px', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '280px' }}>{adSet.name}</p>
               <span style={{ fontSize: '10px', fontWeight: 700, color: cfg.color, background: cfg.bg, padding: '1px 7px', borderRadius: '7px', flexShrink: 0 }}>{cfg.label}</span>
-              {isBest && isActive && (
-                <span style={{ fontSize: '9px', fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.12)', padding: '1px 7px', borderRadius: '7px', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
-                  <Star size={8} />Melhor conjunto
-                </span>
-              )}
+              <span style={{ fontSize: '10px', fontWeight: 700, color: act.color, background: act.bg, padding: '1px 7px', borderRadius: '6px', flexShrink: 0 }}>{act.label}</span>
               {budget > 0 && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>R${budget.toFixed(0)}/dia</span>}
             </div>
-            <span style={{ fontSize: '10px', fontWeight: 700, color: act.color, background: act.bg, padding: '2px 8px', borderRadius: '6px', display: 'inline-block' }}>
-              {act.label} — {act.why}
-            </span>
           </div>
         </div>
 
         {isActive && (
           <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexShrink: 0 }}>
             <Kpi label="CPL" value={cpa > 0 ? `R$${cpa.toFixed(0)}` : '—'} color={cplColor(cpa)} />
-            <Kpi label="CTR" value={ctr > 0 ? `${ctr.toFixed(1)}%` : '—'} color={ctrColor(ctr)} />
-            <Kpi label="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '—'} color={roasColor(roas)} />
-            <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} color="#10b981" />
+            <Kpi label="CTR" value={ctr > 0 ? `${ctr.toFixed(1)}%` : '—'} />
+            <Kpi label="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '—'} />
+            <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} />
             <Kpi label="Gasto" value={spend > 0 ? `R$${spend.toFixed(0)}` : '—'} />
-            <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: `${act.color}15`, border: `1px solid ${act.color}25`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: act.color, lineHeight: 1 }}>{sc}</span>
-              <span style={{ fontSize: '7px', color: 'rgba(255,255,255,0.2)' }}>nota</span>
-            </div>
             <button onClick={toggleDaily} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${showDaily ? CYAN + '40' : 'rgba(255,255,255,0.08)'}`, background: showDaily ? 'rgba(61,184,232,0.08)' : 'transparent', color: showDaily ? CYAN : 'rgba(255,255,255,0.35)', fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <BarChart3 size={11} />{loadingDaily ? '...' : '7 dias'}
             </button>
@@ -362,12 +340,10 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
 
       {/* Best ad set strip (when collapsed) */}
       {!expanded && bestAdSet && (
-        <div style={{ margin: '0 24px 16px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Star size={12} color="#f59e0b" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>Melhor conjunto:</span>
+        <div style={{ margin: '0 24px 16px', padding: '9px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>Destaque:</span>
           <span style={{ fontSize: '12px', fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bestAdSet.name}</span>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981', flexShrink: 0 }}>Escalar</span>
-          {n(bestAdSet.cpa) > 0 && <span style={{ fontSize: '11px', color: cplColor(n(bestAdSet.cpa)), flexShrink: 0 }}>CPL R${n(bestAdSet.cpa).toFixed(0)}</span>}
+          {n(bestAdSet.cpa) > 0 && <span style={{ fontSize: '11px', color: cplColor(n(bestAdSet.cpa)), fontWeight: 700, flexShrink: 0 }}>CPL R${n(bestAdSet.cpa).toFixed(0)}</span>}
         </div>
       )}
 
@@ -387,19 +363,6 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
             </div>
           ) : (
             <>
-              {/* Legend */}
-              <div style={{ display: 'flex', gap: '18px', marginBottom: '14px', flexWrap: 'wrap' }}>
-                {[
-                  { color: '#10b981', txt: 'Escalar — CPL ≤ R$60, CTR ≥ 2,5%' },
-                  { color: '#3b82f6', txt: 'Monitorar — aguardar mais dados' },
-                  { color: '#f59e0b', txt: 'Revisar — ajustar criativo ou público' },
-                  { color: '#ef4444', txt: 'Pausar — métricas críticas' },
-                ].map(({ color, txt }) => (
-                  <span key={color} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: color, flexShrink: 0 }} />{txt}
-                  </span>
-                ))}
-              </div>
               {adSets.map((as) => (
                 <AdSetBlock key={as.id} adSet={as} isBest={as.id === bestAdSet?.id} />
               ))}
@@ -503,28 +466,19 @@ export default function Campaigns() {
         <>
           {active.length > 0 && (
             <section style={{ marginBottom: '32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-                <p style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', letterSpacing: '0.05em' }}>CAMPANHAS ATIVAS ({active.length})</p>
-              </div>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.07em', marginBottom: '14px', textTransform: 'uppercase' }}>Ativas ({active.length})</p>
               {active.map((c) => <CampaignBlock key={c.id} campaign={c} />)}
             </section>
           )}
           {paused.length > 0 && (
             <section style={{ marginBottom: '32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
-                <p style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.05em' }}>PAUSADAS ({paused.length})</p>
-              </div>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.07em', marginBottom: '14px', textTransform: 'uppercase' }}>Pausadas ({paused.length})</p>
               {paused.map((c) => <CampaignBlock key={c.id} campaign={c} />)}
             </section>
           )}
           {other.length > 0 && (
             <section>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#64748b', display: 'inline-block' }} />
-                <p style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>OUTRAS ({other.length})</p>
-              </div>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.07em', marginBottom: '14px', textTransform: 'uppercase' }}>Outras ({other.length})</p>
               {other.map((c) => <CampaignBlock key={c.id} campaign={c} />)}
             </section>
           )}
