@@ -5,20 +5,20 @@ import {
 } from 'lucide-react';
 import { campaignsApi, adSetsApi, syncApi } from '../lib/api';
 
-const NEON = '#00FFB2';
+const NEON = '#00C8FF';
 const GREEN = NEON;
-const BG = '#080B14';
-const BG_CARD = '#0D1117';
-const BG_SUBTLE = '#111520';
-const FG = '#C9D1D9';
-const FG_MUTED = 'rgba(201,209,217,0.55)';
-const FG_SUBTLE = 'rgba(201,209,217,0.3)';
-const BORDER = 'rgba(0,255,178,0.1)';
-const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
-const RED = '#FF3B5C';
-const AMBER = '#FFB800';
-const BLUE = '#00BFFF';
-const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
+const BG = '#0D0D0E';
+const BG_CARD = '#161617';
+const BG_SUBTLE = '#1D1D1F';
+const FG = '#E8E8E8';
+const FG_MUTED = 'rgba(232,232,232,0.45)';
+const FG_SUBTLE = 'rgba(232,232,232,0.2)';
+const BORDER = 'rgba(255,255,255,0.07)';
+const BORDER_ACTIVE = 'rgba(0,200,255,0.18)';
+const RED = '#FF4560';
+const AMBER = '#FFA520';
+const BLUE = '#3B82F6';
+const GLOW = '0 0 0 1px rgba(255,255,255,0.04)';
 const SHADOW = GLOW;
 
 interface Campaign {
@@ -41,12 +41,12 @@ interface DailyRow {
 }
 
 const S: Record<string, { label: string; color: string; bg: string }> = {
-  active:    { label: 'Ativa',     color: NEON,  bg: 'rgba(0,255,178,0.08)' },
-  paused:    { label: 'Pausada',   color: AMBER, bg: 'rgba(255,184,0,0.08)' },
-  deleted:   { label: 'Excluída',  color: RED,   bg: 'rgba(255,59,92,0.08)' },
-  unknown:   { label: 'Inativo',   color: FG_SUBTLE, bg: 'rgba(201,209,217,0.06)' },
-  draft:     { label: 'Rascunho',  color: FG_SUBTLE, bg: 'rgba(201,209,217,0.06)' },
-  completed: { label: 'Concluída', color: BLUE,  bg: 'rgba(0,191,255,0.08)' },
+  active:    { label: 'Ativa',     color: '#00C8FF', bg: 'rgba(0,200,255,0.08)' },
+  paused:    { label: 'Pausada',   color: '#FFA520', bg: 'rgba(255,165,32,0.08)' },
+  deleted:   { label: 'Excluída',  color: '#FF4560', bg: 'rgba(255,69,96,0.08)' },
+  unknown:   { label: 'Inativo',   color: FG_SUBTLE, bg: 'rgba(255,255,255,0.04)' },
+  draft:     { label: 'Rascunho',  color: FG_SUBTLE, bg: 'rgba(255,255,255,0.04)' },
+  completed: { label: 'Concluída', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)' },
 };
 function scfg(s: string) { return S[s] || S.unknown; }
 
@@ -62,20 +62,20 @@ function score(cpa: number, ctr: number, roas: number): number {
 }
 
 function action(sc: number, cpa: number, ctr: number): { label: string; color: string; bg: string; why: string } {
-  if (sc >= 75) return { label: 'Escalar', color: NEON, bg: 'rgba(0,255,178,0.08)', why: 'Métricas saudáveis — aumente o orçamento 20%.' };
-  if (sc >= 55) return { label: 'Monitorar', color: BLUE, bg: 'rgba(0,191,255,0.08)', why: 'Aguarde 3 dias antes de escalar.' };
+  if (sc >= 75) return { label: 'Escalar', color: '#00C8FF', bg: 'rgba(0,200,255,0.08)', why: 'Métricas saudáveis — aumente o orçamento 20%.' };
+  if (sc >= 55) return { label: 'Monitorar', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', why: 'Aguarde 3 dias antes de escalar.' };
   if (sc >= 35) return {
-    label: 'Revisar', color: AMBER, bg: 'rgba(255,184,0,0.08)',
+    label: 'Revisar', color: '#FFA520', bg: 'rgba(255,165,32,0.08)',
     why: ctr > 0 && ctr < 1 ? 'CTR abaixo de 1% — troque o criativo.' : cpa > 60 ? `CPL R$${cpa.toFixed(0)} alto — revise a landing page.` : 'Revise público e oferta.',
   };
   return {
-    label: 'Pausar', color: RED, bg: 'rgba(255,59,92,0.08)',
+    label: 'Pausar', color: '#FF4560', bg: 'rgba(255,69,96,0.08)',
     why: cpa > 150 ? `CPL R$${cpa.toFixed(0)} crítico — pause imediatamente.` : 'Métricas críticas — pause e reformule.',
   };
 }
 
-function cplColor(v: number) { return v <= 0 ? FG_SUBTLE : v <= 60 ? NEON : v <= 150 ? AMBER : RED; }
-function ctrColor(v: number) { return v <= 0 ? FG_SUBTLE : v >= 2.5 ? NEON : v >= 1 ? AMBER : RED; }
+function cplColor(v: number) { return v <= 0 ? FG_SUBTLE : v <= 60 ? '#00C8FF' : v <= 150 ? '#FFA520' : '#FF4560'; }
+function ctrColor(v: number) { return v <= 0 ? FG_SUBTLE : v >= 2.5 ? '#00C8FF' : v >= 1 ? '#FFA520' : '#FF4560'; }
 
 function Kpi({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
@@ -145,7 +145,7 @@ function AdRow({ ad, adSetId }: { ad: Ad; adSetId: string; isBest: boolean }) {
   }
 
   return (
-    <div style={{ borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${isActive ? BORDER : 'rgba(201,209,217,0.06)'}`, marginBottom: '6px', overflow: 'hidden', opacity: isActive ? 1 : 0.5 }}>
+    <div style={{ borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${isActive ? BORDER : 'rgba(255,255,255,0.04)'}`, marginBottom: '6px', overflow: 'hidden', opacity: isActive ? 1 : 0.5 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
           <Image size={12} color={FG_SUBTLE} style={{ flexShrink: 0 }} />
@@ -163,7 +163,7 @@ function AdRow({ ad, adSetId }: { ad: Ad; adSetId: string; isBest: boolean }) {
             <Kpi label="CTR" value={ctr > 0 ? `${ctr.toFixed(1)}%` : '—'} />
             <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} />
             <Kpi label="Gasto" value={spend > 0 ? `R$${spend.toFixed(0)}` : '—'} />
-            <button onClick={toggleDaily} style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${showDaily ? BORDER_ACTIVE : BORDER}`, background: showDaily ? 'rgba(0,255,178,0.06)' : BG_CARD, color: showDaily ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            <button onClick={toggleDaily} style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${showDaily ? BORDER_ACTIVE : BORDER}`, background: showDaily ? 'rgba(0,200,255,0.06)' : BG_CARD, color: showDaily ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <BarChart3 size={9} />{loadingDaily ? '...' : '7 dias'}
             </button>
           </div>
@@ -214,7 +214,7 @@ function AdSetBlock({ adSet }: { adSet: AdSet; isBest: boolean }) {
   }
 
   return (
-    <div style={{ borderRadius: '12px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${isActive ? BORDER : 'rgba(201,209,217,0.06)'}`, marginBottom: '8px', overflow: 'hidden', opacity: isActive ? 1 : 0.55 }}>
+    <div style={{ borderRadius: '12px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${isActive ? BORDER : 'rgba(255,255,255,0.04)'}`, marginBottom: '8px', overflow: 'hidden', opacity: isActive ? 1 : 0.55 }}>
       {/* Ad set header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
@@ -236,10 +236,10 @@ function AdSetBlock({ adSet }: { adSet: AdSet; isBest: boolean }) {
             <Kpi label="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '—'} />
             <Kpi label="Leads" value={leads > 0 ? String(leads) : '—'} />
             <Kpi label="Gasto" value={spend > 0 ? `R$${spend.toFixed(0)}` : '—'} />
-            <button onClick={toggleDaily} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${showDaily ? BORDER_ACTIVE : BORDER}`, background: showDaily ? 'rgba(0,255,178,0.06)' : BG_CARD, color: showDaily ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            <button onClick={toggleDaily} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${showDaily ? BORDER_ACTIVE : BORDER}`, background: showDaily ? 'rgba(0,200,255,0.06)' : BG_CARD, color: showDaily ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <BarChart3 size={11} />{loadingDaily ? '...' : '7 dias'}
             </button>
-            <button onClick={loadAds} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${adsExpanded ? BORDER_ACTIVE : BORDER}`, background: adsExpanded ? 'rgba(0,255,178,0.05)' : BG_CARD, color: adsExpanded ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            <button onClick={loadAds} style={{ padding: '5px 9px', borderRadius: '7px', border: `1px solid ${adsExpanded ? BORDER_ACTIVE : BORDER}`, background: adsExpanded ? 'rgba(0,200,255,0.05)' : BG_CARD, color: adsExpanded ? NEON : FG_MUTED, fontSize: '10px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               {adsExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}{loadingAds ? '...' : 'anúncios'}
             </button>
           </div>
@@ -297,7 +297,7 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
   const criticals = activeAdSets.filter((a) => score(n(a.cpa), n(a.ctr), n(a.roas)) < 35).length;
 
   return (
-    <div style={{ background: BG_CARD, border: `2px solid ${isActive ? 'rgba(0,255,178,0.15)' : BORDER}`, borderRadius: '18px', marginBottom: '16px', overflow: 'hidden', boxShadow: SHADOW }}>
+    <div style={{ background: BG_CARD, border: `2px solid ${isActive ? 'rgba(0,200,255,0.15)' : BORDER}`, borderRadius: '18px', marginBottom: '16px', overflow: 'hidden', boxShadow: SHADOW }}>
 
       {/* Campaign header */}
       <div
@@ -305,7 +305,7 @@ function CampaignBlock({ campaign }: { campaign: Campaign }) {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', cursor: 'pointer', gap: '16px' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'rgba(0,255,178,0.08)', border: '1px solid rgba(0,255,178,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Megaphone size={18} color={GREEN} />
           </div>
           <div style={{ minWidth: 0 }}>
@@ -464,7 +464,7 @@ export default function Campaigns() {
 
       {/* Sync message */}
       {syncMsg && (
-        <div style={{ padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', background: syncMsg.includes('Erro') ? 'rgba(255,59,92,0.06)' : 'rgba(0,255,178,0.06)', border: `1px solid ${syncMsg.includes('Erro') ? 'rgba(255,59,92,0.2)' : 'rgba(0,255,178,0.2)'}`, fontSize: '13px', color: syncMsg.includes('Erro') ? RED : NEON, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', background: syncMsg.includes('Erro') ? 'rgba(255,69,96,0.06)' : 'rgba(0,200,255,0.06)', border: `1px solid ${syncMsg.includes('Erro') ? 'rgba(255,69,96,0.2)' : 'rgba(0,200,255,0.2)'}`, fontSize: '13px', color: syncMsg.includes('Erro') ? RED : NEON, display: 'flex', alignItems: 'center', gap: '8px' }}>
           {syncMsg.includes('Erro') ? <AlertTriangle size={14} /> : <CheckCircle size={14} />}
           {syncMsg}
         </div>

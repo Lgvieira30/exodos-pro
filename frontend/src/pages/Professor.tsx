@@ -11,7 +11,7 @@ import {
 import { metricsApi, analyzeApi, campaignsApi, aiApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-const GREEN = '#00C8FF';     // was '#00FFB2' — the single accent (electric cyan)
+const GREEN = '#00C8FF';     // was '#00C8FF' — the single accent (electric cyan)
 const BG = '#0D0D0E';
 const BG_CARD = '#161617';
 const BG_SUBTLE = '#1D1D1F';
@@ -529,7 +529,7 @@ export default function Professor() {
               ['campanha',      'Por Campanha'],
               ['pausadas',      pausedCampaigns.length > 0 ? `Pausadas (${pausedCampaigns.length})` : 'Pausadas'],
             ] as const).map(([t, lbl]) => (
-              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'apresentacao' ? 'rgba(189,0,255,0.1)' : 'rgba(0,255,178,0.1)') : 'transparent', color: tab === t ? (t === 'apresentacao' ? '#BD00FF' : GREEN) : FG_MUTED, boxShadow: 'none' }}>
+              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'apresentacao' ? 'rgba(189,0,255,0.1)' : 'rgba(0,200,255,0.1)') : 'transparent', color: tab === t ? (t === 'apresentacao' ? '#BD00FF' : GREEN) : FG_MUTED, boxShadow: 'none' }}>
                 {lbl}
               </button>
             ))}
@@ -548,7 +548,7 @@ export default function Professor() {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {aiData && (
-                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: `1px solid ${BORDER_ACTIVE}`, background: 'rgba(0,255,178,0.06)', color: GREEN, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: `1px solid ${BORDER_ACTIVE}`, background: 'rgba(0,200,255,0.06)', color: GREEN, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   ↓ Exportar PDF
                 </button>
               )}
@@ -628,7 +628,7 @@ export default function Professor() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }} className="grid-ai-2col">
                 {/* O que está funcionando */}
                 {aiData.analysis.o_que_esta_funcionando?.length > 0 && (
-                  <div style={{ background: BG_CARD, border: '1px solid rgba(0,255,178,0.2)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
+                  <div style={{ background: BG_CARD, border: '1px solid rgba(0,200,255,0.2)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
                     <p style={{ fontSize: '12px', fontWeight: 700, color: GREEN, marginBottom: '12px' }}>✓ O QUE ESTÁ FUNCIONANDO</p>
                     {aiData.analysis.o_que_esta_funcionando.map((item: string, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
@@ -665,7 +665,7 @@ export default function Professor() {
                           <p style={{ fontSize: '14px', fontWeight: 700, color: FG, marginBottom: '4px' }}>{a.titulo}</p>
                           <p style={{ fontSize: '12px', color: FG_MUTED, lineHeight: '1.8', marginBottom: '6px', whiteSpace: 'pre-line' }}>{a.descricao}</p>
                           {a.impacto_esperado && (
-                            <p style={{ fontSize: '11px', color: '#00FFB2', fontWeight: 600 }}>↑ {a.impacto_esperado}</p>
+                            <p style={{ fontSize: '11px', color: '#00C8FF', fontWeight: 600 }}>↑ {a.impacto_esperado}</p>
                           )}
                           {a.campanha_ou_conjunto && a.campanha_ou_conjunto !== 'Geral' && (
                             <span style={{ fontSize: '11px', color: FG_SUBTLE, marginTop: '4px', display: 'block' }}>Campanha/Conjunto: {a.campanha_ou_conjunto}</span>
@@ -683,7 +683,7 @@ export default function Professor() {
                   <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
                     <p style={{ fontSize: '14px', fontWeight: 700, color: FG, marginBottom: '14px' }}>Por Campanha</p>
                     {aiData.analysis.analise_por_campanha.map((c: any, i: number) => {
-                      const rc = c.recomendacao === 'ESCALAR' ? '#00FFB2' : c.recomendacao === 'PAUSAR' ? '#FF3B5C' : c.recomendacao === 'OTIMIZAR' ? '#FFB800' : '#00BFFF';
+                      const rc = c.recomendacao === 'ESCALAR' ? '#00C8FF' : c.recomendacao === 'PAUSAR' ? '#FF3B5C' : c.recomendacao === 'OTIMIZAR' ? '#FFB800' : '#00BFFF';
                       return (
                         <div key={i} style={{ padding: '12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -710,7 +710,7 @@ export default function Professor() {
                   <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
                     <p style={{ fontSize: '14px', fontWeight: 700, color: FG, marginBottom: '14px' }}>Por Conjunto de Anúncios</p>
                     {aiData.analysis.analise_conjuntos.map((a: any, i: number) => {
-                      const ac = a.acao === 'ESCALAR' ? '#00FFB2' : a.acao === 'PAUSAR' ? '#FF3B5C' : '#FFB800';
+                      const ac = a.acao === 'ESCALAR' ? '#00C8FF' : a.acao === 'PAUSAR' ? '#FF3B5C' : '#FFB800';
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '6px' }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -781,8 +781,8 @@ export default function Professor() {
               {/* Row 2: Metrics row 2 */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }} className="grid-resumo-kpis">
                 {[
-                  { label: 'Taxa de Cliques — CTR', abbr: 'De cada 100 que viram, quantas clicaram', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: summaryData.overview.avg_ctr >= 2.5 ? '✅ Excelente (≥ 2,5%)' : summaryData.overview.avg_ctr >= 1 ? '⚠️ Aceitável (≥ 1%)' : summaryData.overview.avg_ctr > 0 ? '❌ Baixo (< 1%)' : 'cliques ÷ impressões', color: summaryData.overview.avg_ctr >= 2.5 ? '#00FFB2' : summaryData.overview.avg_ctr >= 1 ? '#FFB800' : summaryData.overview.avg_ctr > 0 ? '#FF3B5C' : FG_SUBTLE },
-                  { label: 'Custo por Clique — CPC', abbr: 'Quanto custa cada visita ao site', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: summaryData.overview.avg_cpc <= 5 ? '✅ Bom (≤ R$5)' : summaryData.overview.avg_cpc <= 15 ? '⚠️ Médio (≤ R$15)' : summaryData.overview.avg_cpc > 0 ? '❌ Caro (> R$15)' : 'gasto ÷ cliques', color: summaryData.overview.avg_cpc <= 5 ? '#00FFB2' : summaryData.overview.avg_cpc <= 15 ? '#FFB800' : summaryData.overview.avg_cpc > 0 ? '#FF3B5C' : FG_SUBTLE },
+                  { label: 'Taxa de Cliques — CTR', abbr: 'De cada 100 que viram, quantas clicaram', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: summaryData.overview.avg_ctr >= 2.5 ? '✅ Excelente (≥ 2,5%)' : summaryData.overview.avg_ctr >= 1 ? '⚠️ Aceitável (≥ 1%)' : summaryData.overview.avg_ctr > 0 ? '❌ Baixo (< 1%)' : 'cliques ÷ impressões', color: summaryData.overview.avg_ctr >= 2.5 ? '#00C8FF' : summaryData.overview.avg_ctr >= 1 ? '#FFB800' : summaryData.overview.avg_ctr > 0 ? '#FF3B5C' : FG_SUBTLE },
+                  { label: 'Custo por Clique — CPC', abbr: 'Quanto custa cada visita ao site', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: summaryData.overview.avg_cpc <= 5 ? '✅ Bom (≤ R$5)' : summaryData.overview.avg_cpc <= 15 ? '⚠️ Médio (≤ R$15)' : summaryData.overview.avg_cpc > 0 ? '❌ Caro (> R$15)' : 'gasto ÷ cliques', color: summaryData.overview.avg_cpc <= 5 ? '#00C8FF' : summaryData.overview.avg_cpc <= 15 ? '#FFB800' : summaryData.overview.avg_cpc > 0 ? '#FF3B5C' : FG_SUBTLE },
                   { label: 'Total de Cliques', abbr: 'Pessoas que clicaram no anúncio', value: summaryData.overview.total_clicks > 0 ? summaryData.overview.total_clicks.toLocaleString('pt-BR') : '—', sub: 'no período selecionado', color: GREEN },
                   { label: 'Impressões — Alcance', abbr: 'Vezes que o anúncio apareceu na tela', value: summaryData.overview.total_impressions > 1000 ? `${(summaryData.overview.total_impressions / 1000).toFixed(1)}k` : summaryData.overview.total_impressions.toLocaleString('pt-BR'), sub: 'total de exibições', color: '#BD00FF' },
                 ].map((item) => (
@@ -843,8 +843,8 @@ export default function Professor() {
                       </p>
                       {[
                         { label: 'Gasto Projetado', value: `R$ ${summaryData.projection.projected_spend.toLocaleString('pt-BR')}`, color: '#00BFFF' },
-                        { label: 'Leads Projetados', value: summaryData.projection.projected_leads.toLocaleString('pt-BR'), color: '#00FFB2' },
-                        { label: 'CPA Projetado', value: summaryData.projection.projected_cpa > 0 ? `R$ ${summaryData.projection.projected_cpa}` : '—', color: summaryData.projection.projected_cpa > 60 ? '#FF3B5C' : '#00FFB2' },
+                        { label: 'Leads Projetados', value: summaryData.projection.projected_leads.toLocaleString('pt-BR'), color: '#00C8FF' },
+                        { label: 'CPA Projetado', value: summaryData.projection.projected_cpa > 0 ? `R$ ${summaryData.projection.projected_cpa}` : '—', color: summaryData.projection.projected_cpa > 60 ? '#FF3B5C' : '#00C8FF' },
                       ].map((item) => (
                         <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '8px' }}>
                           <span style={{ fontSize: '12px', color: FG_MUTED }}>{item.label}</span>
@@ -881,9 +881,9 @@ export default function Professor() {
                     {summaryData.campaigns.map((c) => {
                       const scoreColor = c.score >= 75 ? '#00C8FF' : c.score >= 50 ? '#FFA520' : '#FF4560';
                       const scoreEmoji = c.score >= 75 ? '🟢' : c.score >= 50 ? '🟡' : '🔴';
-                      const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? '#00FFB2' : c.avg_cpa <= 150 ? '#FFB800' : '#FF3B5C';
+                      const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? '#00C8FF' : c.avg_cpa <= 150 ? '#FFB800' : '#FF3B5C';
                       const cplLabel = c.avg_cpa <= 0 ? '—' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
-                      const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? '#00FFB2' : c.avg_ctr >= 1 ? '#FFB800' : '#FF3B5C';
+                      const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? '#00C8FF' : c.avg_ctr >= 1 ? '#FFB800' : '#FF3B5C';
                       const ctrLabel = c.avg_ctr <= 0 ? '—' : c.avg_ctr >= 2.5 ? '✅ Excelente' : c.avg_ctr >= 1 ? '⚠️ Aceitável' : '❌ Baixo';
                       const diag = c.total_leads === 0 && c.total_spend > 0
                         ? 'Investimento sem leads — verifique o pixel e a landing page.'
@@ -928,8 +928,8 @@ export default function Professor() {
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '10px' }}>
                             {[
                               { lbl: 'Investido', val: `R$ ${c.total_spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
-                              { lbl: 'Leads', val: String(c.total_leads), color: '#00FFB2' },
-                              { lbl: 'ROAS', val: c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—', color: c.avg_roas >= 3 ? '#00FFB2' : c.avg_roas >= 2 ? '#FFB800' : '#FF3B5C' },
+                              { lbl: 'Leads', val: String(c.total_leads), color: '#00C8FF' },
+                              { lbl: 'ROAS', val: c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—', color: c.avg_roas >= 3 ? '#00C8FF' : c.avg_roas >= 2 ? '#FFB800' : '#FF3B5C' },
                             ].map(({ lbl, val, color }) => (
                               <div key={lbl} style={{ textAlign: 'center', padding: '7px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
                                 <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '2px' }}>{lbl}</p>
@@ -970,7 +970,7 @@ export default function Professor() {
                                   <div style={{ marginBottom: '12px' }}>
                                     <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, marginBottom: '8px', letterSpacing: '0.05em' }}>CONJUNTOS DE ANÚNCIOS ({deep.adSets.length})</p>
                                     {deep.adSets.map((as) => {
-                                      const asColor = as.score >= 75 ? '#00FFB2' : as.score >= 50 ? '#FFB800' : '#FF3B5C';
+                                      const asColor = as.score >= 75 ? '#00C8FF' : as.score >= 50 ? '#FFB800' : '#FF3B5C';
                                       const isActive = as.status === 'active';
                                       const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
                                       return (
@@ -987,8 +987,8 @@ export default function Professor() {
                                           {isActive && (
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
                                               {[
-                                                { lbl: 'CPL', val: as.cpa > 0 ? `R$${as.cpa.toFixed(0)}` : '—', color: as.cpa <= 60 ? '#00FFB2' : as.cpa <= 150 ? '#FFB800' : '#FF3B5C' },
-                                                { lbl: 'CTR', val: as.ctr > 0 ? `${as.ctr.toFixed(1)}%` : '—', color: as.ctr >= 2.5 ? '#00FFB2' : as.ctr >= 1 ? '#FFB800' : '#FF3B5C' },
+                                                { lbl: 'CPL', val: as.cpa > 0 ? `R$${as.cpa.toFixed(0)}` : '—', color: as.cpa <= 60 ? '#00C8FF' : as.cpa <= 150 ? '#FFB800' : '#FF3B5C' },
+                                                { lbl: 'CTR', val: as.ctr > 0 ? `${as.ctr.toFixed(1)}%` : '—', color: as.ctr >= 2.5 ? '#00C8FF' : as.ctr >= 1 ? '#FFB800' : '#FF3B5C' },
                                                 { lbl: 'Leads', val: String(as.leads), color: FG },
                                                 { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
                                               ].map(({ lbl, val, color }) => (
@@ -1010,7 +1010,7 @@ export default function Professor() {
                                   <div>
                                     <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, marginBottom: '8px', letterSpacing: '0.05em' }}>ANÚNCIOS INDIVIDUAIS ({deep.ads.length})</p>
                                     {deep.ads.map((ad) => {
-                                      const adColor = ad.score >= 75 ? '#00FFB2' : ad.score >= 50 ? '#FFB800' : '#FF3B5C';
+                                      const adColor = ad.score >= 75 ? '#00C8FF' : ad.score >= 50 ? '#FFB800' : '#FF3B5C';
                                       const isActive = ad.status === 'active';
                                       const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
                                       return (
@@ -1028,10 +1028,10 @@ export default function Professor() {
                                           {isActive && (
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginTop: '6px' }}>
                                               {[
-                                                { lbl: 'CPL', val: ad.cpa > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#00FFB2' : Number(ad.cpa) <= 150 ? '#FFB800' : '#FF3B5C' },
-                                                { lbl: 'CTR', val: ad.ctr > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#00FFB2' : Number(ad.ctr) >= 1 ? '#FFB800' : '#FF3B5C' },
+                                                { lbl: 'CPL', val: ad.cpa > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? '#00C8FF' : Number(ad.cpa) <= 150 ? '#FFB800' : '#FF3B5C' },
+                                                { lbl: 'CTR', val: ad.ctr > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? '#00C8FF' : Number(ad.ctr) >= 1 ? '#FFB800' : '#FF3B5C' },
                                                 { lbl: 'CPC', val: ad.cpc > 0 ? `R$${Number(ad.cpc).toFixed(2)}` : '—', color: FG_MUTED },
-                                                { lbl: 'Leads', val: String(ad.leads), color: '#00FFB2' },
+                                                { lbl: 'Leads', val: String(ad.leads), color: '#00C8FF' },
                                                 { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
                                               ].map(({ lbl, val, color }) => (
                                                 <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: BG_SUBTLE }}>
@@ -1095,11 +1095,11 @@ export default function Professor() {
                   <div style={{ width: '100%', borderTop: `1px solid ${BORDER}`, paddingTop: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ fontSize: '12px', color: FG_MUTED }}>Críticas</span>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: criticalCount > 0 ? '#FF3B5C' : '#00FFB2' }}>{criticalCount}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: criticalCount > 0 ? '#FF3B5C' : '#00C8FF' }}>{criticalCount}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '12px', color: FG_MUTED }}>Atenção</span>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: warningCount > 0 ? '#FFB800' : '#00FFB2' }}>{warningCount}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: warningCount > 0 ? '#FFB800' : '#00C8FF' }}>{warningCount}</span>
                     </div>
                   </div>
                 </div>
@@ -1198,10 +1198,10 @@ export default function Professor() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                   {[
                     { label: 'Gasto', value: `R$ ${deepData.summary.spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#00BFFF' },
-                    { label: 'Leads', value: deepData.summary.leads.toLocaleString('pt-BR'), color: '#00FFB2' },
-                    { label: 'CPA Médio', value: deepData.summary.cpa > 0 ? `R$ ${deepData.summary.cpa.toFixed(0)}` : '—', color: deepData.summary.cpa > 60 ? '#FF3B5C' : '#00FFB2' },
-                    { label: 'ROAS', value: deepData.summary.roas > 0 ? `${deepData.summary.roas.toFixed(1)}x` : '—', color: deepData.summary.roas >= 3 ? '#00FFB2' : deepData.summary.roas >= 2 ? '#FFB800' : '#FF3B5C' },
-                    { label: 'CTR Médio', value: deepData.summary.ctr > 0 ? `${deepData.summary.ctr.toFixed(2)}%` : '—', color: deepData.summary.ctr >= 1.5 ? '#00FFB2' : '#FFB800' },
+                    { label: 'Leads', value: deepData.summary.leads.toLocaleString('pt-BR'), color: '#00C8FF' },
+                    { label: 'CPA Médio', value: deepData.summary.cpa > 0 ? `R$ ${deepData.summary.cpa.toFixed(0)}` : '—', color: deepData.summary.cpa > 60 ? '#FF3B5C' : '#00C8FF' },
+                    { label: 'ROAS', value: deepData.summary.roas > 0 ? `${deepData.summary.roas.toFixed(1)}x` : '—', color: deepData.summary.roas >= 3 ? '#00C8FF' : deepData.summary.roas >= 2 ? '#FFB800' : '#FF3B5C' },
+                    { label: 'CTR Médio', value: deepData.summary.ctr > 0 ? `${deepData.summary.ctr.toFixed(2)}%` : '—', color: deepData.summary.ctr >= 1.5 ? '#00C8FF' : '#FFB800' },
                     { label: 'CPC Médio', value: deepData.summary.cpc > 0 ? `R$ ${deepData.summary.cpc.toFixed(2)}` : '—', color: FG },
                     { label: 'Cliques', value: deepData.summary.clicks.toLocaleString('pt-BR'), color: GREEN },
                     { label: 'Impressões', value: deepData.summary.impressions > 1000 ? `${(deepData.summary.impressions / 1000).toFixed(1)}k` : deepData.summary.impressions.toLocaleString('pt-BR'), color: '#BD00FF' },
@@ -1233,14 +1233,14 @@ export default function Professor() {
                       <AreaChart data={deepData.daily}>
                         <defs>
                           <linearGradient id="dBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00BFFF" stopOpacity={0.2} /><stop offset="100%" stopColor="#00BFFF" stopOpacity={0} /></linearGradient>
-                          <linearGradient id="dGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00FFB2" stopOpacity={0.2} /><stop offset="100%" stopColor="#00FFB2" stopOpacity={0} /></linearGradient>
+                          <linearGradient id="dGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00C8FF" stopOpacity={0.2} /><stop offset="100%" stopColor="#00C8FF" stopOpacity={0} /></linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                         <XAxis dataKey="label" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
                         <YAxis hide />
                         <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', fontSize: '11px', color: FG }} />
                         <Area type="monotone" dataKey="spend" name="Gasto (R$)" stroke="#00BFFF" strokeWidth={2} fill="url(#dBlue)" dot={false} />
-                        <Area type="monotone" dataKey="leads" name="Leads" stroke="#00FFB2" strokeWidth={2} fill="url(#dGreen)" dot={false} />
+                        <Area type="monotone" dataKey="leads" name="Leads" stroke="#00C8FF" strokeWidth={2} fill="url(#dGreen)" dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   )}
@@ -1268,22 +1268,22 @@ export default function Professor() {
                       </thead>
                       <tbody>
                         {deepData.adSets.map((as) => {
-                          const scoreColor = as.score >= 75 ? '#00FFB2' : as.score >= 55 ? '#00BFFF' : as.score >= 35 ? '#FFB800' : '#FF3B5C';
+                          const scoreColor = as.score >= 75 ? '#00C8FF' : as.score >= 55 ? '#00BFFF' : as.score >= 35 ? '#FFB800' : '#FF3B5C';
                           return (
                             <tr key={as.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
                               <td style={{ padding: '12px 14px', color: FG, fontWeight: 500, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{as.name}</td>
                               <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: as.status === 'active' ? '#00FFB2' : '#FFB800', margin: '0 auto' }} />
+                                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: as.status === 'active' ? '#00C8FF' : '#FFB800', margin: '0 auto' }} />
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 700, color: scoreColor }}>{as.score}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.ctr) >= 1.5 ? '#00FFB2' : Number(as.ctr) >= 1 ? '#FFB800' : Number(as.ctr) > 0 ? '#FF3B5C' : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.ctr) >= 1.5 ? '#00C8FF' : Number(as.ctr) >= 1 ? '#FFB800' : Number(as.ctr) > 0 ? '#FF3B5C' : FG_SUBTLE, fontWeight: 600 }}>
                                 {Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—'}
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', color: FG_MUTED }}>{Number(as.cpc) > 0 ? `R$${Number(as.cpc).toFixed(2)}` : '—'}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.cpa) > 60 ? '#FF3B5C' : Number(as.cpa) > 0 ? '#00FFB2' : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.cpa) > 60 ? '#FF3B5C' : Number(as.cpa) > 0 ? '#00C8FF' : FG_SUBTLE, fontWeight: 600 }}>
                                 {Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—'}
                               </td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.roas) >= 3 ? '#00FFB2' : Number(as.roas) >= 2 ? '#FFB800' : Number(as.roas) > 0 ? '#FF3B5C' : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.roas) >= 3 ? '#00C8FF' : Number(as.roas) >= 2 ? '#FFB800' : Number(as.roas) > 0 ? '#FF3B5C' : FG_SUBTLE, fontWeight: 600 }}>
                                 {Number(as.roas) > 0 ? `${Number(as.roas).toFixed(1)}x` : '—'}
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', color: '#fff' }}>{as.leads}</td>
@@ -1323,7 +1323,7 @@ export default function Professor() {
                     </div>
                   ))}
                   {deepData.analysis.issues.length === 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00FFB2' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00C8FF' }}>
                       <CheckCircle size={16} />
                       <span style={{ fontSize: '13px' }}>Campanha sem problemas críticos detectados.</span>
                     </div>
@@ -1336,8 +1336,8 @@ export default function Professor() {
                     <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '16px' }}>{deepData.projection.daysRemaining} dias restantes</p>
                     {[
                       { label: 'Total Gasto Est.', value: `R$ ${deepData.projection.projectedTotalSpend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: '#00BFFF' },
-                      { label: 'Total Leads Est.', value: deepData.projection.projectedTotalLeads.toLocaleString('pt-BR'), color: '#00FFB2' },
-                      { label: 'CPA Projetado', value: deepData.projection.projectedCpa > 0 ? `R$ ${deepData.projection.projectedCpa.toFixed(0)}` : '—', color: deepData.projection.projectedCpa > 60 ? '#FF3B5C' : '#00FFB2' },
+                      { label: 'Total Leads Est.', value: deepData.projection.projectedTotalLeads.toLocaleString('pt-BR'), color: '#00C8FF' },
+                      { label: 'CPA Projetado', value: deepData.projection.projectedCpa > 0 ? `R$ ${deepData.projection.projectedCpa.toFixed(0)}` : '—', color: deepData.projection.projectedCpa > 60 ? '#FF3B5C' : '#00C8FF' },
                     ].map((item) => (
                       <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '8px' }}>
                         <span style={{ fontSize: '12px', color: FG_MUTED }}>{item.label}</span>
@@ -1377,9 +1377,9 @@ export default function Professor() {
                 {c.total_spend > 0 && (
                   <div style={{ display: 'flex', gap: '20px', padding: '12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, marginBottom: '12px' }}>
                     {[
-                      { l: 'CPA', v: `R$ ${c.avg_cpa.toFixed(0)}`, color: c.avg_cpa > 60 ? '#FF3B5C' : '#00FFB2' },
-                      { l: 'ROAS', v: `${c.avg_roas.toFixed(1)}x`, color: c.avg_roas >= 3 ? '#00FFB2' : c.avg_roas >= 2 ? '#FFB800' : '#FF3B5C' },
-                      { l: 'CTR', v: `${c.avg_ctr.toFixed(1)}%`, color: c.avg_ctr >= 1.5 ? '#00FFB2' : '#FFB800' },
+                      { l: 'CPA', v: `R$ ${c.avg_cpa.toFixed(0)}`, color: c.avg_cpa > 60 ? '#FF3B5C' : '#00C8FF' },
+                      { l: 'ROAS', v: `${c.avg_roas.toFixed(1)}x`, color: c.avg_roas >= 3 ? '#00C8FF' : c.avg_roas >= 2 ? '#FFB800' : '#FF3B5C' },
+                      { l: 'CTR', v: `${c.avg_ctr.toFixed(1)}%`, color: c.avg_ctr >= 1.5 ? '#00C8FF' : '#FFB800' },
                       { l: 'Leads', v: String(c.total_leads), color: FG },
                     ].map((item) => (
                       <div key={item.l}>
@@ -1453,7 +1453,7 @@ export default function Professor() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }} className="grid-apres-kpis">
                   {[
                     { label: 'Total Investido', value: `R$ ${Number(aiData.input_summary.total_spend).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '💰', color: '#00BFFF', desc: 'Quanto foi gasto no período' },
-                    { label: 'Leads Gerados', value: String(aiData.input_summary.total_leads), icon: '🎯', color: '#00FFB2', desc: 'Pessoas que demonstraram interesse' },
+                    { label: 'Leads Gerados', value: String(aiData.input_summary.total_leads), icon: '🎯', color: '#00C8FF', desc: 'Pessoas que demonstraram interesse' },
                     { label: 'Campanhas Ativas', value: String(aiData.input_summary.campaigns), icon: '📣', color: '#BD00FF', desc: 'Campanhas com investimento' },
                     { label: 'Conjuntos', value: String(aiData.input_summary.ad_sets), icon: '🗂️', color: '#FFB800', desc: 'Grupos de anúncios analisados' },
                   ].map((item) => (
@@ -1481,13 +1481,13 @@ export default function Professor() {
               {/* O QUE ESTÁ FUNCIONANDO / MELHORAR */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }} className="grid-ai-2col">
                 {aiData.analysis.o_que_esta_funcionando?.length > 0 && (
-                  <div style={{ background: 'rgba(0,255,178,0.06)', border: '1px solid rgba(0,255,178,0.2)', borderRadius: '16px', padding: '22px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#00FFB2', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.2)', borderRadius: '16px', padding: '22px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#00C8FF', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       ✅ O QUE ESTÁ FUNCIONANDO
                     </p>
                     {aiData.analysis.o_que_esta_funcionando.map((item: string, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start' }}>
-                        <span style={{ color: '#00FFB2', flexShrink: 0, fontWeight: 700 }}>✓</span>
+                        <span style={{ color: '#00C8FF', flexShrink: 0, fontWeight: 700 }}>✓</span>
                         <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.6' }}>{item}</p>
                       </div>
                     ))}
@@ -1527,9 +1527,9 @@ export default function Professor() {
                           <p style={{ fontSize: '15px', fontWeight: 700, color: FG, marginBottom: '8px' }}>{a.titulo}</p>
                           <p style={{ fontSize: '13px', color: FG_MUTED, lineHeight: '1.8', marginBottom: '10px', whiteSpace: 'pre-line' }}>{a.descricao}</p>
                           {a.impacto_esperado && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(0,255,178,0.06)', border: '1px solid rgba(0,255,178,0.15)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.15)' }}>
                               <span style={{ fontSize: '14px' }}>📈</span>
-                              <p style={{ fontSize: '12px', color: '#00FFB2', fontWeight: 600 }}>{a.impacto_esperado}</p>
+                              <p style={{ fontSize: '12px', color: '#00C8FF', fontWeight: 600 }}>{a.impacto_esperado}</p>
                             </div>
                           )}
                           {a.campanha_ou_conjunto && a.campanha_ou_conjunto !== 'Geral' && (
@@ -1548,7 +1548,7 @@ export default function Professor() {
                   <p style={{ fontSize: '15px', fontWeight: 700, color: FG, marginBottom: '18px' }}>📣 Análise por Campanha</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {aiData.analysis.analise_por_campanha.map((c: any, i: number) => {
-                      const rc = c.recomendacao === 'ESCALAR' ? '#00FFB2' : c.recomendacao === 'PAUSAR' ? '#FF3B5C' : c.recomendacao === 'OTIMIZAR' ? '#FFB800' : '#00BFFF';
+                      const rc = c.recomendacao === 'ESCALAR' ? '#00C8FF' : c.recomendacao === 'PAUSAR' ? '#FF3B5C' : c.recomendacao === 'OTIMIZAR' ? '#FFB800' : '#00BFFF';
                       const rcEmoji = c.recomendacao === 'ESCALAR' ? '🚀' : c.recomendacao === 'PAUSAR' ? '⏸️' : c.recomendacao === 'OTIMIZAR' ? '⚙️' : '👀';
                       return (
                         <div key={i} style={{ border: `1px solid ${rc}20`, borderRadius: '14px', overflow: 'hidden' }}>
