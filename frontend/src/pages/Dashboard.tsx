@@ -12,21 +12,30 @@ import { useNavigate } from 'react-router-dom';
 import { campaignsApi, metricsApi, syncApi, analyzeApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-// ── Dark minimal techno design tokens ────────────────────────────────────────
-const BG = '#0D0D0E';
-const BG_CARD = '#161617';
-const BG_SUBTLE = '#1D1D1F';
-const ACCENT = '#00C8FF';    // replaces NEON - the single accent color
-const NEON = ACCENT;         // alias for compatibility
-const BLUE = '#3B82F6';      // secondary blue
-const FG = '#E8E8E8';
-const FG_MUTED = 'rgba(232,232,232,0.45)';
-const FG_SUBTLE = 'rgba(232,232,232,0.2)';
-const BORDER = 'rgba(255,255,255,0.07)';
-const BORDER_ACTIVE = 'rgba(0,200,255,0.18)';
-const RED = '#FF4560';
-const AMBER = '#FFA520';
-const GLOW = '0 0 0 1px rgba(255,255,255,0.04)';
+// ── Quiet Dark Intelligence design tokens ─────────────────────────────────────
+const BG = '#090909';
+const BG_SURFACE = '#0E0F12';
+const BG_ELEVATED = '#13141A';
+const BG_HOVER = 'rgba(255,255,255,0.03)';
+const FG = '#F0F0F0';
+const FG_MUTED = 'rgba(240,240,240,0.4)';
+const FG_SUBTLE = 'rgba(240,240,240,0.18)';
+const BORDER = 'rgba(255,255,255,0.04)';
+const BORDER_MED = 'rgba(255,255,255,0.08)';
+const S_GREEN = '#4ADE80';
+const S_YELLOW = '#FACC15';
+const S_RED = '#F87171';
+const S_BLUE = '#60A5FA';
+// backward-compat aliases
+const NEON = S_GREEN;
+const BLUE = S_BLUE;
+const RED = S_RED;
+const AMBER = S_YELLOW;
+const GLOW = 'none';
+const SHADOW = 'none';
+const BG_CARD = BG_SURFACE;
+const BG_SUBTLE = BG_ELEVATED;
+const BORDER_ACTIVE = BORDER_MED;
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface Campaign {
@@ -80,21 +89,21 @@ function healthDot(cpa: number, ctr: number) {
 }
 
 const PRIORITY: Record<string, { label: string; color: string; bg: string }> = {
-  alta:  { label: 'URGENTE', color: RED,  bg: 'rgba(255,69,96,0.08)' },
-  media: { label: 'ALTA',    color: AMBER, bg: 'rgba(255,165,32,0.08)' },
-  baixa: { label: 'MÉDIA',   color: NEON, bg: 'rgba(0,200,255,0.08)' },
+  alta:  { label: 'URGENTE', color: S_RED,    bg: 'transparent' },
+  media: { label: 'ALTA',    color: S_YELLOW, bg: 'transparent' },
+  baixa: { label: 'MÉDIA',   color: S_GREEN,  bg: 'transparent' },
 };
 const VERDICT: Record<string, { label: string; color: string; bg: string }> = {
-  reativar:             { label: 'Reativar',           color: NEON,  bg: 'rgba(0,200,255,0.08)' },
-  reativar_com_cautela: { label: 'Revisar e Reativar', color: AMBER, bg: 'rgba(255,165,32,0.08)' },
-  manter_pausada:       { label: 'Manter Pausada',     color: RED,   bg: 'rgba(255,69,96,0.08)' },
+  reativar:             { label: 'Reativar',           color: S_GREEN,  bg: 'transparent' },
+  reativar_com_cautela: { label: 'Revisar e Reativar', color: S_YELLOW, bg: 'transparent' },
+  manter_pausada:       { label: 'Manter Pausada',     color: S_RED,    bg: 'transparent' },
 };
 const PLATFORM: Record<string, string> = { meta: 'Meta', google: 'Google', linkedin: 'LinkedIn' };
 const STATUS_CHIP: Record<string, { label: string; color: string }> = {
-  active:    { label: 'Ativa',      color: NEON },
-  paused:    { label: 'Pausada',    color: AMBER },
+  active:    { label: 'Ativa',      color: S_GREEN },
+  paused:    { label: 'Pausada',    color: S_YELLOW },
   draft:     { label: 'Rascunho',   color: FG_MUTED },
-  completed: { label: 'Concluída',  color: BLUE },
+  completed: { label: 'Concluída',  color: S_BLUE },
 };
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
@@ -106,15 +115,15 @@ function KpiCard({
   icon: React.ElementType; iconColor: string;
 }) {
   return (
-    <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: GLOW }}>
+    <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: 'none' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: `${iconColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon size={17} color={iconColor} />
+        <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon size={17} color={FG_MUTED} />
         </div>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: subColor, background: `${subColor}15`, padding: '2px 8px', borderRadius: '10px' }}>{sub}</span>
+        <span style={{ fontSize: '10px', fontWeight: 600, color: subColor }}>{sub}</span>
       </div>
       <div>
-        <p style={{ fontSize: '26px', fontWeight: 800, color: NEON, lineHeight: 1, marginBottom: '4px' }}>{value}</p>
+        <p style={{ fontSize: '26px', fontWeight: 800, color: FG, lineHeight: 1, marginBottom: '4px' }}>{value}</p>
         <p style={{ fontSize: '12px', color: FG_MUTED, fontWeight: 500 }}>
           {label}{abbr ? <span style={{ color: FG_SUBTLE, marginLeft: '4px' }}>— {abbr}</span> : null}
         </p>
@@ -127,7 +136,7 @@ function KpiCard({
 function ChartTip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', padding: '10px 14px', fontSize: '11px', color: FG }}>
+    <div style={{ background: '#0E0F12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 14px', fontSize: '11px', color: FG }}>
       <p style={{ color: FG_MUTED, marginBottom: '6px' }}>{label}</p>
       {payload.map((p: any) => (
         <p key={p.name} style={{ color: p.color, fontWeight: 700 }}>
@@ -197,7 +206,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: BG }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: `3px solid ${NEON}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.08)', borderTop: '2px solid rgba(240,240,240,0.5)', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -216,7 +225,7 @@ export default function Dashboard() {
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '28px 32px' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:rgba(0,200,255,0.03)!important}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:rgba(255,255,255,0.03)!important}`}</style>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -230,15 +239,15 @@ export default function Dashboard() {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <DateRangePicker value={range} onChange={setRange} />
           {syncMsg && (
-            <span style={{ fontSize: '11px', color: syncMsg.includes('Erro') ? RED : NEON, padding: '5px 10px', borderRadius: '8px', background: syncMsg.includes('Erro') ? 'rgba(255,69,96,0.08)' : 'rgba(0,200,255,0.08)', fontWeight: 600 }}>
+            <span style={{ fontSize: '11px', color: syncMsg.includes('Erro') ? S_RED : FG, padding: '5px 10px', borderRadius: '8px', background: 'transparent', fontWeight: 600 }}>
               {syncMsg}
             </span>
           )}
-          <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: `1px solid ${BORDER_ACTIVE}`, background: 'rgba(0,200,255,0.08)', color: NEON, fontSize: '12px', fontWeight: 600, cursor: syncing ? 'not-allowed' : 'pointer', opacity: syncing ? 0.6 : 1, fontFamily: 'inherit' }}>
+          <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: `1px solid ${BORDER_MED}`, background: 'rgba(255,255,255,0.08)', color: FG, fontSize: '12px', fontWeight: 600, cursor: syncing ? 'not-allowed' : 'pointer', opacity: syncing ? 0.6 : 1, fontFamily: 'inherit' }}>
             <RefreshCw size={13} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
             {syncing ? 'Sincronizando…' : 'Sincronizar'}
           </button>
-          <button onClick={() => navigate('/wizard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: 'none', background: NEON, color: '#000', fontSize: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => navigate('/wizard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: `1px solid ${BORDER_MED}`, background: 'rgba(255,255,255,0.08)', color: FG, fontSize: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
             <Plus size={13} /> Nova Campanha
           </button>
         </div>
@@ -246,26 +255,26 @@ export default function Dashboard() {
 
       {/* ── Sync status ────────────────────────────────────────────────────── */}
       {lastSync.status === 'error' && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,69,96,0.06)', border: `1px solid rgba(255,69,96,0.2)` }}>
-          <AlertTriangle size={14} color={RED} />
-          <span style={{ fontSize: '12px', color: RED, fontWeight: 600 }}>Última sincronização falhou</span>
-          <span style={{ fontSize: '11px', color: FG_MUTED }}>— Token Meta expirado. Renove em{' '}<span onClick={() => navigate('/settings')} style={{ color: NEON, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.</span>
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: BG_SURFACE, border: `1px solid ${BORDER_MED}` }}>
+          <AlertTriangle size={14} color={S_RED} />
+          <span style={{ fontSize: '12px', color: S_RED, fontWeight: 600 }}>Última sincronização falhou</span>
+          <span style={{ fontSize: '11px', color: FG_MUTED }}>— Token Meta expirado. Renove em{' '}<span onClick={() => navigate('/settings')} style={{ color: FG, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.</span>
           {lastSync.at && <span style={{ marginLeft: 'auto', fontSize: '10px', color: FG_SUBTLE }}>{new Date(lastSync.at).toLocaleString('pt-BR')}</span>}
         </div>
       )}
       {lastSync.status === 'success' && lastSync.at && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(0,200,255,0.05)', border: `1px solid rgba(0,200,255,0.12)` }}>
-          <CheckCircle size={12} color={NEON} />
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: BG_SURFACE, border: `1px solid ${BORDER}` }}>
+          <CheckCircle size={12} color={S_GREEN} />
           <span style={{ fontSize: '11px', color: FG_MUTED }}>
             Sincronizado em <strong style={{ color: FG }}>{new Date(lastSync.at).toLocaleString('pt-BR')}</strong>
           </span>
         </div>
       )}
       {!lastSync.status && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(255,165,32,0.05)', border: `1px solid rgba(255,165,32,0.12)` }}>
-          <AlertTriangle size={12} color={AMBER} />
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: BG_SURFACE, border: `1px solid ${BORDER}` }}>
+          <AlertTriangle size={12} color={S_YELLOW} />
           <span style={{ fontSize: '11px', color: FG_MUTED }}>
-            Meta Ads não sincronizado. Configure em{' '}<span onClick={() => navigate('/settings')} style={{ color: NEON, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.
+            Meta Ads não sincronizado. Configure em{' '}<span onClick={() => navigate('/settings')} style={{ color: FG, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.
           </span>
         </div>
       )}
@@ -286,7 +295,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Chart card */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 24px', boxShadow: GLOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 24px', boxShadow: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
                 <p style={{ fontSize: '14px', fontWeight: 700, color: FG }}>Evolução no Período</p>
@@ -297,7 +306,7 @@ export default function Dashboard() {
               {/* Toggle leads/spend */}
               <div style={{ display: 'flex', gap: '4px', background: BG_SUBTLE, borderRadius: '8px', padding: '3px' }}>
                 {(['leads', 'spend'] as const).map(m => (
-                  <button key={m} onClick={() => setChartMetric(m)} style={{ padding: '4px 12px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: chartMetric === m ? NEON : 'transparent', color: chartMetric === m ? '#000' : FG_MUTED, transition: 'all 0.15s' }}>
+                  <button key={m} onClick={() => setChartMetric(m)} style={{ padding: '4px 12px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: chartMetric === m ? 'rgba(255,255,255,0.08)' : 'transparent', color: chartMetric === m ? FG : FG_MUTED, transition: 'all 0.15s' }}>
                     {m === 'leads' ? 'Leads' : 'Investimento'}
                   </button>
                 ))}
@@ -308,8 +317,8 @@ export default function Dashboard() {
                 <AreaChart data={weekly} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={chartMetric === 'leads' ? NEON : BLUE} stopOpacity={0.25} />
-                      <stop offset="100%" stopColor={chartMetric === 'leads' ? NEON : BLUE} stopOpacity={0} />
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.08)" stopOpacity={1} />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0)" stopOpacity={1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
@@ -319,7 +328,7 @@ export default function Dashboard() {
                   <Area
                     type="monotone"
                     dataKey={chartMetric}
-                    stroke={chartMetric === 'leads' ? NEON : BLUE}
+                    stroke={chartMetric === 'leads' ? S_GREEN : S_BLUE}
                     strokeWidth={2}
                     fill="url(#grad)"
                     dot={false}
@@ -336,7 +345,7 @@ export default function Dashboard() {
           </div>
 
           {/* Campaign table */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', overflow: 'hidden', boxShadow: GLOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', overflow: 'hidden', boxShadow: 'none' }}>
             {/* Table header */}
             <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, display: 'grid', gridTemplateColumns: '24px 1fr 70px 80px 70px 70px 70px', gap: '0 12px', alignItems: 'center' }}>
               <span />
@@ -351,7 +360,7 @@ export default function Dashboard() {
             {campaigns.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center' }}>
                 <p style={{ color: FG_MUTED, fontSize: '13px', marginBottom: '12px' }}>Nenhuma campanha ainda.</p>
-                <button onClick={() => navigate('/wizard')} style={{ background: NEON, border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar campanha</button>
+                <button onClick={() => navigate('/wizard')} style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${BORDER_MED}`, color: FG, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar campanha</button>
               </div>
             ) : (
               campaigns.map((c) => {
@@ -371,7 +380,7 @@ export default function Dashboard() {
                     <p style={{ fontSize: '13px', fontWeight: 700, color: FG, textAlign: 'right' }}>
                       {n(c.total_spend) > 0 ? `R$${n(c.total_spend).toLocaleString('pt-BR')}` : '—'}
                     </p>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: n(c.total_leads) > 0 ? NEON : FG_SUBTLE, textAlign: 'right' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: n(c.total_leads) > 0 ? FG : FG_SUBTLE, textAlign: 'right' }}>
                       {n(c.total_leads) > 0 ? n(c.total_leads) : '—'}
                     </p>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: cplStatus(cpaV).color, textAlign: 'right' }}>
@@ -391,7 +400,7 @@ export default function Dashboard() {
             {/* Paused campaigns toggle */}
             {pausedCampaigns.length > 0 && (
               <div>
-                <button onClick={() => setShowPaused(p => !p)} style={{ width: '100%', padding: '12px 20px', background: 'rgba(255,165,32,0.04)', border: 'none', borderTop: `1px solid rgba(255,165,32,0.12)`, display: 'flex', alignItems: 'center', gap: '8px', color: AMBER, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={() => setShowPaused(p => !p)} style={{ width: '100%', padding: '12px 20px', background: BG_SURFACE, border: 'none', borderTop: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '8px', color: FG_MUTED, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   <PauseCircle size={14} />
                   {pausedCampaigns.length} campanha{pausedCampaigns.length !== 1 ? 's' : ''} pausada{pausedCampaigns.length !== 1 ? 's' : ''}
                   {showPaused ? <ChevronUp size={13} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={13} style={{ marginLeft: 'auto' }} />}
@@ -399,7 +408,7 @@ export default function Dashboard() {
                 {showPaused && pausedCampaigns.map((c) => {
                   const vc = VERDICT[c.verdict]; const h = healthDot(n(c.avg_cpa), n(c.avg_ctr));
                   return (
-                    <div key={c.id} style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(255,165,32,0.02)' }}>
+                    <div key={c.id} style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: BG_SURFACE }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '14px' }}>{h.dot}</span>
@@ -431,12 +440,12 @@ export default function Dashboard() {
             const days = Math.max(1, Math.round((dateTo.getTime() - dateFrom.getTime()) / 86400000) + 1);
             const avgDailySpend = sp / days;
             return (
-              <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: GLOW }}>
+              <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: 'none' }}>
                 <p style={{ fontSize: '11px', fontWeight: 700, color: FG_SUBTLE, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '14px' }}>Destaques do Período</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   <div style={{ padding: '12px 14px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
                     <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '6px', fontWeight: 600 }}>Gasto médio/dia</p>
-                    <p style={{ fontSize: '18px', fontWeight: 800, color: BLUE }}>{avgDailySpend > 0 ? `R$${avgDailySpend.toFixed(0)}` : '—'}</p>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: FG }}>{avgDailySpend > 0 ? `R$${avgDailySpend.toFixed(0)}` : '—'}</p>
                     <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '3px' }}>{days} dias no período</p>
                   </div>
                   <div style={{ padding: '12px 14px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
@@ -448,7 +457,7 @@ export default function Dashboard() {
                   </div>
                   <div style={{ padding: '12px 14px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
                     <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '6px', fontWeight: 600 }}>Mais leads</p>
-                    <p style={{ fontSize: '18px', fontWeight: 800, color: n(bestLeads?.total_leads) > 0 ? NEON : FG_SUBTLE }}>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: FG }}>
                       {n(bestLeads?.total_leads) > 0 ? n(bestLeads!.total_leads) : '—'}
                     </p>
                     <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bestLeads?.name ?? 'sem dados'}</p>
@@ -456,7 +465,7 @@ export default function Dashboard() {
                 </div>
                 {analysis && analysis.actions.length > 0 && (
                   <div style={{ marginTop: '14px', padding: '10px 12px', borderRadius: '10px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <Brain size={13} color={NEON} style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <Brain size={13} color={FG_MUTED} style={{ flexShrink: 0, marginTop: '1px' }} />
                     <p style={{ fontSize: '12px', color: FG_MUTED, lineHeight: '1.55' }}>
                       <strong style={{ color: FG }}>IA: </strong>{analysis.actions[0].acao} — {analysis.actions[0].motivo}
                     </p>
@@ -471,7 +480,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Score card */}
-          <div style={{ background: BG_CARD, border: `1px solid ${scoreColor}25`, borderRadius: '16px', padding: '20px', boxShadow: GLOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px', boxShadow: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Brain size={15} color={scoreColor} />
               <p style={{ fontSize: '13px', fontWeight: 700, color: FG }}>Saúde da Conta</p>
@@ -483,7 +492,6 @@ export default function Dashboard() {
                   <circle cx="44" cy="44" r={radius} fill="none" stroke={scoreColor} strokeWidth="6"
                     strokeDasharray={`${arc} ${circ}`} strokeLinecap="round"
                     transform="rotate(-90 44 44)"
-                    style={{ filter: `drop-shadow(0 0 5px ${scoreColor}50)` }}
                   />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -492,7 +500,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '10px', color: scoreColor, background: `${scoreColor}12`, display: 'inline-block', marginBottom: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, display: 'inline-block', marginBottom: '8px', color: scoreColor }}>
                   {scoreLabel.toUpperCase()}
                 </span>
                 <p style={{ fontSize: '12px', color: FG_MUTED, lineHeight: '1.55' }}>
@@ -524,13 +532,13 @@ export default function Dashboard() {
               </>
             )}
 
-            <button onClick={() => navigate('/professor')} style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '8px', background: 'none', border: 'none', color: NEON, fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+            <button onClick={() => navigate('/professor')} style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '8px', background: 'none', border: 'none', color: FG_MUTED, fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
               Análise completa no Professor <ArrowRight size={12} />
             </button>
           </div>
 
           {/* Benchmark reference card */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: GLOW }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: 'none' }}>
             <p style={{ fontSize: '12px', fontWeight: 700, color: FG_MUTED, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px' }}>Referência B2B — Meta Ads</p>
             {[
               { abbr: 'CPL', label: 'Custo por Lead', zones: ['≤ R$60 Excelente', 'R$60–150 Aceitável', '> R$150 Alto'], colors: [NEON, AMBER, RED] },
@@ -540,7 +548,7 @@ export default function Dashboard() {
             ].map(({ abbr, label, zones, colors }) => (
               <div key={abbr} style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '5px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: NEON }}>{abbr}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: FG_MUTED }}>{abbr}</span>
                   <span style={{ fontSize: '10px', color: FG_MUTED }}>{label}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '3px' }}>
@@ -556,7 +564,7 @@ export default function Dashboard() {
 
           {/* Problems / OK */}
           {analysis && analysis.issues.length > 0 && (
-            <div style={{ background: BG_CARD, border: `1px solid rgba(255,165,32,0.15)`, borderRadius: '16px', padding: '16px 18px', boxShadow: GLOW }}>
+            <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '16px 18px', boxShadow: 'none' }}>
               <p style={{ fontSize: '12px', fontWeight: 700, color: FG, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AlertTriangle size={13} color={AMBER} /> Pontos de atenção
               </p>
@@ -569,8 +577,8 @@ export default function Dashboard() {
             </div>
           )}
           {analysis && analysis.issues.length === 0 && (
-            <div style={{ background: 'rgba(0,200,255,0.05)', border: `1px solid rgba(0,200,255,0.15)`, borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
-              <CheckCircle size={22} color={NEON} style={{ margin: '0 auto 6px' }} />
+            <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
+              <CheckCircle size={22} color={S_GREEN} style={{ margin: '0 auto 6px' }} />
               <p style={{ fontSize: '12px', fontWeight: 600, color: FG, marginBottom: '3px' }}>Tudo saudável</p>
               <p style={{ fontSize: '11px', color: FG_MUTED }}>Métricas dentro do esperado para B2B.</p>
             </div>

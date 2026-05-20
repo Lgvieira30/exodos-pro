@@ -13,10 +13,14 @@ import Diagnostico from './pages/Diagnostico';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
-const ACCENT = '#00C8FF';
-const GREEN = ACCENT;
-const SIDEBAR_BG = '#0A0A0B';
-const BORDER = 'rgba(255,255,255,0.07)';
+const BG_SIDEBAR = '#070708';
+const BORDER = 'rgba(255,255,255,0.04)';
+const FG = '#F0F0F0';
+const FG_MUTED = 'rgba(240,240,240,0.4)';
+const FG_SUBTLE = 'rgba(240,240,240,0.18)';
+const BG_HOVER = 'rgba(255,255,255,0.04)';
+const BG_ACTIVE = 'rgba(255,255,255,0.07)';
+const S_RED = '#F87171';
 
 const NAV_MAIN = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -31,11 +35,11 @@ const NAV_ACTIONS = [
 ];
 
 const GROUP_LABEL_STYLE: React.CSSProperties = {
-  fontSize: '9px',
-  fontWeight: 700,
-  color: 'rgba(232,232,232,0.2)',
-  letterSpacing: '0.12em',
-  padding: '10px 12px 5px',
+  fontSize: '10px',
+  fontWeight: 600,
+  color: FG_SUBTLE,
+  letterSpacing: '0.06em',
+  padding: '0 10px 6px',
   textTransform: 'uppercase' as const,
 };
 
@@ -60,25 +64,35 @@ function NavItem({
       style={({ isActive }) => ({
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        padding: '9px 12px',
-        marginBottom: '2px',
-        borderRadius: '8px',
+        gap: '9px',
+        padding: '8px 10px',
+        marginBottom: '1px',
+        borderRadius: '7px',
         textDecoration: 'none',
         fontSize: '13px',
-        fontWeight: isActive ? 600 : 400,
-        color: isActive ? ACCENT : 'rgba(232,232,232,0.45)',
-        background: isActive ? 'rgba(0,200,255,0.07)' : 'transparent',
-        borderLeft: isActive ? `2px solid ${ACCENT}` : '2px solid transparent',
-        transition: 'all 0.15s',
+        fontWeight: isActive ? 500 : 400,
+        color: isActive ? FG : FG_MUTED,
+        background: isActive ? BG_ACTIVE : 'transparent',
+        transition: 'background 0.15s ease, color 0.15s ease',
       })}
-      className="btn-ghost"
+      onMouseEnter={(e) => {
+        const el = e.currentTarget;
+        if (!el.getAttribute('aria-current')) {
+          el.style.background = BG_HOVER;
+        }
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        if (!el.getAttribute('aria-current')) {
+          el.style.background = 'transparent';
+        }
+      }}
     >
       {({ isActive }) => (
         <>
           <Icon
             size={15}
-            color={isActive ? ACCENT : 'rgba(232,232,232,0.35)'}
+            color={isActive ? 'rgba(240,240,240,0.85)' : 'rgba(240,240,240,0.25)'}
           />
           {label}
         </>
@@ -89,6 +103,7 @@ function NavItem({
 
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [logoutHovered, setLogoutHovered] = useState(false);
+  const [settingsHovered, setSettingsHovered] = useState(false);
 
   function handleLogout() {
     localStorage.removeItem('token');
@@ -118,7 +133,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           left: 0,
           bottom: 0,
           width: '220px',
-          background: SIDEBAR_BG,
+          background: BG_SIDEBAR,
           borderRight: `1px solid ${BORDER}`,
           display: 'flex',
           flexDirection: 'column',
@@ -126,23 +141,21 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           transition: 'transform 0.25s ease',
         }}
       >
-        {/* Logo */}
-        <div style={{ padding: '20px 16px 16px', borderBottom: `1px solid ${BORDER}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Logo size={36} />
-            <div>
-              <div style={{ color: '#E8E8E8', fontSize: '13px', fontWeight: 700, letterSpacing: '-0.3px' }}>
-                êxodos
-              </div>
-              <div style={{ color: ACCENT, fontSize: '9px', letterSpacing: '0.15em', fontWeight: 600, opacity: 0.8 }}>
-                PRO
-              </div>
+        {/* Logo block */}
+        <div style={{ padding: '18px 16px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Logo size={28} />
+          <div>
+            <div style={{ color: FG, fontSize: '13px', fontWeight: 600, letterSpacing: '-0.2px' }}>
+              êxodos
+            </div>
+            <div style={{ color: 'rgba(240,240,240,0.35)', fontSize: '8px', letterSpacing: '0.15em', fontWeight: 500 }}>
+              PRO
             </div>
           </div>
         </div>
 
-        {/* ── Nav ── */}
-        <nav style={{ flex: 1, padding: '14px 10px', overflowY: 'auto' }}>
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
           {/* Group: ANÁLISE */}
           <div style={GROUP_LABEL_STYLE}>Análise</div>
           {NAV_MAIN.map(({ to, label, icon, exact }) => (
@@ -150,16 +163,16 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           ))}
 
           {/* Group: AÇÕES */}
-          <div style={{ ...GROUP_LABEL_STYLE, marginTop: '6px' }}>Ações</div>
+          <div style={{ ...GROUP_LABEL_STYLE, marginTop: '16px' }}>Ações</div>
           {NAV_ACTIONS.map(({ to, label, icon }) => (
             <NavItem key={to} to={to} label={label} icon={icon} onClose={onClose} />
           ))}
         </nav>
 
-        {/* ── Bottom: Configurações + Sair ── */}
+        {/* Bottom: Configurações + Sair */}
         <div
           style={{
-            padding: '12px 10px',
+            padding: '10px 8px',
             borderTop: `1px solid ${BORDER}`,
           }}
         >
@@ -169,23 +182,23 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              padding: '9px 12px',
-              marginBottom: '4px',
-              borderRadius: '8px',
+              gap: '9px',
+              padding: '8px 10px',
+              marginBottom: '1px',
+              borderRadius: '7px',
               textDecoration: 'none',
               fontSize: '13px',
-              fontWeight: isActive ? 600 : 400,
-              color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
-              background: isActive ? 'rgba(0,200,255,0.07)' : 'transparent',
-              borderLeft: isActive ? `2px solid ${ACCENT}` : '2px solid transparent',
-              transition: 'all 0.15s',
+              fontWeight: isActive ? 500 : 400,
+              color: isActive ? FG : FG_MUTED,
+              background: isActive ? BG_ACTIVE : settingsHovered ? BG_HOVER : 'transparent',
+              transition: 'background 0.15s ease, color 0.15s ease',
             })}
-            className="btn-ghost"
+            onMouseEnter={() => setSettingsHovered(true)}
+            onMouseLeave={() => setSettingsHovered(false)}
           >
             {({ isActive }) => (
               <>
-                <Settings size={15} color={isActive ? ACCENT : 'rgba(255,255,255,0.35)'} />
+                <Settings size={15} color={isActive ? 'rgba(240,240,240,0.85)' : 'rgba(240,240,240,0.25)'} />
                 Configurações
               </>
             )}
@@ -199,22 +212,22 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               width: '100%',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              padding: '9px 12px',
-              borderRadius: '8px',
+              gap: '9px',
+              padding: '8px 10px',
+              borderRadius: '7px',
               border: 'none',
-              background: logoutHovered ? 'rgba(220,38,38,0.08)' : 'transparent',
-              color: logoutHovered ? '#DC2626' : 'rgba(255,255,255,0.3)',
+              background: 'transparent',
+              color: logoutHovered ? S_RED : FG_SUBTLE,
               fontSize: '13px',
               cursor: 'pointer',
               fontFamily: 'inherit',
-              transition: 'all 0.15s',
+              transition: 'color 0.15s ease',
               textAlign: 'left',
             }}
           >
             <LogOut
-              size={16}
-              color={logoutHovered ? '#DC2626' : 'rgba(255,255,255,0.3)'}
+              size={15}
+              color={logoutHovered ? S_RED : FG_SUBTLE}
             />
             Sair
           </button>
@@ -230,7 +243,7 @@ function ProtectedLayout() {
   if (!token) return <Navigate to="/login" replace />;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0D0D0E' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#090909' }}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Hamburger button - mobile only */}
@@ -241,8 +254,8 @@ function ProtectedLayout() {
           display: 'none',
           position: 'fixed', top: '14px', left: '14px', zIndex: 60,
           width: '40px', height: '40px', borderRadius: '10px',
-          background: SIDEBAR_BG, border: '1px solid rgba(255,255,255,0.1)',
-          color: '#fff', cursor: 'pointer',
+          background: BG_SIDEBAR, border: `1px solid ${BORDER}`,
+          color: FG, cursor: 'pointer',
           alignItems: 'center', justifyContent: 'center',
         }}
       >
