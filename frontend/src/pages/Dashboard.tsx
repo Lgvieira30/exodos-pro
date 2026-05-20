@@ -12,20 +12,21 @@ import { useNavigate } from 'react-router-dom';
 import { campaignsApi, metricsApi, syncApi, analyzeApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-// ── Cyberpunk design tokens ──────────────────────────────────────────────────
-const BG = '#080B14';
-const BG_CARD = '#0D1117';
-const BG_SUBTLE = '#111520';
-const NEON = '#00FFB2';     // primary - Matrix teal-green
-const BLUE = '#00BFFF';     // secondary - cyber blue
-const FG = '#C9D1D9';
-const FG_MUTED = 'rgba(201,209,217,0.55)';
-const FG_SUBTLE = 'rgba(201,209,217,0.3)';
-const BORDER = 'rgba(0,255,178,0.1)';
-const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
-const RED = '#FF3B5C';
-const AMBER = '#FFB800';
-const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
+// ── Dark minimal techno design tokens ────────────────────────────────────────
+const BG = '#0D0D0E';
+const BG_CARD = '#161617';
+const BG_SUBTLE = '#1D1D1F';
+const ACCENT = '#00C8FF';    // replaces NEON - the single accent color
+const NEON = ACCENT;         // alias for compatibility
+const BLUE = '#3B82F6';      // secondary blue
+const FG = '#E8E8E8';
+const FG_MUTED = 'rgba(232,232,232,0.45)';
+const FG_SUBTLE = 'rgba(232,232,232,0.2)';
+const BORDER = 'rgba(255,255,255,0.07)';
+const BORDER_ACTIVE = 'rgba(0,200,255,0.18)';
+const RED = '#FF4560';
+const AMBER = '#FFA520';
+const GLOW = '0 0 0 1px rgba(255,255,255,0.04)';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface Campaign {
@@ -79,14 +80,14 @@ function healthDot(cpa: number, ctr: number) {
 }
 
 const PRIORITY: Record<string, { label: string; color: string; bg: string }> = {
-  alta:  { label: 'URGENTE', color: RED,  bg: 'rgba(255,59,92,0.08)' },
-  media: { label: 'ALTA',    color: AMBER, bg: 'rgba(255,184,0,0.08)' },
-  baixa: { label: 'MÉDIA',   color: NEON, bg: 'rgba(0,255,178,0.08)' },
+  alta:  { label: 'URGENTE', color: RED,  bg: 'rgba(255,69,96,0.08)' },
+  media: { label: 'ALTA',    color: AMBER, bg: 'rgba(255,165,32,0.08)' },
+  baixa: { label: 'MÉDIA',   color: NEON, bg: 'rgba(0,200,255,0.08)' },
 };
 const VERDICT: Record<string, { label: string; color: string; bg: string }> = {
-  reativar:             { label: 'Reativar',           color: NEON,  bg: 'rgba(0,255,178,0.08)' },
-  reativar_com_cautela: { label: 'Revisar e Reativar', color: AMBER, bg: 'rgba(255,184,0,0.08)' },
-  manter_pausada:       { label: 'Manter Pausada',     color: RED,   bg: 'rgba(255,59,92,0.08)' },
+  reativar:             { label: 'Reativar',           color: NEON,  bg: 'rgba(0,200,255,0.08)' },
+  reativar_com_cautela: { label: 'Revisar e Reativar', color: AMBER, bg: 'rgba(255,165,32,0.08)' },
+  manter_pausada:       { label: 'Manter Pausada',     color: RED,   bg: 'rgba(255,69,96,0.08)' },
 };
 const PLATFORM: Record<string, string> = { meta: 'Meta', google: 'Google', linkedin: 'LinkedIn' };
 const STATUS_CHIP: Record<string, { label: string; color: string }> = {
@@ -215,7 +216,7 @@ export default function Dashboard() {
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '28px 32px' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:rgba(0,255,178,0.03)!important}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:rgba(0,200,255,0.03)!important}`}</style>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -229,11 +230,11 @@ export default function Dashboard() {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <DateRangePicker value={range} onChange={setRange} />
           {syncMsg && (
-            <span style={{ fontSize: '11px', color: syncMsg.includes('Erro') ? RED : NEON, padding: '5px 10px', borderRadius: '8px', background: syncMsg.includes('Erro') ? 'rgba(255,59,92,0.08)' : 'rgba(0,255,178,0.08)', fontWeight: 600 }}>
+            <span style={{ fontSize: '11px', color: syncMsg.includes('Erro') ? RED : NEON, padding: '5px 10px', borderRadius: '8px', background: syncMsg.includes('Erro') ? 'rgba(255,69,96,0.08)' : 'rgba(0,200,255,0.08)', fontWeight: 600 }}>
               {syncMsg}
             </span>
           )}
-          <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: `1px solid ${BORDER_ACTIVE}`, background: 'rgba(0,255,178,0.08)', color: NEON, fontSize: '12px', fontWeight: 600, cursor: syncing ? 'not-allowed' : 'pointer', opacity: syncing ? 0.6 : 1, fontFamily: 'inherit' }}>
+          <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '10px', border: `1px solid ${BORDER_ACTIVE}`, background: 'rgba(0,200,255,0.08)', color: NEON, fontSize: '12px', fontWeight: 600, cursor: syncing ? 'not-allowed' : 'pointer', opacity: syncing ? 0.6 : 1, fontFamily: 'inherit' }}>
             <RefreshCw size={13} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
             {syncing ? 'Sincronizando…' : 'Sincronizar'}
           </button>
@@ -245,7 +246,7 @@ export default function Dashboard() {
 
       {/* ── Sync status ────────────────────────────────────────────────────── */}
       {lastSync.status === 'error' && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,59,92,0.06)', border: `1px solid rgba(255,59,92,0.2)` }}>
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,69,96,0.06)', border: `1px solid rgba(255,69,96,0.2)` }}>
           <AlertTriangle size={14} color={RED} />
           <span style={{ fontSize: '12px', color: RED, fontWeight: 600 }}>Última sincronização falhou</span>
           <span style={{ fontSize: '11px', color: FG_MUTED }}>— Token Meta expirado. Renove em{' '}<span onClick={() => navigate('/settings')} style={{ color: NEON, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.</span>
@@ -253,7 +254,7 @@ export default function Dashboard() {
         </div>
       )}
       {lastSync.status === 'success' && lastSync.at && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(0,255,178,0.05)', border: `1px solid rgba(0,255,178,0.12)` }}>
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(0,200,255,0.05)', border: `1px solid rgba(0,200,255,0.12)` }}>
           <CheckCircle size={12} color={NEON} />
           <span style={{ fontSize: '11px', color: FG_MUTED }}>
             Sincronizado em <strong style={{ color: FG }}>{new Date(lastSync.at).toLocaleString('pt-BR')}</strong>
@@ -261,7 +262,7 @@ export default function Dashboard() {
         </div>
       )}
       {!lastSync.status && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(255,184,0,0.05)', border: `1px solid rgba(255,184,0,0.12)` }}>
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(255,165,32,0.05)', border: `1px solid rgba(255,165,32,0.12)` }}>
           <AlertTriangle size={12} color={AMBER} />
           <span style={{ fontSize: '11px', color: FG_MUTED }}>
             Meta Ads não sincronizado. Configure em{' '}<span onClick={() => navigate('/settings')} style={{ color: NEON, cursor: 'pointer', textDecoration: 'underline' }}>Configurações</span>.
@@ -311,7 +312,7 @@ export default function Dashboard() {
                       <stop offset="100%" stopColor={chartMetric === 'leads' ? NEON : BLUE} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(0,255,178,0.04)" vertical={false} />
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
                   <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip content={<ChartTip />} />
@@ -390,7 +391,7 @@ export default function Dashboard() {
             {/* Paused campaigns toggle */}
             {pausedCampaigns.length > 0 && (
               <div>
-                <button onClick={() => setShowPaused(p => !p)} style={{ width: '100%', padding: '12px 20px', background: 'rgba(255,184,0,0.04)', border: 'none', borderTop: `1px solid rgba(255,184,0,0.12)`, display: 'flex', alignItems: 'center', gap: '8px', color: AMBER, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={() => setShowPaused(p => !p)} style={{ width: '100%', padding: '12px 20px', background: 'rgba(255,165,32,0.04)', border: 'none', borderTop: `1px solid rgba(255,165,32,0.12)`, display: 'flex', alignItems: 'center', gap: '8px', color: AMBER, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   <PauseCircle size={14} />
                   {pausedCampaigns.length} campanha{pausedCampaigns.length !== 1 ? 's' : ''} pausada{pausedCampaigns.length !== 1 ? 's' : ''}
                   {showPaused ? <ChevronUp size={13} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={13} style={{ marginLeft: 'auto' }} />}
@@ -398,7 +399,7 @@ export default function Dashboard() {
                 {showPaused && pausedCampaigns.map((c) => {
                   const vc = VERDICT[c.verdict]; const h = healthDot(n(c.avg_cpa), n(c.avg_ctr));
                   return (
-                    <div key={c.id} style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(255,184,0,0.02)' }}>
+                    <div key={c.id} style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(255,165,32,0.02)' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '14px' }}>{h.dot}</span>
@@ -478,7 +479,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '14px' }}>
               <div style={{ position: 'relative', width: '88px', height: '88px', flexShrink: 0 }}>
                 <svg width="88" height="88" viewBox="0 0 88 88">
-                  <circle cx="44" cy="44" r={radius} fill="none" stroke="rgba(0,255,178,0.08)" strokeWidth="6" />
+                  <circle cx="44" cy="44" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
                   <circle cx="44" cy="44" r={radius} fill="none" stroke={scoreColor} strokeWidth="6"
                     strokeDasharray={`${arc} ${circ}`} strokeLinecap="round"
                     transform="rotate(-90 44 44)"
@@ -555,7 +556,7 @@ export default function Dashboard() {
 
           {/* Problems / OK */}
           {analysis && analysis.issues.length > 0 && (
-            <div style={{ background: BG_CARD, border: `1px solid rgba(255,184,0,0.15)`, borderRadius: '16px', padding: '16px 18px', boxShadow: GLOW }}>
+            <div style={{ background: BG_CARD, border: `1px solid rgba(255,165,32,0.15)`, borderRadius: '16px', padding: '16px 18px', boxShadow: GLOW }}>
               <p style={{ fontSize: '12px', fontWeight: 700, color: FG, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AlertTriangle size={13} color={AMBER} /> Pontos de atenção
               </p>
@@ -568,7 +569,7 @@ export default function Dashboard() {
             </div>
           )}
           {analysis && analysis.issues.length === 0 && (
-            <div style={{ background: 'rgba(0,255,178,0.05)', border: `1px solid rgba(0,255,178,0.15)`, borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
+            <div style={{ background: 'rgba(0,200,255,0.05)', border: `1px solid rgba(0,200,255,0.15)`, borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
               <CheckCircle size={22} color={NEON} style={{ margin: '0 auto 6px' }} />
               <p style={{ fontSize: '12px', fontWeight: 600, color: FG, marginBottom: '3px' }}>Tudo saudável</p>
               <p style={{ fontSize: '11px', color: FG_MUTED }}>Métricas dentro do esperado para B2B.</p>

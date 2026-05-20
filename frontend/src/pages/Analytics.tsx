@@ -5,22 +5,22 @@ import {
 } from 'recharts';
 import { DollarSign, Users, Target, Zap, MousePointerClick, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { metricsApi, campaignsApi, analyzeApi } from '../lib/api';
+import { metricsApi, campaignsApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
-const BG = '#080B14';
-const BG_CARD = '#0D1117';
-const BG_SUBTLE = '#111520';
-const NEON = '#00FFB2';
-const BLUE = '#00BFFF';
-const FG = '#C9D1D9';
-const FG_MUTED = 'rgba(201,209,217,0.55)';
-const FG_SUBTLE = 'rgba(201,209,217,0.3)';
-const BORDER = 'rgba(0,255,178,0.1)';
-const BORDER_ACTIVE = 'rgba(0,255,178,0.25)';
-const RED = '#FF3B5C';
-const AMBER = '#FFB800';
-const GLOW = '0 0 0 1px rgba(0,255,178,0.08), inset 0 1px 0 rgba(255,255,255,0.03)';
+const BG = '#0D0D0E';
+const BG_CARD = '#161617';
+const BG_SUBTLE = '#1D1D1F';
+const NEON = '#00C8FF';
+const BLUE = '#3B82F6';
+const FG = '#E8E8E8';
+const FG_MUTED = 'rgba(232,232,232,0.45)';
+const FG_SUBTLE = 'rgba(232,232,232,0.2)';
+const BORDER = 'rgba(255,255,255,0.07)';
+const BORDER_ACTIVE = 'rgba(0,200,255,0.18)';
+const RED = '#FF4560';
+const AMBER = '#FFA520';
+const GLOW = '0 0 0 1px rgba(255,255,255,0.04)';
 
 interface Summary {
   spend: number; leads: number; cpa: number; roas: number;
@@ -39,10 +39,10 @@ interface CampaignRow {
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  active:    { label: 'Ativa',      color: NEON,  bg: 'rgba(0,255,178,0.08)' },
-  paused:    { label: 'Pausada',    color: AMBER, bg: 'rgba(255,184,0,0.08)' },
-  draft:     { label: 'Rascunho',   color: FG_MUTED, bg: 'rgba(201,209,217,0.06)' },
-  completed: { label: 'Concluída',  color: BLUE,  bg: 'rgba(0,191,255,0.08)' },
+  active:    { label: 'Ativa',      color: NEON,     bg: 'rgba(0,200,255,0.08)' },
+  paused:    { label: 'Pausada',    color: AMBER,    bg: 'rgba(255,165,32,0.08)' },
+  draft:     { label: 'Rascunho',   color: FG_MUTED, bg: 'rgba(232,232,232,0.06)' },
+  completed: { label: 'Concluída',  color: BLUE,     bg: 'rgba(59,130,246,0.08)' },
 };
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -130,9 +130,6 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [noData, setNoData] = useState(false);
-  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
-  const [campaignDeepCache, setCampaignDeepCache] = useState<Record<string, any>>({});
-  const [loadingDeepId, setLoadingDeepId] = useState<string | null>(null);
 
   const load = useCallback((r: DateRange, initial = false) => {
     if (initial) setLoading(true); else setFetching(true);
@@ -166,22 +163,6 @@ export default function Analytics() {
       if (campaignsRes?.data?.campaigns) setCampaigns(campaignsRes.data.campaigns);
     }).finally(() => { setLoading(false); setFetching(false); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadCampaignDeep = useCallback(async (campaignId: string) => {
-    if (campaignDeepCache[campaignId]) {
-      setExpandedCampaignId(prev => prev === campaignId ? null : campaignId);
-      return;
-    }
-    if (expandedCampaignId === campaignId) { setExpandedCampaignId(null); return; }
-    setLoadingDeepId(campaignId);
-    try {
-      const res = await analyzeApi.deep(campaignId, range.from, range.to);
-      if (res?.data) {
-        setCampaignDeepCache(prev => ({ ...prev, [campaignId]: res.data }));
-        setExpandedCampaignId(campaignId);
-      }
-    } catch { /* ignore */ } finally { setLoadingDeepId(null); }
-  }, [campaignDeepCache, expandedCampaignId, range]);
 
   const isFirstMount = React.useRef(true);
   useEffect(() => {
@@ -354,7 +335,7 @@ export default function Analytics() {
                   <stop offset="100%" stopColor={NEON} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
@@ -368,7 +349,7 @@ export default function Analytics() {
         <ChartCard title="Taxa de Cliques (CTR) e Custo por Clique (CPC) por Dia" desc="CTR (verde) = % que clicou. CPC (roxo) = preço de cada clique. CTR alto + CPC baixo = anúncio eficiente.">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={weekly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
               <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
@@ -385,7 +366,7 @@ export default function Analytics() {
         <ChartCard title="Custo por Lead (CPL) por Dia" desc="Verde = ótimo (abaixo de R$60) · Amarelo = aceitável (R$60–R$150) · Vermelho = alto (acima de R$150). Linhas tracejadas mostram os limites de benchmark.">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weekly} barSize={26}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
@@ -413,7 +394,7 @@ export default function Analytics() {
                   <stop offset="100%" stopColor="#A855F7" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,178,0.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: BG_CARD, border: `1px solid ${BORDER_ACTIVE}`, borderRadius: '8px', color: FG, fontSize: '11px' }} />
@@ -431,184 +412,74 @@ export default function Analytics() {
           background: BG_CARD,
           border: `1px solid ${BORDER}`,
           borderRadius: '16px',
-          padding: '22px 24px',
+          padding: '0',
           marginBottom: '16px',
           boxShadow: GLOW,
+          overflow: 'hidden',
         }}>
-          <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '4px' }}>Análise Individual por Campanha</p>
-          <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '20px' }}>Cada campanha avaliada com semáforo de saúde baseado nos benchmarks B2B.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px' }}>
-            {campaigns.map((c) => {
-              const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? NEON : c.avg_cpa <= 150 ? AMBER : RED;
-              const cplLabel = c.avg_cpa <= 0 ? 'Sem dados' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
-              const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? NEON : c.avg_ctr >= 1 ? AMBER : RED;
-              const ctrLabel = c.avg_ctr <= 0 ? 'Sem dados' : c.avg_ctr >= 2.5 ? '✅ Excelente' : c.avg_ctr >= 1 ? '⚠️ Aceitável' : '❌ Baixo';
-              const badge = STATUS_BADGE[c.status] || STATUS_BADGE.draft;
-              const healthScore = [
-                c.avg_cpa > 0 && c.avg_cpa <= 60 ? 40 : c.avg_cpa > 0 && c.avg_cpa <= 150 ? 25 : c.avg_cpa > 0 ? 0 : 20,
-                c.avg_ctr >= 2.5 ? 30 : c.avg_ctr >= 1 ? 20 : c.avg_ctr > 0 ? 5 : 15,
-                c.avg_cpc > 0 && c.avg_cpc <= 5 ? 30 : c.avg_cpc > 0 && c.avg_cpc <= 15 ? 20 : c.avg_cpc > 0 ? 5 : 15,
-              ].reduce((a, b) => a + b, 0);
-              const healthColor = healthScore >= 70 ? NEON : healthScore >= 45 ? AMBER : RED;
-              const healthEmoji = healthScore >= 70 ? '🟢' : healthScore >= 45 ? '🟡' : '🔴';
-              return (
-                <div key={c.id} style={{ background: BG_SUBTLE, border: `1px solid ${healthColor}25`, borderRadius: '14px', padding: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '13px', fontWeight: 700, color: FG, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', color: badge.color, background: badge.bg }}>{badge.label}</span>
-                        <span style={{ fontSize: '10px', color: FG_SUBTLE }}>{PLATFORM_LABEL[c.platform] || c.platform}</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '10px' }}>
-                      <p style={{ fontSize: '20px', fontWeight: 800, color: healthColor, lineHeight: 1 }}>{healthScore}</p>
-                      <p style={{ fontSize: '9px', color: FG_SUBTLE }}>saúde/100</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${cplColor}08`, border: `1px solid ${cplColor}25` }}>
-                      <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '2px' }}>Custo por Lead (CPL)</p>
-                      <p style={{ fontSize: '15px', fontWeight: 700, color: cplColor }}>{c.avg_cpa > 0 ? `R$ ${Number(c.avg_cpa).toFixed(0)}` : '—'}</p>
-                      <p style={{ fontSize: '10px', color: cplColor }}>{cplLabel}</p>
-                    </div>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${ctrColor}08`, border: `1px solid ${ctrColor}25` }}>
-                      <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '2px' }}>Taxa de Cliques (CTR)</p>
-                      <p style={{ fontSize: '15px', fontWeight: 700, color: ctrColor }}>{c.avg_ctr > 0 ? `${Number(c.avg_ctr).toFixed(2)}%` : '—'}</p>
-                      <p style={{ fontSize: '10px', color: ctrColor }}>{ctrLabel}</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '10px' }}>
-                    <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
-                      <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>Investido</p>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: FG }}>R$ {Number(c.total_spend).toLocaleString('pt-BR')}</p>
-                    </div>
-                    <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
-                      <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>Leads</p>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: NEON }}>{Number(c.total_leads)}</p>
-                    </div>
-                    <div style={{ textAlign: 'center', padding: '6px', borderRadius: '6px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
-                      <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>ROAS</p>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? NEON : c.avg_roas >= 2 ? AMBER : FG_SUBTLE }}>{c.avg_roas > 0 ? `${Number(c.avg_roas).toFixed(1)}x` : '—'}</p>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '10px', padding: '8px 10px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${healthColor}` }}>
-                    <p style={{ fontSize: '11px', color: FG_MUTED, lineHeight: 1.5 }}>
-                      {healthEmoji} {
-                        c.total_leads === 0 && c.total_spend > 0 ? 'Investimento sem leads — verifique o pixel de rastreamento e a landing page.' :
-                        c.avg_cpa <= 60 && c.avg_ctr >= 1 ? 'Campanha eficiente — boa candidata para aumentar o orçamento gradualmente.' :
-                        c.avg_cpa > 150 ? 'CPL alto — revise a landing page e o criativo antes de continuar investindo.' :
-                        c.avg_ctr < 1 && c.avg_ctr > 0 ? 'CTR baixo — o criativo não está chamando atenção. Teste uma nova imagem ou vídeo.' :
-                        c.total_leads < 3 ? 'Volume pequeno — aguarde mais dados antes de tomar decisões.' :
-                        'Métricas aceitáveis — monitore diariamente e teste variações de criativo.'
-                      }
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => loadCampaignDeep(c.id)}
-                    style={{
-                      marginTop: '10px', width: '100%', padding: '7px', borderRadius: '8px',
-                      border: `1px solid ${expandedCampaignId === c.id ? BORDER_ACTIVE : BORDER}`,
-                      background: expandedCampaignId === c.id ? `${NEON}0F` : BG_CARD,
-                      color: expandedCampaignId === c.id ? NEON : FG_MUTED,
-                      fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                      transition: 'background 0.15s, color 0.15s',
-                    }}
-                  >
-                    {loadingDeepId === c.id ? '⟳ Carregando...' : expandedCampaignId === c.id ? '▲ Ocultar detalhes' : '▼ Conjuntos e anúncios'}
-                  </button>
-
-                  {expandedCampaignId === c.id && campaignDeepCache[c.id] && (() => {
-                    const deep = campaignDeepCache[c.id];
-                    return (
-                      <div style={{ marginTop: '10px', borderTop: `1px solid ${BORDER}`, paddingTop: '10px' }}>
-                        {deep.adSets?.length > 0 && (
-                          <div style={{ marginBottom: '10px' }}>
-                            <p style={{ fontSize: '10px', fontWeight: 700, color: FG_SUBTLE, marginBottom: '6px', letterSpacing: '0.05em' }}>CONJUNTOS ({deep.adSets.length})</p>
-                            {deep.adSets.map((as: any) => {
-                              const asColor = as.score >= 75 ? NEON : as.score >= 50 ? AMBER : RED;
-                              const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
-                              const isActive = as.status === 'active';
-                              return (
-                                <div key={as.id} style={{ padding: '8px 10px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${asColor}20`, marginBottom: '4px' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isActive ? '5px' : 0 }}>
-                                    <p style={{ fontSize: '11px', fontWeight: 600, color: isActive ? FG : FG_SUBTLE, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '6px' }}>{statusDot} {as.name}</p>
-                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                                      <span style={{ fontSize: '9px', fontWeight: 700, color: as.action?.color, background: as.action?.bg, padding: '1px 6px', borderRadius: '6px' }}>{as.action?.label}</span>
-                                      <span style={{ fontSize: '12px', fontWeight: 800, color: asColor }}>{as.score}</span>
-                                    </div>
-                                  </div>
-                                  {isActive && (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
-                                      {[
-                                        { lbl: 'CPL', val: Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—', color: Number(as.cpa) <= 60 ? NEON : Number(as.cpa) <= 150 ? AMBER : RED },
-                                        { lbl: 'CTR', val: Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—', color: Number(as.ctr) >= 2.5 ? NEON : Number(as.ctr) >= 1 ? AMBER : RED },
-                                        { lbl: 'Leads', val: String(as.leads), color: FG },
-                                        { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
-                                      ].map(({ lbl, val, color }) => (
-                                        <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: BG_SUBTLE }}>
-                                          <p style={{ fontSize: '8px', color: FG_SUBTLE, marginBottom: '1px' }}>{lbl}</p>
-                                          <p style={{ fontSize: '10px', fontWeight: 700, color }}>{val}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {deep.ads?.length > 0 && (
-                          <div>
-                            <p style={{ fontSize: '10px', fontWeight: 700, color: FG_SUBTLE, marginBottom: '6px', letterSpacing: '0.05em' }}>ANÚNCIOS ({deep.ads.length})</p>
-                            {deep.ads.map((ad: any) => {
-                              const adColor = ad.score >= 75 ? NEON : ad.score >= 50 ? AMBER : RED;
-                              const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
-                              const isActive = ad.status === 'active';
-                              return (
-                                <div key={ad.id} style={{ padding: '7px 9px', borderRadius: '7px', background: BG_CARD, border: `1px solid ${BORDER}`, marginBottom: '3px' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <p style={{ fontSize: '10px', fontWeight: 600, color: isActive ? FG : FG_SUBTLE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {ad.name}</p>
-                                      <p style={{ fontSize: '9px', color: FG_SUBTLE }}>{ad.ad_set_name}</p>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
-                                      <span style={{ fontSize: '9px', fontWeight: 700, color: ad.action?.color, background: ad.action?.bg, padding: '1px 5px', borderRadius: '5px' }}>{ad.action?.label}</span>
-                                      <span style={{ fontSize: '11px', fontWeight: 800, color: adColor }}>{ad.score}</span>
-                                    </div>
-                                  </div>
-                                  {isActive && (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px', marginTop: '4px' }}>
-                                      {[
-                                        { lbl: 'CPL', val: Number(ad.cpa) > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? NEON : Number(ad.cpa) <= 150 ? AMBER : RED },
-                                        { lbl: 'CTR', val: Number(ad.ctr) > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? NEON : Number(ad.ctr) >= 1 ? AMBER : RED },
-                                        { lbl: 'Leads', val: String(ad.leads), color: NEON },
-                                        { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
-                                      ].map(({ lbl, val, color }) => (
-                                        <div key={lbl} style={{ textAlign: 'center', padding: '2px', borderRadius: '4px', background: BG_SUBTLE }}>
-                                          <p style={{ fontSize: '8px', color: FG_SUBTLE, marginBottom: '1px' }}>{lbl}</p>
-                                          <p style={{ fontSize: '10px', fontWeight: 700, color }}>{val}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {(!deep.adSets?.length && !deep.ads?.length) && (
-                          <p style={{ fontSize: '11px', color: FG_SUBTLE, textAlign: 'center', padding: '8px' }}>Nenhum conjunto/anúncio sincronizado.</p>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              );
-            })}
+          <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${BORDER}` }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: FG, margin: 0 }}>Comparativo de Campanhas</p>
+            <p style={{ fontSize: '11px', color: FG_MUTED, marginTop: '3px' }}>Performance por campanha no período selecionado</p>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  {['Campanha', 'Status', 'Plataforma', 'Investimento', 'Leads', 'CPL', 'ROAS', 'CTR', 'CPC'].map((h) => (
+                    <th key={h} style={{
+                      padding: '10px 16px', textAlign: h === 'Campanha' ? 'left' : 'right',
+                      fontSize: '10px', fontWeight: 700, color: FG_SUBTLE,
+                      letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                      textTransform: 'uppercase',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map((c, i) => {
+                  const badge = STATUS_BADGE[c.status] || STATUS_BADGE.draft;
+                  const cpaVal = Number(c.avg_cpa);
+                  const ctrVal = Number(c.avg_ctr);
+                  const roasVal = Number(c.avg_roas);
+                  const cpcVal = Number(c.avg_cpc);
+                  const cpaColor = cpaVal <= 0 ? FG_SUBTLE : cpaVal <= 60 ? NEON : cpaVal <= 150 ? AMBER : RED;
+                  const ctrColor = ctrVal <= 0 ? FG_SUBTLE : ctrVal >= 2.5 ? NEON : ctrVal >= 1 ? AMBER : RED;
+                  const roasColor = roasVal <= 0 ? FG_SUBTLE : roasVal >= 3 ? NEON : roasVal >= 2 ? AMBER : RED;
+                  return (
+                    <tr key={c.id} style={{ borderBottom: i < campaigns.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.1s' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = BG_SUBTLE)}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td style={{ padding: '12px 16px', maxWidth: '200px' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 600, color: FG, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', color: badge.color, background: badge.bg, whiteSpace: 'nowrap' }}>{badge.label}</span>
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: FG_MUTED, whiteSpace: 'nowrap' }}>{PLATFORM_LABEL[c.platform] || c.platform}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: FG, fontWeight: 600 }}>
+                        {c.total_spend > 0 ? `R$ ${Number(c.total_spend).toLocaleString('pt-BR')}` : '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: NEON, fontWeight: 700 }}>
+                        {Number(c.total_leads) > 0 ? Number(c.total_leads) : '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: cpaColor, fontWeight: 600 }}>
+                        {cpaVal > 0 ? `R$ ${cpaVal.toFixed(0)}` : '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: roasColor, fontWeight: 600 }}>
+                        {roasVal > 0 ? `${roasVal.toFixed(1)}x` : '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: ctrColor, fontWeight: 600 }}>
+                        {ctrVal > 0 ? `${ctrVal.toFixed(2)}%` : '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: FG_MUTED }}>
+                        {cpcVal > 0 ? `R$ ${cpcVal.toFixed(2)}` : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

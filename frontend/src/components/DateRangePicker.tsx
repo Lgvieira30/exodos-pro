@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Calendar } from 'lucide-react';
 
-const NEON = '#00FFB2';
-const BG_CARD = '#0D1117';
-const FG = '#C9D1D9';
-const FG_MUTED = 'rgba(201,209,217,0.55)';
-const BORDER = 'rgba(0,255,178,0.1)';
-const BORDER_ACTIVE = 'rgba(0,255,178,0.3)';
-const BG_INPUT = '#0A0D16';
+const ACCENT = '#00C8FF';
+const BG_CARD = '#161617';
+const FG = '#E8E8E8';
+const FG_MUTED = 'rgba(232,232,232,0.45)';
+const BORDER = 'rgba(255,255,255,0.07)';
+const BORDER_ACTIVE = 'rgba(0,200,255,0.18)';
+const BG_INPUT = '#0D0D0E';
 
 export interface DateRange {
   from: string;
@@ -96,8 +96,8 @@ export function DateRangePicker({ value, onChange }: Props) {
                 padding: '5px 11px', borderRadius: '7px', cursor: 'pointer',
                 fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
                 border: active ? `1px solid ${BORDER_ACTIVE}` : `1px solid ${BORDER}`,
-                background: active ? `rgba(0,255,178,0.12)` : 'rgba(0,255,178,0.03)',
-                color: active ? NEON : FG_MUTED,
+                background: active ? `rgba(0,200,255,0.12)` : 'rgba(0,200,255,0.03)',
+                color: active ? ACCENT : FG_MUTED,
                 transition: 'all 0.15s',
               }}
             >
@@ -112,8 +112,8 @@ export function DateRangePicker({ value, onChange }: Props) {
             padding: '5px 11px', borderRadius: '7px', cursor: 'pointer',
             fontSize: '12px', fontWeight: 600, fontFamily: 'inherit',
             border: customOpen ? `1px solid ${BORDER_ACTIVE}` : `1px solid ${BORDER}`,
-            background: customOpen ? 'rgba(0,255,178,0.12)' : 'rgba(0,255,178,0.03)',
-            color: customOpen ? NEON : FG_MUTED,
+            background: customOpen ? 'rgba(0,200,255,0.12)' : 'rgba(0,200,255,0.03)',
+            color: customOpen ? ACCENT : FG_MUTED,
             transition: 'all 0.15s',
           }}
         >
@@ -130,10 +130,10 @@ export function DateRangePicker({ value, onChange }: Props) {
           borderRadius: '12px',
           padding: '16px',
           display: 'flex', gap: '12px', alignItems: 'flex-end',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,255,178,0.08)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)',
         }}>
           <div>
-            <p style={{ fontSize: '10px', color: NEON, marginBottom: '4px', letterSpacing: '0.08em', fontWeight: 700 }}>DE</p>
+            <p style={{ fontSize: '10px', color: ACCENT, marginBottom: '4px', letterSpacing: '0.08em', fontWeight: 700 }}>DE</p>
             <input
               type="date"
               value={draft.from}
@@ -143,7 +143,7 @@ export function DateRangePicker({ value, onChange }: Props) {
             />
           </div>
           <div>
-            <p style={{ fontSize: '10px', color: NEON, marginBottom: '4px', letterSpacing: '0.08em', fontWeight: 700 }}>ATÉ</p>
+            <p style={{ fontSize: '10px', color: ACCENT, marginBottom: '4px', letterSpacing: '0.08em', fontWeight: 700 }}>ATÉ</p>
             <input
               type="date"
               value={draft.to}
@@ -157,7 +157,7 @@ export function DateRangePicker({ value, onChange }: Props) {
             onClick={applyCustom}
             style={{
               padding: '7px 16px', borderRadius: '8px', border: 'none',
-              background: NEON, color: '#000', fontSize: '12px', fontWeight: 700,
+              background: ACCENT, color: '#000', fontSize: '12px', fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
