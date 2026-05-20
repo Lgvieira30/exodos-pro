@@ -30,7 +30,6 @@ const BG_CARD = BG_SURFACE;
 const BG_SUBTLE = BG_ELEVATED;
 const BORDER_ACTIVE = BORDER_MED;
 const RED = S_RED;
-const AMBER = S_YELLOW;
 const SHADOW = 'none';
 const PRIORITY_COLOR: Record<string, string> = { alta: S_RED, media: S_YELLOW, baixa: S_GREEN };
 const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google: 'Google Ads', linkedin: 'LinkedIn' };
@@ -570,7 +569,7 @@ export default function Professor() {
           </div>
 
           {aiError && (
-            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', marginBottom: '16px' }}>
+            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', marginBottom: '16px' }}>
               <p style={{ fontSize: '13px', color: RED, fontWeight: 600 }}>{aiError}</p>
               {aiError.includes('ANTHROPIC_API_KEY') && (
                 <p style={{ fontSize: '12px', color: FG_MUTED, marginTop: '6px' }}>
@@ -623,7 +622,7 @@ export default function Professor() {
 
               {/* Alerta crítico */}
               {aiData.analysis.alerta_critico && (
-                <div style={{ background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', borderRadius: '14px', padding: '16px 20px', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', borderRadius: '14px', padding: '16px 20px', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                   <AlertTriangle size={18} color={RED} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: RED, marginBottom: '4px' }}>ALERTA CRÍTICO</p>
@@ -647,7 +646,7 @@ export default function Professor() {
                 )}
                 {/* O que precisa melhorar */}
                 {aiData.analysis.o_que_nao_esta_funcionando?.length > 0 && (
-                  <div style={{ background: BG_CARD, border: '1px solid rgba(255,59,92,0.2)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
+                  <div style={{ background: BG_CARD, border: '1px solid rgba(248,113,113,0.15)', borderRadius: '14px', padding: '20px', boxShadow: SHADOW }}>
                     <p style={{ fontSize: '12px', fontWeight: 700, color: RED, marginBottom: '12px' }}>✗ O QUE PRECISA MELHORAR</p>
                     {aiData.analysis.o_que_nao_esta_funcionando.map((item: string, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
@@ -1171,7 +1170,7 @@ export default function Professor() {
           )}
 
           {!deepLoading && deepError && (
-            <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', marginBottom: '16px' }}>
+            <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', marginBottom: '16px' }}>
               <p style={{ fontSize: '13px', fontWeight: 700, color: '#F87171', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AlertTriangle size={14} /> Erro ao carregar análise
               </p>
@@ -1476,7 +1475,7 @@ export default function Professor() {
 
               {/* ALERTA CRÍTICO */}
               {aiData.analysis.alerta_critico && (
-                <div style={{ background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.25)', borderRadius: '14px', padding: '18px 22px', marginBottom: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', borderRadius: '14px', padding: '18px 22px', marginBottom: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '22px', flexShrink: 0 }}>🚨</span>
                   <div>
                     <p style={{ fontSize: '13px', fontWeight: 800, color: '#F87171', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Atenção Imediata Necessária</p>
@@ -1501,7 +1500,7 @@ export default function Professor() {
                   </div>
                 )}
                 {aiData.analysis.o_que_nao_esta_funcionando?.length > 0 && (
-                  <div style={{ background: 'rgba(255,59,92,0.06)', border: '1px solid rgba(255,59,92,0.2)', borderRadius: '16px', padding: '22px' }}>
+                  <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', borderRadius: '16px', padding: '22px' }}>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#F87171', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       🔧 O QUE PRECISA MELHORAR
                     </p>
