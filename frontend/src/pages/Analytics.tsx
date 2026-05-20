@@ -11,11 +11,10 @@ import { DateRangePicker, DateRange, defaultRange } from '../components/DateRang
 const BG = '#090909';
 const BG_CARD = '#0E0F12';
 const BG_SUBTLE = '#13141A';
-const S_GREEN = '#4ADE80';
+const S_BLUE = '#3DB8E8';
 const S_YELLOW = '#FACC15';
 const S_RED = '#F87171';
-const S_BLUE = '#60A5FA';
-const NEON = S_GREEN;
+const NEON = S_BLUE;
 const BLUE = S_BLUE;
 const RED = S_RED;
 const AMBER = S_YELLOW;
@@ -43,7 +42,7 @@ interface CampaignRow {
 }
 
 const STATUS_DOT: Record<string, { label: string; color: string }> = {
-  active:    { label: 'Ativa',     color: S_GREEN  },
+  active:    { label: 'Ativa',     color: S_BLUE  },
   paused:    { label: 'Pausada',   color: S_YELLOW },
   draft:     { label: 'Rascunho',  color: FG_MUTED },
   completed: { label: 'Concluída', color: S_BLUE   },

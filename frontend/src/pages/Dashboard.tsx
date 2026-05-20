@@ -22,12 +22,11 @@ const FG_MUTED = 'rgba(240,240,240,0.4)';
 const FG_SUBTLE = 'rgba(240,240,240,0.18)';
 const BORDER = 'rgba(255,255,255,0.04)';
 const BORDER_MED = 'rgba(255,255,255,0.08)';
-const S_GREEN = '#4ADE80';
+const S_BLUE = '#3DB8E8';
 const S_YELLOW = '#FACC15';
 const S_RED = '#F87171';
-const S_BLUE = '#60A5FA';
 // backward-compat aliases
-const NEON = S_GREEN;
+const NEON = S_BLUE;
 const BLUE = S_BLUE;
 const RED = S_RED;
 const AMBER = S_YELLOW;
@@ -91,16 +90,16 @@ function healthDot(cpa: number, ctr: number) {
 const PRIORITY: Record<string, { label: string; color: string; bg: string }> = {
   alta:  { label: 'URGENTE', color: S_RED,    bg: 'transparent' },
   media: { label: 'ALTA',    color: S_YELLOW, bg: 'transparent' },
-  baixa: { label: 'MÉDIA',   color: S_GREEN,  bg: 'transparent' },
+  baixa: { label: 'MÉDIA',   color: S_BLUE,  bg: 'transparent' },
 };
 const VERDICT: Record<string, { label: string; color: string; bg: string }> = {
-  reativar:             { label: 'Reativar',           color: S_GREEN,  bg: 'transparent' },
+  reativar:             { label: 'Reativar',           color: S_BLUE,  bg: 'transparent' },
   reativar_com_cautela: { label: 'Revisar e Reativar', color: S_YELLOW, bg: 'transparent' },
   manter_pausada:       { label: 'Manter Pausada',     color: S_RED,    bg: 'transparent' },
 };
 const PLATFORM: Record<string, string> = { meta: 'Meta', google: 'Google', linkedin: 'LinkedIn' };
 const STATUS_CHIP: Record<string, { label: string; color: string }> = {
-  active:    { label: 'Ativa',      color: S_GREEN },
+  active:    { label: 'Ativa',      color: S_BLUE },
   paused:    { label: 'Pausada',    color: S_YELLOW },
   draft:     { label: 'Rascunho',   color: FG_MUTED },
   completed: { label: 'Concluída',  color: S_BLUE },
@@ -264,7 +263,7 @@ export default function Dashboard() {
       )}
       {lastSync.status === 'success' && lastSync.at && (
         <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', background: BG_SURFACE, border: `1px solid ${BORDER}` }}>
-          <CheckCircle size={12} color={S_GREEN} />
+          <CheckCircle size={12} color={S_BLUE} />
           <span style={{ fontSize: '11px', color: FG_MUTED }}>
             Sincronizado em <strong style={{ color: FG }}>{new Date(lastSync.at).toLocaleString('pt-BR')}</strong>
           </span>
@@ -328,7 +327,7 @@ export default function Dashboard() {
                   <Area
                     type="monotone"
                     dataKey={chartMetric}
-                    stroke={chartMetric === 'leads' ? S_GREEN : S_BLUE}
+                    stroke={chartMetric === 'leads' ? S_BLUE : S_BLUE}
                     strokeWidth={2}
                     fill="url(#grad)"
                     dot={false}
@@ -578,7 +577,7 @@ export default function Dashboard() {
           )}
           {analysis && analysis.issues.length === 0 && (
             <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
-              <CheckCircle size={22} color={S_GREEN} style={{ margin: '0 auto 6px' }} />
+              <CheckCircle size={22} color={S_BLUE} style={{ margin: '0 auto 6px' }} />
               <p style={{ fontSize: '12px', fontWeight: 600, color: FG, marginBottom: '3px' }}>Tudo saudável</p>
               <p style={{ fontSize: '11px', color: FG_MUTED }}>Métricas dentro do esperado para B2B.</p>
             </div>

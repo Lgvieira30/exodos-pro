@@ -10,7 +10,7 @@ const FG_MUTED = 'rgba(240,240,240,0.4)';
 const FG_SUBTLE = 'rgba(240,240,240,0.18)';
 const BORDER = 'rgba(255,255,255,0.04)';
 const BORDER_MED = 'rgba(255,255,255,0.08)';
-const S_GREEN = '#4ADE80';
+const S_BLUE = '#3DB8E8';
 const S_RED = '#F87171';
 
 interface Integration {
@@ -175,7 +175,7 @@ export default function Settings() {
 
       {msg && (
         <div style={{ marginBottom: '16px', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px', color: FG, background: BG_SURFACE, border: `1px solid ${BORDER_MED}` }}>
-          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: msg.ok ? S_GREEN : S_RED, flexShrink: 0 }} />
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: msg.ok ? S_BLUE : S_RED, flexShrink: 0 }} />
           {msg.text}
         </div>
       )}
@@ -192,7 +192,7 @@ export default function Settings() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                 {metaAccounts.length > 0 ? (
                   <>
-                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_GREEN }} />
+                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_BLUE }} />
                     <p style={{ fontSize: '11px', color: FG_MUTED }}>{metaAccounts.length} conta(s) conectada(s)</p>
                   </>
                 ) : (
@@ -226,7 +226,7 @@ export default function Settings() {
                     </p>
                     {account.is_active && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_GREEN }} />
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_BLUE }} />
                         <span style={{ fontSize: '10px', fontWeight: 700, color: FG_MUTED }}>ATIVA</span>
                       </div>
                     )}
@@ -320,7 +320,7 @@ export default function Settings() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                 {googleAccounts.length > 0 ? (
                   <>
-                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_GREEN }} />
+                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_BLUE }} />
                     <p style={{ fontSize: '11px', color: FG_MUTED }}>{googleAccounts.length} conta(s) conectada(s)</p>
                   </>
                 ) : (
@@ -348,7 +348,7 @@ export default function Settings() {
                     </p>
                     {account.is_active && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_GREEN }} />
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: S_BLUE }} />
                         <span style={{ fontSize: '10px', fontWeight: 700, color: FG_MUTED }}>ATIVA</span>
                       </div>
                     )}

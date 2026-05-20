@@ -19,19 +19,18 @@ const FG_MUTED = 'rgba(240,240,240,0.4)';
 const FG_SUBTLE = 'rgba(240,240,240,0.18)';
 const BORDER = 'rgba(255,255,255,0.04)';
 const BORDER_MED = 'rgba(255,255,255,0.08)';
-const S_GREEN = '#4ADE80';
+const S_BLUE = '#3DB8E8';
 const S_YELLOW = '#FACC15';
 const S_RED = '#F87171';
-const S_BLUE = '#60A5FA';
 
 // Aliases for readability throughout the file
-const GREEN = S_GREEN;
+const GREEN = S_BLUE;
 const BG_CARD = BG_SURFACE;
 const BG_SUBTLE = BG_ELEVATED;
 const BORDER_ACTIVE = BORDER_MED;
 const RED = S_RED;
 const SHADOW = 'none';
-const PRIORITY_COLOR: Record<string, string> = { alta: S_RED, media: S_YELLOW, baixa: S_GREEN };
+const PRIORITY_COLOR: Record<string, string> = { alta: S_RED, media: S_YELLOW, baixa: S_BLUE };
 const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google: 'Google Ads', linkedin: 'LinkedIn' };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -87,14 +86,14 @@ function getStatus(key: string, value: number): 'excellent' | 'good' | 'warning'
 }
 
 const STATUS_CONFIG = {
-  excellent: { color: '#4ADE80', bg: 'rgba(74,222,128,0.06)',  border: 'rgba(74,222,128,0.15)',  label: 'Excelente', icon: CheckCircle },
+  excellent: { color: '#3DB8E8', bg: 'rgba(61,184,232,0.06)',  border: 'rgba(61,184,232,0.15)',  label: 'Excelente', icon: CheckCircle },
   good:      { color: '#60A5FA', bg: 'rgba(96,165,250,0.06)',  border: 'rgba(96,165,250,0.15)',  label: 'Bom',       icon: TrendingUp },
   warning:   { color: '#FACC15', bg: 'rgba(250,204,21,0.06)',  border: 'rgba(250,204,21,0.15)',  label: 'Atenção',   icon: AlertTriangle },
   critical:  { color: '#F87171', bg: 'rgba(248,113,113,0.06)', border: 'rgba(248,113,113,0.15)', label: 'Crítico',   icon: TrendingDown },
 };
 
 const VERDICT_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  reativar:             { label: 'Reativar',           color: '#4ADE80', bg: 'rgba(74,222,128,0.06)',  border: 'rgba(74,222,128,0.15)' },
+  reativar:             { label: 'Reativar',           color: '#3DB8E8', bg: 'rgba(61,184,232,0.06)',  border: 'rgba(61,184,232,0.15)' },
   reativar_com_cautela: { label: 'Revisar e Reativar', color: '#FACC15', bg: 'rgba(250,204,21,0.06)',  border: 'rgba(250,204,21,0.15)' },
   manter_pausada:       { label: 'Manter Pausada',     color: '#F87171', bg: 'rgba(248,113,113,0.06)', border: 'rgba(248,113,113,0.15)' },
 };
@@ -103,7 +102,7 @@ const VERDICT_CONFIG: Record<string, { label: string; color: string; bg: string;
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
-  const color = score >= 75 ? '#4ADE80' : score >= 50 ? '#FACC15' : '#F87171';
+  const color = score >= 75 ? '#3DB8E8' : score >= 50 ? '#FACC15' : '#F87171';
   const label = score >= 75 ? 'Excelente' : score >= 50 ? 'Atenção' : 'Crítico';
   const r = size * 0.4;
   const c = 2 * Math.PI * r;
@@ -129,8 +128,8 @@ function HealthGauge({ score, size = 130 }: { score: number; size?: number }) {
 function TrendBadge({ value, inverted = false }: { value: number | null | undefined; inverted?: boolean }) {
   if (value === null || value === undefined) return <span style={{ fontSize: '10px', color: FG_SUBTLE }}>—</span>;
   const isGood = inverted ? value <= 0 : value >= 0;
-  const color = isGood ? '#4ADE80' : '#F87171';
-  const bg = isGood ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)';
+  const color = isGood ? '#3DB8E8' : '#F87171';
+  const bg = isGood ? 'rgba(61,184,232,0.1)' : 'rgba(248,113,113,0.1)';
   const Arrow = value > 0 ? ArrowUpRight : value < 0 ? ArrowDownRight : Minus;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color, background: bg, padding: '2px 7px', borderRadius: '20px' }}>
@@ -250,7 +249,7 @@ function ActionCard({ action, rank }: { action: any; rank: number }) {
 }
 
 function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: number }) {
-  const scoreColor = c.score >= 75 ? S_GREEN : c.score >= 50 ? S_YELLOW : S_RED;
+  const scoreColor = c.score >= 75 ? S_BLUE : c.score >= 50 ? S_YELLOW : S_RED;
   const barWidth = maxSpend > 0 ? Math.max(4, (c.score / 100) * 100) : 4;
   return (
     <div style={{ padding: '12px 0', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -271,9 +270,9 @@ function CampaignScoreRow({ c, maxSpend }: { c: SummaryCampaign; maxSpend: numbe
       </div>
       <div style={{ flex: '0 0 auto', textAlign: 'right', minWidth: '70px' }}>
         <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '1px' }}>CPL</p>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_cpa > 150 ? S_RED : c.avg_cpa > 60 ? S_YELLOW : c.avg_cpa > 0 ? S_GREEN : FG_SUBTLE }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_cpa > 150 ? S_RED : c.avg_cpa > 60 ? S_YELLOW : c.avg_cpa > 0 ? S_BLUE : FG_SUBTLE }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
         <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '4px', marginBottom: '1px' }}>ROAS</p>
-        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? S_GREEN : c.avg_roas > 0 ? S_YELLOW : FG_SUBTLE }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
+        <p style={{ fontSize: '12px', fontWeight: 700, color: c.avg_roas >= 3 ? S_BLUE : c.avg_roas > 0 ? S_YELLOW : FG_SUBTLE }}>{c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—'}</p>
       </div>
     </div>
   );
@@ -535,7 +534,7 @@ export default function Professor() {
               ['campanha',      'Por Campanha'],
               ['pausadas',      pausedCampaigns.length > 0 ? `Pausadas (${pausedCampaigns.length})` : 'Pausadas'],
             ] as const).map(([t, lbl]) => (
-              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'apresentacao' ? 'rgba(189,0,255,0.1)' : 'rgba(74,222,128,0.08)') : 'transparent', color: tab === t ? (t === 'apresentacao' ? '#BD00FF' : GREEN) : FG_MUTED, boxShadow: 'none' }}>
+              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', background: tab === t ? (t === 'apresentacao' ? 'rgba(189,0,255,0.1)' : 'rgba(61,184,232,0.08)') : 'transparent', color: tab === t ? (t === 'apresentacao' ? '#BD00FF' : GREEN) : FG_MUTED, boxShadow: 'none' }}>
                 {lbl}
               </button>
             ))}
@@ -787,8 +786,8 @@ export default function Professor() {
               {/* Row 2: Metrics row 2 */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }} className="grid-resumo-kpis">
                 {[
-                  { label: 'Taxa de Cliques — CTR', abbr: 'De cada 100 que viram, quantas clicaram', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: summaryData.overview.avg_ctr >= 2.5 ? '✅ Excelente (≥ 2,5%)' : summaryData.overview.avg_ctr >= 1 ? '⚠️ Aceitável (≥ 1%)' : summaryData.overview.avg_ctr > 0 ? '❌ Baixo (< 1%)' : 'cliques ÷ impressões', color: summaryData.overview.avg_ctr >= 2.5 ? S_GREEN : summaryData.overview.avg_ctr >= 1 ? S_YELLOW : summaryData.overview.avg_ctr > 0 ? S_RED : FG_SUBTLE },
-                  { label: 'Custo por Clique — CPC', abbr: 'Quanto custa cada visita ao site', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: summaryData.overview.avg_cpc <= 5 ? '✅ Bom (≤ R$5)' : summaryData.overview.avg_cpc <= 15 ? '⚠️ Médio (≤ R$15)' : summaryData.overview.avg_cpc > 0 ? '❌ Caro (> R$15)' : 'gasto ÷ cliques', color: summaryData.overview.avg_cpc <= 5 ? S_GREEN : summaryData.overview.avg_cpc <= 15 ? S_YELLOW : summaryData.overview.avg_cpc > 0 ? S_RED : FG_SUBTLE },
+                  { label: 'Taxa de Cliques — CTR', abbr: 'De cada 100 que viram, quantas clicaram', value: summaryData.overview.avg_ctr > 0 ? `${summaryData.overview.avg_ctr.toFixed(2)}%` : '—', sub: summaryData.overview.avg_ctr >= 2.5 ? '✅ Excelente (≥ 2,5%)' : summaryData.overview.avg_ctr >= 1 ? '⚠️ Aceitável (≥ 1%)' : summaryData.overview.avg_ctr > 0 ? '❌ Baixo (< 1%)' : 'cliques ÷ impressões', color: summaryData.overview.avg_ctr >= 2.5 ? S_BLUE : summaryData.overview.avg_ctr >= 1 ? S_YELLOW : summaryData.overview.avg_ctr > 0 ? S_RED : FG_SUBTLE },
+                  { label: 'Custo por Clique — CPC', abbr: 'Quanto custa cada visita ao site', value: summaryData.overview.avg_cpc > 0 ? `R$ ${summaryData.overview.avg_cpc.toFixed(2)}` : '—', sub: summaryData.overview.avg_cpc <= 5 ? '✅ Bom (≤ R$5)' : summaryData.overview.avg_cpc <= 15 ? '⚠️ Médio (≤ R$15)' : summaryData.overview.avg_cpc > 0 ? '❌ Caro (> R$15)' : 'gasto ÷ cliques', color: summaryData.overview.avg_cpc <= 5 ? S_BLUE : summaryData.overview.avg_cpc <= 15 ? S_YELLOW : summaryData.overview.avg_cpc > 0 ? S_RED : FG_SUBTLE },
                   { label: 'Total de Cliques', abbr: 'Pessoas que clicaram no anúncio', value: summaryData.overview.total_clicks > 0 ? summaryData.overview.total_clicks.toLocaleString('pt-BR') : '—', sub: 'no período selecionado', color: S_BLUE },
                   { label: 'Impressões — Alcance', abbr: 'Vezes que o anúncio apareceu na tela', value: summaryData.overview.total_impressions > 1000 ? `${(summaryData.overview.total_impressions / 1000).toFixed(1)}k` : summaryData.overview.total_impressions.toLocaleString('pt-BR'), sub: 'total de exibições', color: FG_MUTED },
                 ].map((item) => (
@@ -1013,9 +1012,9 @@ export default function Professor() {
                   {[
                     { label: 'Gasto', value: `R$ ${deepData.summary.spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG_MUTED },
                     { label: 'Leads', value: deepData.summary.leads.toLocaleString('pt-BR'), color: S_BLUE },
-                    { label: 'CPA Médio', value: deepData.summary.cpa > 0 ? `R$ ${deepData.summary.cpa.toFixed(0)}` : '—', color: deepData.summary.cpa > 60 ? S_RED : S_GREEN },
-                    { label: 'ROAS', value: deepData.summary.roas > 0 ? `${deepData.summary.roas.toFixed(1)}x` : '—', color: deepData.summary.roas >= 3 ? S_GREEN : deepData.summary.roas >= 2 ? S_YELLOW : S_RED },
-                    { label: 'CTR Médio', value: deepData.summary.ctr > 0 ? `${deepData.summary.ctr.toFixed(2)}%` : '—', color: deepData.summary.ctr >= 1.5 ? S_GREEN : S_YELLOW },
+                    { label: 'CPA Médio', value: deepData.summary.cpa > 0 ? `R$ ${deepData.summary.cpa.toFixed(0)}` : '—', color: deepData.summary.cpa > 60 ? S_RED : S_BLUE },
+                    { label: 'ROAS', value: deepData.summary.roas > 0 ? `${deepData.summary.roas.toFixed(1)}x` : '—', color: deepData.summary.roas >= 3 ? S_BLUE : deepData.summary.roas >= 2 ? S_YELLOW : S_RED },
+                    { label: 'CTR Médio', value: deepData.summary.ctr > 0 ? `${deepData.summary.ctr.toFixed(2)}%` : '—', color: deepData.summary.ctr >= 1.5 ? S_BLUE : S_YELLOW },
                     { label: 'CPC Médio', value: deepData.summary.cpc > 0 ? `R$ ${deepData.summary.cpc.toFixed(2)}` : '—', color: FG },
                     { label: 'Cliques', value: deepData.summary.clicks.toLocaleString('pt-BR'), color: FG_MUTED },
                     { label: 'Impressões', value: deepData.summary.impressions > 1000 ? `${(deepData.summary.impressions / 1000).toFixed(1)}k` : deepData.summary.impressions.toLocaleString('pt-BR'), color: FG_SUBTLE },
@@ -1086,7 +1085,7 @@ export default function Professor() {
                             <tr key={as.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
                               <td style={{ padding: '12px 14px', color: FG, fontWeight: 500, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{as.name}</td>
                               <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: as.status === 'active' ? S_GREEN : S_YELLOW, margin: '0 auto' }} />
+                                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: as.status === 'active' ? S_BLUE : S_YELLOW, margin: '0 auto' }} />
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 600, color: FG }}>{as.score}</td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.ctr) > 0 ? FG : FG_SUBTLE, fontWeight: 500 }}>

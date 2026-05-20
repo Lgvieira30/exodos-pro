@@ -12,10 +12,9 @@ const FG_MUTED    = 'rgba(240,240,240,0.4)';
 const FG_SUBTLE   = 'rgba(240,240,240,0.18)';
 const BORDER      = 'rgba(255,255,255,0.04)';
 const BORDER_MED  = 'rgba(255,255,255,0.08)';
-const S_GREEN     = '#4ADE80';
+const S_BLUE     = '#3DB8E8';
 const S_YELLOW    = '#FACC15';
 const S_RED       = '#F87171';
-const S_BLUE      = '#60A5FA';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 interface Campaign {
@@ -79,7 +78,7 @@ function score(cpa: number, ctr: number, roas: number): number {
 }
 
 function action(sc: number, cpa: number, ctr: number): { label: string; dotColor: string; why: string } {
-  if (sc >= 75) return { label: 'Escalar',   dotColor: S_GREEN,  why: 'Métricas saudáveis — aumente o orçamento 20%.' };
+  if (sc >= 75) return { label: 'Escalar',   dotColor: S_BLUE,  why: 'Métricas saudáveis — aumente o orçamento 20%.' };
   if (sc >= 55) return { label: 'Monitorar', dotColor: S_BLUE,   why: 'Aguarde 3 dias antes de escalar.' };
   if (sc >= 35) return {
     label: 'Revisar', dotColor: S_YELLOW,
@@ -96,18 +95,18 @@ function action(sc: number, cpa: number, ctr: number): { label: string; dotColor
 }
 
 function statusDot(status: string): string {
-  if (status === 'active')  return S_GREEN;
+  if (status === 'active')  return S_BLUE;
   if (status === 'paused')  return S_YELLOW;
   if (status === 'deleted') return S_RED;
   return 'rgba(240,240,240,0.2)';
 }
 
 function cplColor(v: number): string {
-  return v <= 0 ? FG_SUBTLE : v <= 60 ? S_GREEN : v <= 150 ? S_YELLOW : S_RED;
+  return v <= 0 ? FG_SUBTLE : v <= 60 ? S_BLUE : v <= 150 ? S_YELLOW : S_RED;
 }
 
 function ctrColor(v: number): string {
-  return v <= 0 ? FG_SUBTLE : v >= 2.5 ? S_GREEN : v >= 1 ? S_YELLOW : S_RED;
+  return v <= 0 ? FG_SUBTLE : v >= 2.5 ? S_BLUE : v >= 1 ? S_YELLOW : S_RED;
 }
 
 // ─── KPI card ─────────────────────────────────────────────────────────────────
@@ -562,12 +561,12 @@ export default function Campaigns() {
           marginBottom: '20px',
           background: syncMsg.toLowerCase().includes('erro')
             ? 'rgba(248,113,113,0.05)'
-            : 'rgba(74,222,128,0.05)',
+            : 'rgba(61,184,232,0.05)',
           border: `1px solid ${syncMsg.toLowerCase().includes('erro')
             ? 'rgba(248,113,113,0.15)'
-            : 'rgba(74,222,128,0.15)'}`,
+            : 'rgba(61,184,232,0.15)'}`,
           fontSize: '12px',
-          color: syncMsg.toLowerCase().includes('erro') ? S_RED : S_GREEN,
+          color: syncMsg.toLowerCase().includes('erro') ? S_RED : S_BLUE,
         }}>
           {syncMsg}
         </div>
