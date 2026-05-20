@@ -873,198 +873,6 @@ export default function Professor() {
                 </div>
               </div>
 
-              {/* Row 5: Campanhas ativas — análise detalhada */}
-              {summaryData.campaigns.length > 0 && (
-                <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px', boxShadow: SHADOW }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Activity size={15} color={GREEN} />
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: FG }}>Campanhas Ativas — Análise Completa</p>
-                  </div>
-                  <p style={{ fontSize: '11px', color: FG_MUTED, marginBottom: '20px' }}>
-                    Cada campanha com saúde visual, métricas coloridas e diagnóstico em linguagem simples.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
-                    {summaryData.campaigns.map((c) => {
-                      const scoreColor = c.score >= 75 ? S_GREEN : c.score >= 50 ? S_YELLOW : S_RED;
-                      const scoreEmoji = c.score >= 75 ? '🟢' : c.score >= 50 ? '🟡' : '🔴';
-                      const cplColor = c.avg_cpa <= 0 ? FG_SUBTLE : c.avg_cpa <= 60 ? S_GREEN : c.avg_cpa <= 150 ? S_YELLOW : S_RED;
-                      const cplLabel = c.avg_cpa <= 0 ? '—' : c.avg_cpa <= 60 ? '✅ Ótimo' : c.avg_cpa <= 150 ? '⚠️ Aceitável' : '❌ Alto';
-                      const ctrColor = c.avg_ctr <= 0 ? FG_SUBTLE : c.avg_ctr >= 2.5 ? S_GREEN : c.avg_ctr >= 1 ? S_YELLOW : S_RED;
-                      const ctrLabel = c.avg_ctr <= 0 ? '—' : c.avg_ctr >= 2.5 ? '✅ Excelente' : c.avg_ctr >= 1 ? '⚠️ Aceitável' : '❌ Baixo';
-                      const diag = c.total_leads === 0 && c.total_spend > 0
-                        ? 'Investimento sem leads — verifique o pixel e a landing page.'
-                        : c.avg_cpa <= 60 && c.avg_ctr >= 1
-                          ? 'Campanha eficiente — boa candidata para aumentar o orçamento gradualmente.'
-                          : c.avg_cpa > 150
-                            ? 'CPL alto — revise a landing page e o criativo antes de investir mais.'
-                            : c.avg_ctr < 1 && c.avg_ctr > 0
-                              ? 'CTR baixo — o criativo não está chamando atenção. Teste nova imagem ou vídeo.'
-                              : c.total_leads < 3
-                                ? 'Volume pequeno — aguarde mais dados antes de tomar decisões.'
-                                : 'Métricas aceitáveis — monitore e teste variações de criativo.';
-                      return (
-                        <div key={c.id} style={{ background: BG_SUBTLE, border: `1px solid ${scoreColor}25`, borderRadius: '14px', padding: '16px' }}>
-                          {/* Header */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ fontSize: '13px', fontWeight: 700, color: FG, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '3px' }}>{c.name}</p>
-                              <p style={{ fontSize: '11px', color: FG_SUBTLE }}>{PLATFORM_LABEL[c.platform] || c.platform} · {c.status === 'active' ? '🟢 Ativa' : c.status === 'paused' ? '⏸ Pausada' : c.status}</p>
-                            </div>
-                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                              <p style={{ fontSize: '24px', fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{c.score}</p>
-                              <p style={{ fontSize: '9px', color: FG_SUBTLE, marginTop: '1px' }}>saúde</p>
-                            </div>
-                          </div>
-
-                          {/* Métricas principais */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                            <div style={{ padding: '10px', borderRadius: '10px', background: BG_CARD, border: `1px solid ${cplColor}20` }}>
-                              <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '3px' }}>Custo por Lead (CPL)</p>
-                              <p style={{ fontSize: '18px', fontWeight: 800, color: cplColor, lineHeight: 1 }}>{c.avg_cpa > 0 ? `R$ ${c.avg_cpa.toFixed(0)}` : '—'}</p>
-                              <p style={{ fontSize: '10px', color: cplColor, marginTop: '3px', fontWeight: 600 }}>{cplLabel}</p>
-                            </div>
-                            <div style={{ padding: '10px', borderRadius: '10px', background: BG_CARD, border: `1px solid ${ctrColor}20` }}>
-                              <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '3px' }}>Taxa de Cliques (CTR)</p>
-                              <p style={{ fontSize: '18px', fontWeight: 800, color: ctrColor, lineHeight: 1 }}>{c.avg_ctr > 0 ? `${c.avg_ctr.toFixed(2)}%` : '—'}</p>
-                              <p style={{ fontSize: '10px', color: ctrColor, marginTop: '3px', fontWeight: 600 }}>{ctrLabel}</p>
-                            </div>
-                          </div>
-
-                          {/* Métricas secundárias */}
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '10px' }}>
-                            {[
-                              { lbl: 'Investido', val: `R$ ${c.total_spend.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
-                              { lbl: 'Leads', val: String(c.total_leads), color: S_BLUE },
-                              { lbl: 'ROAS', val: c.avg_roas > 0 ? `${c.avg_roas.toFixed(1)}x` : '—', color: c.avg_roas >= 3 ? S_GREEN : c.avg_roas >= 2 ? S_YELLOW : S_RED },
-                            ].map(({ lbl, val, color }) => (
-                              <div key={lbl} style={{ textAlign: 'center', padding: '7px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${BORDER}` }}>
-                                <p style={{ fontSize: '10px', color: FG_SUBTLE, marginBottom: '2px' }}>{lbl}</p>
-                                <p style={{ fontSize: '13px', fontWeight: 700, color }}>{val}</p>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Diagnóstico */}
-                          <div style={{ padding: '8px 10px', borderRadius: '8px', background: BG_CARD, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${scoreColor}` }}>
-                            <p style={{ fontSize: '11px', color: FG_MUTED, lineHeight: 1.5 }}>{scoreEmoji} {diag}</p>
-                          </div>
-
-                          {/* Ação recomendada */}
-                          {c.top_action && (
-                            <div style={{ marginTop: '8px', padding: '8px 10px', borderRadius: '8px', background: `${PRIORITY_COLOR[c.top_action.priority] || FG_SUBTLE}08`, border: `1px solid ${PRIORITY_COLOR[c.top_action.priority] || FG_SUBTLE}20` }}>
-                              <p style={{ fontSize: '10px', fontWeight: 700, color: PRIORITY_COLOR[c.top_action.priority] || FG_SUBTLE, marginBottom: '3px' }}>{c.top_action.priority.toUpperCase()}</p>
-                              <p style={{ fontSize: '12px', color: FG, fontWeight: 600, marginBottom: '2px' }}>{c.top_action.acao}</p>
-                              <p style={{ fontSize: '11px', color: FG_MUTED }}>{c.top_action.motivo}</p>
-                            </div>
-                          )}
-
-                          {/* Expand button */}
-                          <button
-                            onClick={() => loadCampaignDeepForCard(c.id)}
-                            style={{ marginTop: '10px', width: '100%', padding: '8px', borderRadius: '8px', border: `1px solid ${BORDER}`, background: expandedCampaignId === c.id ? `${GREEN}10` : BG_CARD, color: expandedCampaignId === c.id ? GREEN : FG_MUTED, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                          >
-                            {loadingDeepId === c.id ? '⟳ Carregando...' : expandedCampaignId === c.id ? '▲ Ocultar conjuntos e anúncios' : '▼ Ver conjuntos e anúncios'}
-                          </button>
-
-                          {/* Expanded: ad sets + ads */}
-                          {expandedCampaignId === c.id && campaignDeepCache[c.id] && (() => {
-                            const deep = campaignDeepCache[c.id];
-                            return (
-                              <div style={{ marginTop: '12px', borderTop: `1px solid ${BORDER}`, paddingTop: '12px' }}>
-                                {/* Ad Sets */}
-                                {deep.adSets.length > 0 && (
-                                  <div style={{ marginBottom: '12px' }}>
-                                    <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, marginBottom: '8px', letterSpacing: '0.05em' }}>CONJUNTOS DE ANÚNCIOS ({deep.adSets.length})</p>
-                                    {deep.adSets.map((as) => {
-                                      const asColor = as.score >= 75 ? S_GREEN : as.score >= 50 ? S_YELLOW : S_RED;
-                                      const isActive = as.status === 'active';
-                                      const statusDot = as.status === 'active' ? '🟢' : as.status === 'paused' ? '⏸' : '⭕';
-                                      return (
-                                        <div key={as.id} style={{ padding: '10px 12px', borderRadius: '10px', background: BG_CARD, border: `1px solid ${asColor}20`, marginBottom: '6px' }}>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                              <p style={{ fontSize: '12px', fontWeight: 600, color: isActive ? FG : FG_MUTED, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {as.name}</p>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '8px' }}>
-                                              <span style={{ fontSize: '10px', fontWeight: 700, color: as.action.color, background: as.action.bg, padding: '2px 7px', borderRadius: '8px' }}>{as.action.label}</span>
-                                              <span style={{ fontSize: '13px', fontWeight: 800, color: asColor }}>{as.score}</span>
-                                            </div>
-                                          </div>
-                                          {isActive && (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
-                                              {[
-                                                { lbl: 'CPL', val: as.cpa > 0 ? `R$${as.cpa.toFixed(0)}` : '—', color: as.cpa <= 60 ? S_GREEN : as.cpa <= 150 ? S_YELLOW : S_RED },
-                                                { lbl: 'CTR', val: as.ctr > 0 ? `${as.ctr.toFixed(1)}%` : '—', color: as.ctr >= 2.5 ? S_GREEN : as.ctr >= 1 ? S_YELLOW : S_RED },
-                                                { lbl: 'Leads', val: String(as.leads), color: FG },
-                                                { lbl: 'Gasto', val: `R$${Number(as.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
-                                              ].map(({ lbl, val, color }) => (
-                                                <div key={lbl} style={{ textAlign: 'center', padding: '4px', borderRadius: '6px', background: BG_SUBTLE }}>
-                                                  <p style={{ fontSize: '9px', color: FG_SUBTLE, marginBottom: '1px' }}>{lbl}</p>
-                                                  <p style={{ fontSize: '12px', fontWeight: 700, color }}>{val}</p>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {/* Individual Ads */}
-                                {deep.ads && deep.ads.length > 0 && (
-                                  <div>
-                                    <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, marginBottom: '8px', letterSpacing: '0.05em' }}>ANÚNCIOS INDIVIDUAIS ({deep.ads.length})</p>
-                                    {deep.ads.map((ad) => {
-                                      const adColor = ad.score >= 75 ? S_GREEN : ad.score >= 50 ? S_YELLOW : S_RED;
-                                      const isActive = ad.status === 'active';
-                                      const statusDot = ad.status === 'active' ? '🟢' : ad.status === 'paused' ? '⏸' : '⭕';
-                                      return (
-                                        <div key={ad.id} style={{ padding: '9px 12px', borderRadius: '9px', background: BG_CARD, border: `1px solid ${BORDER}`, marginBottom: '5px' }}>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                              <p style={{ fontSize: '11px', fontWeight: 600, color: isActive ? FG : FG_SUBTLE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{statusDot} {ad.name}</p>
-                                              <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '1px' }}>Conjunto: {ad.ad_set_name}</p>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                                              <span style={{ fontSize: '10px', fontWeight: 700, color: ad.action.color, background: ad.action.bg, padding: '1px 6px', borderRadius: '6px' }}>{ad.action.label}</span>
-                                              <span style={{ fontSize: '12px', fontWeight: 800, color: adColor }}>{ad.score}</span>
-                                            </div>
-                                          </div>
-                                          {isActive && (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginTop: '6px' }}>
-                                              {[
-                                                { lbl: 'CPL', val: ad.cpa > 0 ? `R$${Number(ad.cpa).toFixed(0)}` : '—', color: Number(ad.cpa) <= 60 ? S_GREEN : Number(ad.cpa) <= 150 ? S_YELLOW : S_RED },
-                                                { lbl: 'CTR', val: ad.ctr > 0 ? `${Number(ad.ctr).toFixed(1)}%` : '—', color: Number(ad.ctr) >= 2.5 ? S_GREEN : Number(ad.ctr) >= 1 ? S_YELLOW : S_RED },
-                                                { lbl: 'CPC', val: ad.cpc > 0 ? `R$${Number(ad.cpc).toFixed(2)}` : '—', color: FG_MUTED },
-                                                { lbl: 'Leads', val: String(ad.leads), color: S_BLUE },
-                                                { lbl: 'Gasto', val: `R$${Number(ad.spend).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`, color: FG },
-                                              ].map(({ lbl, val, color }) => (
-                                                <div key={lbl} style={{ textAlign: 'center', padding: '3px', borderRadius: '5px', background: BG_SUBTLE }}>
-                                                  <p style={{ fontSize: '8px', color: FG_SUBTLE, marginBottom: '1px' }}>{lbl}</p>
-                                                  <p style={{ fontSize: '11px', fontWeight: 700, color }}>{val}</p>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {deep.adSets.length === 0 && (!deep.ads || deep.ads.length === 0) && (
-                                  <p style={{ fontSize: '12px', color: FG_SUBTLE, textAlign: 'center', padding: '12px' }}>Nenhum conjunto/anúncio sincronizado ainda.</p>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
             </div>
           )}
@@ -1274,31 +1082,30 @@ export default function Professor() {
                       </thead>
                       <tbody>
                         {deepData.adSets.map((as) => {
-                          const scoreColor = as.score >= 75 ? S_GREEN : as.score >= 55 ? S_BLUE : as.score >= 35 ? S_YELLOW : S_RED;
                           return (
                             <tr key={as.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
                               <td style={{ padding: '12px 14px', color: FG, fontWeight: 500, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{as.name}</td>
                               <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                                 <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: as.status === 'active' ? S_GREEN : S_YELLOW, margin: '0 auto' }} />
                               </td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 700, color: scoreColor }}>{as.score}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.ctr) >= 1.5 ? S_GREEN : Number(as.ctr) >= 1 ? S_YELLOW : Number(as.ctr) > 0 ? S_RED : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 600, color: FG }}>{as.score}</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.ctr) > 0 ? FG : FG_SUBTLE, fontWeight: 500 }}>
                                 {Number(as.ctr) > 0 ? `${Number(as.ctr).toFixed(1)}%` : '—'}
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', color: FG_MUTED }}>{Number(as.cpc) > 0 ? `R$${Number(as.cpc).toFixed(2)}` : '—'}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.cpa) > 60 ? S_RED : Number(as.cpa) > 0 ? S_GREEN : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.cpa) > 0 ? FG : FG_SUBTLE, fontWeight: 500 }}>
                                 {Number(as.cpa) > 0 ? `R$${Number(as.cpa).toFixed(0)}` : '—'}
                               </td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.roas) >= 3 ? '#60A5FA' : Number(as.roas) >= 2 ? '#FACC15' : Number(as.roas) > 0 ? '#F87171' : FG_SUBTLE, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: Number(as.roas) > 0 ? FG : FG_SUBTLE, fontWeight: 500 }}>
                                 {Number(as.roas) > 0 ? `${Number(as.roas).toFixed(1)}x` : '—'}
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center', color: FG_MUTED }}>{as.leads}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center', color: FG, fontWeight: 600 }}>
+                              <td style={{ padding: '12px 14px', textAlign: 'center', color: FG, fontWeight: 500 }}>
                                 {Number(as.spend) > 0 ? `R$${Number(as.spend).toFixed(0)}` : '—'}
                               </td>
                               <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                                 <div>
-                                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', color: as.action.color, background: as.action.bg, whiteSpace: 'nowrap' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '6px', color: FG_MUTED, background: 'rgba(255,255,255,0.05)', border: `1px solid ${BORDER_MED}`, whiteSpace: 'nowrap' }}>
                                     {as.action.label}
                                   </span>
                                   <p style={{ fontSize: '10px', color: FG_SUBTLE, marginTop: '3px', maxWidth: '160px', lineHeight: '1.4' }}>{as.action.detail}</p>
