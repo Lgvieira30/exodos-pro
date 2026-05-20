@@ -178,14 +178,14 @@ function AdSetRow({ adSet }: { adSet: AdSet }) {
 
       {/* CPL */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        <span style={{ fontSize: '12px', fontWeight: 500, color: cpa > 0 ? cplColor(cpa) : FG_SUBTLE }}>
+        <span style={{ fontSize: '12px', fontWeight: 500, color: cpa > 0 ? FG : FG_SUBTLE }}>
           {cpa > 0 ? `R$ ${cpa.toFixed(2)}` : '—'}
         </span>
       </div>
 
       {/* CTR */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        <span style={{ fontSize: '12px', color: ctr > 0 ? ctrColor(ctr) : FG_SUBTLE }}>
+        <span style={{ fontSize: '12px', color: ctr > 0 ? FG : FG_SUBTLE }}>
           {ctr > 0 ? `${ctr.toFixed(1)}%` : '—'}
         </span>
       </div>
@@ -307,14 +307,14 @@ function CampaignRow({ campaign, onAdSetsLoaded, defaultExpanded = true }: Campa
 
         {/* CPL */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-          <span style={{ fontSize: '13px', fontWeight: 500, color: avgCPL > 0 ? cplColor(avgCPL) : FG_SUBTLE }}>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: avgCPL > 0 ? FG : FG_SUBTLE }}>
             {avgCPL > 0 ? `R$ ${avgCPL.toFixed(2)}` : loading ? '…' : '—'}
           </span>
         </div>
 
         {/* CTR */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-          <span style={{ fontSize: '13px', color: avgCTR > 0 ? ctrColor(avgCTR) : FG_SUBTLE }}>
+          <span style={{ fontSize: '13px', color: avgCTR > 0 ? FG : FG_SUBTLE }}>
             {avgCTR > 0 ? `${avgCTR.toFixed(1)}%` : loading ? '…' : '—'}
           </span>
         </div>

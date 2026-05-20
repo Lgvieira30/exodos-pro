@@ -53,7 +53,7 @@ const PLATFORM_LABEL: Record<string, string> = {
   meta: 'Meta Ads', google: 'Google Ads', linkedin: 'LinkedIn',
 };
 
-function KpiCard({ label, value, icon: Icon, iconColor, sub, subColor }: any) {
+function KpiCard({ label, value, icon: Icon, sub }: any) {
   return (
     <div style={{
       background: BG_CARD,
@@ -72,10 +72,10 @@ function KpiCard({ label, value, icon: Icon, iconColor, sub, subColor }: any) {
         </div>
         {sub && (
           <span style={{
-            fontSize: '10px', fontWeight: 500,
-            color: subColor || FG_SUBTLE,
-            maxWidth: '130px', textAlign: 'right', lineHeight: 1.3,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            fontSize: '10px', fontWeight: 400,
+            color: FG_SUBTLE,
+            maxWidth: '140px', textAlign: 'right', lineHeight: 1.4,
+            overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {sub}
           </span>
@@ -186,95 +186,69 @@ export default function Analytics() {
       label: 'Investimento Total',
       value: `R$ ${(summary?.spend || 0).toLocaleString('pt-BR')}`,
       icon: DollarSign,
-      iconColor: BLUE,
       sub: 'Soma de todos os anúncios',
-      subColor: undefined,
     },
     {
       label: 'Leads Gerados',
       value: (summary?.leads || 0).toLocaleString('pt-BR'),
       icon: Users,
-      iconColor: S_GREEN,
       sub: 'Contatos qualificados',
-      subColor: undefined,
     },
     {
       label: 'Custo por Lead — CPL',
       value: summary?.cpa ? `R$ ${Number(summary.cpa).toFixed(2)}` : '—',
       icon: Target,
-      iconColor: AMBER,
       sub: summary?.cpa
-        ? (Number(summary.cpa) <= 60 ? '✅ Ótimo' : Number(summary.cpa) <= 150 ? '⚠️ Aceitável' : '❌ Alto')
+        ? (Number(summary.cpa) <= 60 ? 'Ótimo · abaixo de R$60' : Number(summary.cpa) <= 150 ? 'Aceitável · R$60–R$150' : 'Alto · acima de R$150')
         : 'Quanto você paga por lead',
-      subColor: summary?.cpa
-        ? (Number(summary.cpa) <= 60 ? NEON : Number(summary.cpa) <= 150 ? AMBER : RED)
-        : undefined,
     },
     {
       label: 'Retorno sobre Gasto — ROAS',
       value: summary?.roas ? `${Number(summary.roas).toFixed(1)}x` : '—',
       icon: Zap,
-      iconColor: S_BLUE,
       sub: summary?.roas
-        ? (Number(summary.roas) >= 3 ? '✅ Ótimo' : Number(summary.roas) >= 2 ? '⚠️ Aceitável' : '❌ Baixo')
+        ? (Number(summary.roas) >= 3 ? 'Ótimo · acima de 3x' : Number(summary.roas) >= 2 ? 'Aceitável · 2–3x' : 'Baixo · abaixo de 2x')
         : 'R$ de retorno por R$ gasto',
-      subColor: summary?.roas
-        ? (Number(summary.roas) >= 3 ? NEON : Number(summary.roas) >= 2 ? AMBER : RED)
-        : undefined,
     },
     {
       label: 'Taxa de Cliques — CTR',
       value: summary?.ctr ? `${Number(summary.ctr).toFixed(2)}%` : '—',
       icon: MousePointerClick,
-      iconColor: NEON,
       sub: summary?.ctr
-        ? (Number(summary.ctr) >= 2.5 ? '✅ Excelente' : Number(summary.ctr) >= 1 ? '⚠️ Aceitável' : '❌ Baixo')
+        ? (Number(summary.ctr) >= 2.5 ? 'Excelente · acima de 2,5%' : Number(summary.ctr) >= 1 ? 'Aceitável · 1–2,5%' : 'Baixo · abaixo de 1%')
         : '% de quem viu e clicou',
-      subColor: summary?.ctr
-        ? (Number(summary.ctr) >= 2.5 ? NEON : Number(summary.ctr) >= 1 ? AMBER : RED)
-        : undefined,
     },
     {
       label: 'Custo por Clique — CPC',
       value: summary?.cpc ? `R$ ${Number(summary.cpc).toFixed(2)}` : '—',
       icon: Eye,
-      iconColor: BLUE,
       sub: summary?.cpc
-        ? (Number(summary.cpc) <= 5 ? '✅ Bom' : Number(summary.cpc) <= 15 ? '⚠️ Médio' : '❌ Caro')
+        ? (Number(summary.cpc) <= 5 ? 'Bom · abaixo de R$5' : Number(summary.cpc) <= 15 ? 'Médio · R$5–R$15' : 'Caro · acima de R$15')
         : 'Preço de cada visita ao site',
-      subColor: summary?.cpc
-        ? (Number(summary.cpc) <= 5 ? NEON : Number(summary.cpc) <= 15 ? AMBER : RED)
-        : undefined,
     },
     {
       label: 'CPM — Custo por Mil Imp.',
       value: cpm > 0 ? `R$ ${cpm.toFixed(2)}` : '—',
       icon: Eye,
-      iconColor: S_BLUE,
       sub: cpm > 0
-        ? (cpm <= 15 ? '✅ Barato' : cpm <= 40 ? '⚠️ Médio' : '❌ Caro')
+        ? (cpm <= 15 ? 'Barato · abaixo de R$15' : cpm <= 40 ? 'Médio · R$15–R$40' : 'Caro · acima de R$40')
         : 'R$ por 1.000 exibições do anúncio',
-      subColor: cpm > 0 ? (cpm <= 15 ? NEON : cpm <= 40 ? AMBER : RED) : undefined,
     },
     {
       label: 'Taxa de Conversão — CTL',
       value: convRate > 0 ? `${convRate.toFixed(1)}%` : '—',
       icon: Target,
-      iconColor: NEON,
       sub: convRate > 0
-        ? (convRate >= 5 ? '✅ Excelente' : convRate >= 2 ? '⚠️ Aceitável' : '❌ Baixo')
+        ? (convRate >= 5 ? 'Excelente · acima de 5%' : convRate >= 2 ? 'Aceitável · 2–5%' : 'Baixo · abaixo de 2%')
         : '% dos cliques que viraram leads',
-      subColor: convRate > 0 ? (convRate >= 5 ? NEON : convRate >= 2 ? AMBER : RED) : undefined,
     },
     {
       label: 'Campanhas no Período',
       value: String(summary?.campaigns || campaigns.length || 0),
       icon: Zap,
-      iconColor: BLUE,
       sub: campaigns.filter((c) => c.status === 'active').length > 0
         ? `${campaigns.filter((c) => c.status === 'active').length} ativas · ${campaigns.filter((c) => c.status === 'paused').length} pausadas`
         : 'Total de campanhas analisadas',
-      subColor: undefined,
     },
   ];
 
@@ -464,13 +438,13 @@ export default function Analytics() {
                       <td style={{ padding: '12px 16px', textAlign: 'right', color: FG, fontWeight: 700 }}>
                         {Number(c.total_leads) > 0 ? Number(c.total_leads) : '—'}
                       </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: cpaColor, fontWeight: 600 }}>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: cpaVal > 0 ? FG : FG_SUBTLE, fontWeight: 600 }}>
                         {cpaVal > 0 ? `R$ ${cpaVal.toFixed(0)}` : '—'}
                       </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: roasColor, fontWeight: 600 }}>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: roasVal > 0 ? FG : FG_SUBTLE, fontWeight: 600 }}>
                         {roasVal > 0 ? `${roasVal.toFixed(1)}x` : '—'}
                       </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: ctrColor, fontWeight: 600 }}>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: ctrVal > 0 ? FG : FG_SUBTLE, fontWeight: 600 }}>
                         {ctrVal > 0 ? `${ctrVal.toFixed(2)}%` : '—'}
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right', color: FG_MUTED }}>
