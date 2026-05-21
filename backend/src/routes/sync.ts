@@ -424,6 +424,7 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
       WHERE id = ${integration.id}
     `.catch(() => {});
     const msg = err.response?.data?.error?.message || err.message || 'Erro ao sincronizar com Meta Ads';
+    console.error('[sync/meta] ERRO:', msg, '| status:', err.response?.status);
     res.status(500).json({ success: false, error: { message: msg } });
   }
 });
