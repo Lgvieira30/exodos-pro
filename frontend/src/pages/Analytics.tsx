@@ -256,7 +256,7 @@ export default function Analytics() {
 
       {/* Header */}
       <div style={{ marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div className="analytics-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '5px' }}>
               <h1 style={{ fontSize: '20px', fontWeight: 800, color: FG, letterSpacing: '-0.02em', margin: 0 }}>Analytics</h1>
@@ -466,6 +466,13 @@ export default function Analytics() {
         }
         @media (max-width: 600px) {
           .grid-kpis-analytics { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .grid-kpis-analytics { grid-template-columns: 1fr !important; }
+          .grid-charts { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 768px) {
+          .analytics-header { flex-direction: column !important; align-items: flex-start !important; }
         }
       `}</style>
     </div>

@@ -224,7 +224,18 @@ export default function Dashboard() {
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '28px 32px' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .row-hover:hover{background:rgba(255,255,255,0.03)!important}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .row-hover:hover{background:rgba(255,255,255,0.03)!important}
+        @media (max-width: 768px) {
+          .dash-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .dash-main-grid { grid-template-columns: 1fr !important; }
+          .dash-score-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 480px) {
+          .dash-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+      `}</style>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -279,7 +290,7 @@ export default function Dashboard() {
       )}
 
       {/* ── KPI Row ────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }}>
+      <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }}>
         <KpiCard label="Total Investido" value={sp > 0 ? `R$ ${sp.toLocaleString('pt-BR')}` : '--'} sub="no período" subColor={FG_SUBTLE} icon={DollarSign} iconColor={BLUE} />
         <KpiCard label="Leads Gerados" value={lds > 0 ? lds.toLocaleString('pt-BR') : '--'} sub={lds > 0 ? 'contatos' : 'sem dados'} subColor={lds > 0 ? NEON : FG_SUBTLE} icon={Users} iconColor={NEON} />
         <KpiCard label="Custo por Lead" abbr="CPL" value={cpl > 0 ? `R$ ${cpl.toFixed(0)}` : '--'} sub={cplStatus(cpl).label} subColor={cplStatus(cpl).color} icon={Target} iconColor={AMBER} />
@@ -288,7 +299,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Main Grid ──────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px', alignItems: 'start' }}>
+      <div className="dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px', alignItems: 'start' }}>
 
         {/* ── Left column ──────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -345,8 +356,9 @@ export default function Dashboard() {
 
           {/* Campaign table */}
           <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', overflow: 'hidden', boxShadow: 'none' }}>
+            <div style={{ overflowX: 'auto' }}>
             {/* Table header */}
-            <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, display: 'grid', gridTemplateColumns: '24px 1fr 70px 80px 70px 70px 70px', gap: '0 12px', alignItems: 'center' }}>
+            <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, display: 'grid', gridTemplateColumns: '24px 1fr 70px 80px 70px 70px 70px', gap: '0 12px', alignItems: 'center', minWidth: '560px' }}>
               <span />
               <span style={{ fontSize: '10px', fontWeight: 700, color: FG_SUBTLE, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Campanha</span>
               <span style={{ fontSize: '10px', fontWeight: 700, color: FG_SUBTLE, textAlign: 'right', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Gasto</span>
@@ -396,6 +408,8 @@ export default function Dashboard() {
               })
             )}
 
+            </div>{/* end overflowX wrapper */}
+
             {/* Paused campaigns toggle */}
             {pausedCampaigns.length > 0 && (
               <div>
@@ -441,7 +455,7 @@ export default function Dashboard() {
             return (
               <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px', boxShadow: 'none' }}>
                 <p style={{ fontSize: '11px', fontWeight: 700, color: FG_SUBTLE, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '14px' }}>Destaques do Período</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                <div className="dash-score-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   <div style={{ padding: '12px 14px', borderRadius: '12px', background: BG_SUBTLE, border: `1px solid ${BORDER}` }}>
                     <p style={{ fontSize: '10px', color: FG_MUTED, marginBottom: '6px', fontWeight: 600 }}>Gasto médio/dia</p>
                     <p style={{ fontSize: '18px', fontWeight: 800, color: FG }}>{avgDailySpend > 0 ? `R$${avgDailySpend.toFixed(0)}` : '—'}</p>

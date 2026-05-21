@@ -525,7 +525,7 @@ export default function Professor() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '16px' }}>
-          <div style={{ display: 'flex', gap: '4px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, padding: '4px', borderRadius: '10px', flexWrap: 'wrap' }}>
+          <div className="prof-tabs" style={{ display: 'flex', gap: '4px', background: BG_SUBTLE, border: `1px solid ${BORDER}`, padding: '4px', borderRadius: '10px', flexWrap: 'wrap' }}>
             {([
               ['ia',            '✦ Análise IA'],
               ['apresentacao',  '📊 Apresentação'],
@@ -1426,6 +1426,10 @@ export default function Professor() {
         }
         @media (max-width: 600px) {
           .grid-resumo-kpis { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 768px) {
+          .prof-tabs { flex-wrap: wrap !important; gap: 4px !important; }
+          .prof-tabs button { font-size: 11px !important; padding: 5px 10px !important; }
         }
         .no-print { display: flex; }
         @media print {

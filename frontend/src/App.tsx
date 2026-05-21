@@ -117,7 +117,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         className="sidebar-overlay"
         onClick={onClose}
         style={{
-          display: 'none',
+          display: open ? 'block' : 'none',
           position: 'fixed',
           inset: 0,
           background: 'rgba(0,0,0,0.6)',

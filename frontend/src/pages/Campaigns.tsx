@@ -419,12 +419,14 @@ function TableSection({ title, count, campaigns, onAdSetsLoaded, defaultExpanded
         </div>
       </div>
 
+      <div className="camp-table-scroll" style={{ overflowX: 'auto' }}>
       {/* Table header */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: COL_TEMPLATE,
         padding: '8px 20px',
         borderBottom: `1px solid ${BORDER}`,
+        minWidth: '560px',
       }}>
         {COL_HEADERS.map((h, i) => (
           <div key={h} style={{
@@ -436,6 +438,7 @@ function TableSection({ title, count, campaigns, onAdSetsLoaded, defaultExpanded
       </div>
 
       {/* Rows */}
+      <div style={{ minWidth: '560px' }}>
       {campaigns.map((c) => (
         <CampaignRow
           key={c.id}
@@ -444,6 +447,8 @@ function TableSection({ title, count, campaigns, onAdSetsLoaded, defaultExpanded
           defaultExpanded={defaultExpanded}
         />
       ))}
+      </div>
+      </div>{/* end camp-table-scroll */}
     </div>
   );
 }
@@ -573,7 +578,7 @@ export default function Campaigns() {
       )}
 
       {/* ── KPI strip ── */}
-      <div style={{
+      <div className="camp-kpi-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(6, 1fr)',
         gap: '10px',
@@ -673,6 +678,13 @@ export default function Campaigns() {
         }
         @media (max-width: 1100px) {
           .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+        @media (max-width: 768px) {
+          .camp-kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+          .camp-table-scroll { overflow-x: auto !important; }
+        }
+        @media (max-width: 480px) {
+          .camp-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </div>

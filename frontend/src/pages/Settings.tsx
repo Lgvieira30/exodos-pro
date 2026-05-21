@@ -162,7 +162,7 @@ export default function Settings() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, padding: '28px 32px', maxWidth: '680px' }}>
+    <div className="settings-wrap" style={{ minHeight: '100vh', background: BG, padding: '28px 32px', maxWidth: '680px' }}>
       <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: BG_ELEVATED, border: `1px solid ${BORDER_MED}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Settings2 size={18} color={FG_MUTED} />
@@ -450,7 +450,12 @@ export default function Settings() {
         </ol>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+          .settings-wrap { padding: 20px 16px !important; max-width: 100% !important; }
+        }
+      `}</style>
     </div>
   );
 }
