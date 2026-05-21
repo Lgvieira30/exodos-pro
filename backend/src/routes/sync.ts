@@ -477,7 +477,7 @@ syncRouter.post('/google', async (req: AuthRequest, res: Response) => {
     `;
 
     const gaRes = await axios.post(
-      `https://googleads.googleapis.com/v17/customers/${customerId}/googleAds:searchStream`,
+      `https://googleads.googleapis.com/v18/customers/${customerId}/googleAds:searchStream`,
       { query: GAQL },
       {
         headers: {
