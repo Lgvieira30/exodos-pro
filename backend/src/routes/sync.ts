@@ -581,15 +581,18 @@ syncRouter.post('/google', async (req: AuthRequest, res: Response) => {
       },
     });
   } catch (err: any) {
+    const googleErr =
+      err.response?.data?.[0]?.error?.details?.[0]?.errors?.[0]?.message ||
+      err.response?.data?.error_description ||
+      err.response?.data?.error?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      'Erro ao sincronizar com Google Ads';
+    console.error('[sync/google] ERRO:', googleErr, '| status:', err.response?.status, '| body:', JSON.stringify(err.response?.data));
     await sql`
       UPDATE user_integrations SET last_sync_at = NOW(), last_sync_status = 'error'
       WHERE id = ${integration.id}
     `.catch(() => {});
-    const msg =
-      err.response?.data?.[0]?.error?.details?.[0]?.errors?.[0]?.message ||
-      err.response?.data?.error?.message ||
-      err.message ||
-      'Erro ao sincronizar com Google Ads';
-    res.status(500).json({ success: false, error: { message: msg } });
+    res.status(500).json({ success: false, error: { message: String(googleErr) } });
   }
 });
