@@ -54,6 +54,7 @@ async function runMigrations() {
     await sql`ALTER TABLE user_integrations DROP CONSTRAINT IF EXISTS user_integrations_user_id_platform_key`;
     await sql`ALTER TABLE user_integrations ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT false`;
     await sql`ALTER TABLE user_integrations ADD COLUMN IF NOT EXISTS nickname TEXT`;
+    await sql`ALTER TABLE user_integrations ADD COLUMN IF NOT EXISTS developer_token TEXT`;
     await sql`UPDATE user_integrations SET is_active = true WHERE is_active = false AND id IN (SELECT DISTINCT ON (user_id, platform) id FROM user_integrations ORDER BY user_id, platform, created_at DESC)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_integrations_active ON user_integrations(user_id, platform) WHERE is_active = true`;
     await sql`CREATE TABLE IF NOT EXISTS ad_sets (

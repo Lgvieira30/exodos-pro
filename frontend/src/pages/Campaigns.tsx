@@ -457,8 +457,9 @@ function TableSection({ title, count, campaigns, onAdSetsLoaded, defaultExpanded
 export default function Campaigns() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading,   setLoading]   = useState(true);
-  const [syncing,   setSyncing]   = useState(false);
-  const [syncMsg,   setSyncMsg]   = useState('');
+  const [syncing,        setSyncing]        = useState(false);
+  const [syncingGoogle,  setSyncingGoogle]  = useState(false);
+  const [syncMsg,        setSyncMsg]        = useState('');
 
   // KPI accumulator – keyed by campaign id
   const adSetDataRef = useRef<Record<string, AdSet[]>>({});
@@ -501,6 +502,18 @@ export default function Campaigns() {
     setSyncing(false);
   }
 
+  async function handleSyncGoogle() {
+    setSyncingGoogle(true); setSyncMsg('');
+    try {
+      const res = await syncApi.google();
+      setSyncMsg(res.data?.message || res.message || 'Google Ads sincronizado!');
+      load();
+    } catch (e: any) {
+      setSyncMsg(e?.response?.data?.error?.message || 'Erro na sincronização Google Ads.');
+    }
+    setSyncingGoogle(false);
+  }
+
   const activeCampaigns = campaigns.filter((c) => c.status === 'active');
   const pausedCampaigns = campaigns.filter((c) => c.status === 'paused');
   const otherCampaigns  = campaigns.filter((c) => c.status !== 'active' && c.status !== 'paused');
@@ -538,24 +551,44 @@ export default function Campaigns() {
             Visão geral de todas as campanhas ativas.
           </p>
         </div>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '7px',
-            padding: '8px 16px', borderRadius: '8px',
-            border: `1px solid ${BORDER_MED}`,
-            background: syncing ? BG_ELEVATED : BG_SURFACE,
-            color: syncing ? FG_MUTED : FG,
-            fontSize: '13px', fontWeight: 500,
-            cursor: syncing ? 'wait' : 'pointer',
-            fontFamily: 'inherit',
-            transition: 'all 0.15s',
-          }}
-        >
-          <RefreshCw size={13} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
-          {syncing ? 'Sincronizando...' : 'Sincronizar Meta Ads'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '7px',
+              padding: '8px 16px', borderRadius: '8px',
+              border: `1px solid ${BORDER_MED}`,
+              background: syncing ? BG_ELEVATED : BG_SURFACE,
+              color: syncing ? FG_MUTED : FG,
+              fontSize: '13px', fontWeight: 500,
+              cursor: syncing ? 'wait' : 'pointer',
+              fontFamily: 'inherit',
+              transition: 'all 0.15s',
+            }}
+          >
+            <RefreshCw size={13} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
+            {syncing ? 'Sincronizando...' : 'Sincronizar Meta Ads'}
+          </button>
+          <button
+            onClick={handleSyncGoogle}
+            disabled={syncingGoogle}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '7px',
+              padding: '8px 16px', borderRadius: '8px',
+              border: `1px solid ${BORDER_MED}`,
+              background: syncingGoogle ? BG_ELEVATED : BG_SURFACE,
+              color: syncingGoogle ? FG_MUTED : FG,
+              fontSize: '13px', fontWeight: 500,
+              cursor: syncingGoogle ? 'wait' : 'pointer',
+              fontFamily: 'inherit',
+              transition: 'all 0.15s',
+            }}
+          >
+            <RefreshCw size={13} style={{ animation: syncingGoogle ? 'spin 1s linear infinite' : 'none' }} />
+            {syncingGoogle ? 'Sincronizando...' : 'Sincronizar Google Ads'}
+          </button>
+        </div>
       </div>
 
       {/* ── Sync message ── */}

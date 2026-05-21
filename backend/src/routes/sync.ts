@@ -427,3 +427,169 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, error: { message: msg } });
   }
 });
+
+syncRouter.post('/google', async (req: AuthRequest, res: Response) => {
+  const [integration] = await sql`
+    SELECT id, app_id, app_secret, access_token, account_id, developer_token
+    FROM user_integrations
+    WHERE user_id = ${req.userId!} AND platform = 'google' AND is_active = true
+  `;
+  if (!integration) {
+    res.status(400).json({ success: false, error: { message: 'Google Ads nao conectado. Configure em Configuracoes.' } });
+    return;
+  }
+
+  const { app_id: client_id, app_secret: client_secret, access_token: refresh_token, account_id, developer_token } = integration;
+
+  if (!developer_token) {
+    res.status(400).json({ success: false, error: { message: 'Developer token do Google Ads nao configurado. Reconecte a conta em Configuracoes.' } });
+    return;
+  }
+
+  try {
+    // Step 1: exchange refresh_token for access_token
+    const tokenRes = await axios.post('https://oauth2.googleapis.com/token', {
+      grant_type: 'refresh_token',
+      client_id,
+      client_secret,
+      refresh_token,
+    });
+    const accessToken: string = tokenRes.data.access_token;
+
+    // Step 2: query Google Ads API v17
+    const customerId = account_id.replace(/-/g, '');
+    const GAQL = `
+      SELECT
+        campaign.id,
+        campaign.name,
+        campaign.status,
+        metrics.cost_micros,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc,
+        metrics.all_conversions_value,
+        segments.date
+      FROM campaign
+      WHERE segments.date DURING LAST_30_DAYS
+        AND metrics.cost_micros > 0
+    `;
+
+    const gaRes = await axios.post(
+      `https://googleads.googleapis.com/v17/customers/${customerId}/googleAds:searchStream`,
+      { query: GAQL },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'developer-token': developer_token,
+          'login-customer-id': customerId,
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
+      }
+    );
+
+    // searchStream returns an array of batches, each with results[]
+    const batches: any[] = Array.isArray(gaRes.data) ? gaRes.data : [gaRes.data];
+    const rows: any[] = [];
+    for (const batch of batches) {
+      if (batch.results) rows.push(...batch.results);
+    }
+
+    const campaignIdMap: Record<string, string> = {};
+    const seenCampaigns = new Set<string>();
+
+    // Pass 1: upsert campaigns
+    for (const row of rows) {
+      const googleCampaignId = String(row.campaign?.id || '');
+      if (!googleCampaignId || seenCampaigns.has(googleCampaignId)) continue;
+      seenCampaigns.add(googleCampaignId);
+
+      const campaignName: string = row.campaign?.name || `Google Campaign ${googleCampaignId}`;
+      const status: string = (row.campaign?.status || 'ENABLED').toLowerCase() === 'enabled' ? 'active' : 'paused';
+
+      const [existing] = await sql`
+        SELECT id FROM campaigns WHERE user_id = ${req.userId!} AND meta_id = ${googleCampaignId}
+      `;
+
+      let campaignDbId: string;
+      if (existing) {
+        campaignDbId = existing.id;
+        await sql`UPDATE campaigns SET status = ${status}, updated_at = NOW() WHERE id = ${campaignDbId}`;
+      } else {
+        const [byName] = await sql`
+          SELECT id FROM campaigns WHERE user_id = ${req.userId!} AND name = ${campaignName} AND platform = 'google'
+        `;
+        if (byName) {
+          campaignDbId = byName.id;
+          await sql`UPDATE campaigns SET meta_id = ${googleCampaignId}, status = ${status}, updated_at = NOW() WHERE id = ${campaignDbId}`;
+        } else {
+          const [created] = await sql`
+            INSERT INTO campaigns (user_id, name, platform, objective, status, budget, meta_id)
+            VALUES (${req.userId!}, ${campaignName}, 'google', 'leads', ${status}, 0, ${googleCampaignId})
+            RETURNING id
+          `;
+          campaignDbId = created.id;
+        }
+      }
+      campaignIdMap[googleCampaignId] = campaignDbId;
+    }
+
+    // Pass 2: save daily metrics
+    let syncedMetrics = 0;
+    for (const row of rows) {
+      const googleCampaignId = String(row.campaign?.id || '');
+      const campaignDbId = campaignIdMap[googleCampaignId];
+      if (!campaignDbId) continue;
+
+      const date: string = row.segments?.date || '';
+      if (!date) continue;
+
+      const spend = (Number(row.metrics?.costMicros || 0)) / 1_000_000;
+      const impressions = Number(row.metrics?.impressions || 0);
+      const clicks = Number(row.metrics?.clicks || 0);
+      const conversions = Number(row.metrics?.conversions || 0);
+      const ctr = Number(row.metrics?.ctr || 0);
+      const cpc = (Number(row.metrics?.averageCpc || 0)) / 1_000_000;
+      const revenue = Number(row.metrics?.allConversionsValue || 0);
+      const cpa = conversions > 0 ? spend / conversions : 0;
+      const roas = spend > 0 && revenue > 0 ? revenue / spend : 0;
+
+      await sql`
+        INSERT INTO metrics (campaign_id, date, spend, leads, conversions, impressions, clicks, cpc, cpa, ctr, roas)
+        VALUES (${campaignDbId}, ${date}, ${spend}, ${conversions}, ${conversions}, ${impressions}, ${clicks}, ${cpc}, ${cpa}, ${ctr}, ${roas})
+        ON CONFLICT (campaign_id, date) DO UPDATE SET
+          spend = EXCLUDED.spend, leads = EXCLUDED.leads, conversions = EXCLUDED.conversions,
+          impressions = EXCLUDED.impressions, clicks = EXCLUDED.clicks,
+          cpc = EXCLUDED.cpc, cpa = EXCLUDED.cpa, ctr = EXCLUDED.ctr, roas = EXCLUDED.roas
+      `;
+      syncedMetrics++;
+    }
+
+    await sql`
+      UPDATE user_integrations SET last_sync_at = NOW(), last_sync_status = 'success'
+      WHERE id = ${integration.id}
+    `;
+
+    res.json({
+      success: true,
+      data: {
+        synced: seenCampaigns.size,
+        daily_metrics: syncedMetrics,
+        message: `${seenCampaigns.size} campanha(s) Google Ads — ${syncedMetrics} registros diarios sincronizados.`,
+      },
+    });
+  } catch (err: any) {
+    await sql`
+      UPDATE user_integrations SET last_sync_at = NOW(), last_sync_status = 'error'
+      WHERE id = ${integration.id}
+    `.catch(() => {});
+    const msg =
+      err.response?.data?.[0]?.error?.details?.[0]?.errors?.[0]?.message ||
+      err.response?.data?.error?.message ||
+      err.message ||
+      'Erro ao sincronizar com Google Ads';
+    res.status(500).json({ success: false, error: { message: msg } });
+  }
+});
