@@ -20,7 +20,7 @@ integrationsRouter.get('/', async (req: AuthRequest, res: Response) => {
 });
 
 integrationsRouter.post('/', async (req: AuthRequest, res: Response) => {
-  const { platform, app_id, app_secret, access_token, account_id, nickname } = req.body;
+  const { platform, app_id, app_secret, access_token, account_id, nickname, developer_token } = req.body;
   if (!platform || !access_token || !account_id) {
     res.status(400).json({ success: false, error: { message: 'platform, access_token e account_id sao obrigatorios' } });
     return;
@@ -39,14 +39,15 @@ integrationsRouter.post('/', async (req: AuthRequest, res: Response) => {
         UPDATE user_integrations SET
           app_id = ${app_id || null}, app_secret = ${app_secret || null},
           access_token = ${access_token}, nickname = ${nickname || null},
+          developer_token = ${developer_token || null},
           is_active = true, updated_at = NOW()
         WHERE user_id = ${req.userId!} AND platform = ${platform} AND account_id = ${account_id}
         RETURNING id, platform, account_id, nickname, is_active
       `;
     } else {
       [row] = await sql`
-        INSERT INTO user_integrations (user_id, platform, app_id, app_secret, access_token, account_id, nickname, is_active)
-        VALUES (${req.userId!}, ${platform}, ${app_id || null}, ${app_secret || null}, ${access_token}, ${account_id}, ${nickname || null}, true)
+        INSERT INTO user_integrations (user_id, platform, app_id, app_secret, access_token, account_id, nickname, developer_token, is_active)
+        VALUES (${req.userId!}, ${platform}, ${app_id || null}, ${app_secret || null}, ${access_token}, ${account_id}, ${nickname || null}, ${developer_token || null}, true)
         RETURNING id, platform, account_id, nickname, is_active
       `;
     }

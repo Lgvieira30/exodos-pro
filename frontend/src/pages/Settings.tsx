@@ -36,12 +36,14 @@ export default function Settings() {
   const [googleForm, setGoogleForm] = useState(blankGoogle);
   const [showGoogleForm, setShowGoogleForm] = useState(false);
   const [savingGoogle, setSavingGoogle] = useState(false);
+  const [syncingGoogle, setSyncingGoogle] = useState(false);
   const [showGoogleSecret, setShowGoogleSecret] = useState(false);
   const [showGoogleToken, setShowGoogleToken] = useState(false);
 
   const metaAccounts = integrations.filter((i) => i.platform === 'meta');
   const googleAccounts = integrations.filter((i) => i.platform === 'google');
   const activeAccount = metaAccounts.find((i) => i.is_active);
+  const activeGoogleAccount = googleAccounts.find((i) => i.is_active);
 
   useEffect(() => {
     integrationsApi.list().then((r) => setIntegrations(r.data?.integrations || [])).catch(() => {});
@@ -88,6 +90,7 @@ export default function Settings() {
         access_token: googleForm.refresh_token,
         account_id: googleForm.customer_id,
         nickname: googleForm.nickname,
+        developer_token: googleForm.developer_token,
       });
       flash('Google Ads conectado com sucesso!', true);
       setShowGoogleForm(false);
@@ -129,6 +132,18 @@ export default function Settings() {
     } catch (err: any) {
       flash(err.response?.data?.error?.message || 'Erro ao sincronizar', false);
     } finally { setSyncing(false); }
+  }
+
+  async function handleSyncGoogle() {
+    setSyncingGoogle(true);
+    try {
+      const r = await syncApi.google();
+      flash(r.data?.message || 'Google Ads sincronizado!', true);
+      const r2 = await integrationsApi.list();
+      setIntegrations(r2.data?.integrations || []);
+    } catch (err: any) {
+      flash(err.response?.data?.error?.message || 'Erro ao sincronizar Google Ads', false);
+    } finally { setSyncingGoogle(false); }
   }
 
   const card: React.CSSProperties = {
@@ -329,6 +344,12 @@ export default function Settings() {
               </div>
             </div>
           </div>
+          {activeGoogleAccount && (
+            <button onClick={handleSyncGoogle} disabled={syncingGoogle} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: `1px solid ${BORDER_MED}`, background: 'rgba(255,255,255,0.04)', color: FG_MUTED, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <RefreshCw size={13} style={{ animation: syncingGoogle ? 'spin 1s linear infinite' : 'none' }} />
+              {syncingGoogle ? 'Sincronizando...' : 'Sincronizar agora'}
+            </button>
+          )}
         </div>
 
         {/* Lista de contas Google conectadas */}

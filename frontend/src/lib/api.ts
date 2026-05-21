@@ -69,7 +69,7 @@ export const analyzeApi = {
 
 export const integrationsApi = {
   list: () => api.get('/integrations').then((r) => r.data),
-  save: (data: { platform: string; app_id?: string; app_secret?: string; access_token: string; account_id: string; nickname?: string }) =>
+  save: (data: { platform: string; app_id?: string; app_secret?: string; access_token: string; account_id: string; nickname?: string; developer_token?: string }) =>
     api.post('/integrations', data).then((r) => r.data),
   activate: (id: string) => api.patch(`/integrations/${id}/activate`).then((r) => r.data),
   remove: (id: string) => api.delete(`/integrations/${id}`).then((r) => r.data),
