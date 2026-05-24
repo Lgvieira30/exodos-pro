@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers, Database } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers, Database, Wand2 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Wizard from './pages/Wizard';
@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Campaigns from './pages/Campaigns';
 import Diagnostico from './pages/Diagnostico';
+import CampaignGenerator from './pages/CampaignGenerator';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
@@ -32,6 +33,7 @@ const NAV_MAIN = [
 const NAV_ACTIONS = [
   { to: '/wizard', label: 'Nova Campanha', icon: Rocket },
   { to: '/diagnostico', label: 'Diagnóstico', icon: Database },
+  { to: '/gerador', label: 'Gerador IA', icon: Wand2 },
 ];
 
 const GROUP_LABEL_STYLE: React.CSSProperties = {
@@ -270,6 +272,7 @@ function ProtectedLayout() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="wizard" element={<Wizard />} />
           <Route path="diagnostico" element={<Diagnostico />} />
+          <Route path="gerador" element={<CampaignGenerator />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
       </main>

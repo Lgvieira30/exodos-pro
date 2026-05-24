@@ -7,6 +7,7 @@ import { analyzeRouter } from './analyze.js';
 import { integrationsRouter } from './integrations.js';
 import { adSetsRouter } from './ad-sets.js';
 import { aiRouter } from './ai.js';
+import { campaignGeneratorRouter } from './campaign-generator.js';
 
 export const router = Router();
 
@@ -18,3 +19,4 @@ router.use('/analyze', analyzeRouter);
 router.use('/integrations', integrationsRouter);
 router.use('/ad-sets', adSetsRouter);
 router.use('/ai', aiRouter);
+router.use('/campaign-generator', campaignGeneratorRouter);
