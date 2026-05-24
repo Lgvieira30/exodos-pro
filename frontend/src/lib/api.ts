@@ -90,3 +90,18 @@ export const aiApi = {
   professor: (from?: string, to?: string) =>
     api.post('/ai/professor', {}, { params: from ? { from, to } : {} }).then((r) => r.data),
 };
+
+export const campaignGeneratorApi = {
+  generate: (brief: {
+    empresa: string;
+    segmento?: string;
+    produto: string;
+    objetivo: string;
+    diferenciais?: string;
+    provas_sociais?: string;
+    budget_mensal?: string;
+    regiao?: string;
+    cta?: string;
+    publico_alvo?: string;
+  }) => api.post('/campaign-generator', brief).then((r) => r.data),
+};
