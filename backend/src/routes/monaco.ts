@@ -6,7 +6,7 @@ import { sql } from '../db/index.js';
 export const monacoRouter = Router();
 
 const MOSKIT_API = 'https://api.ms.prod.moskit.services/v2';
-const DATA_INICIAL = '2026-05-30';
+const DATA_INICIAL = '2026-05-01';
 
 const CF = {
   url: 'CF_Pj3qYeieC0PvXqQe',
