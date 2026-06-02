@@ -91,6 +91,15 @@ export const aiApi = {
     api.post('/ai/professor', {}, { params: from ? { from, to } : {} }).then((r) => r.data),
 };
 
+export const monacoApi = {
+  syncStatus: () => api.get('/monaco/sync/status').then((r) => r.data),
+  syncMoskit: () => api.post('/monaco/sync/moskit').then((r) => r.data),
+  ingestAds: (rows: any[]) => api.post('/monaco/ingest/ads', { rows }).then((r) => r.data),
+  clearAds: () => api.delete('/monaco/ads').then((r) => r.data),
+  report: (params: { from: string; to: string; compare_from?: string; compare_to?: string }) =>
+    api.get('/monaco/report', { params }).then((r) => r.data),
+};
+
 export const campaignGeneratorApi = {
   generate: (brief: {
     empresa: string;
