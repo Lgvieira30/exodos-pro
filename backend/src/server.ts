@@ -122,6 +122,42 @@ async function runMigrations() {
       roas NUMERIC(8,4) DEFAULT 0,
       UNIQUE(ad_id, date)
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS monaco_crm_leads (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      moskit_deal_id TEXT NOT NULL,
+      data DATE,
+      lead TEXT,
+      status TEXT,
+      campanha TEXT DEFAULT '',
+      grupo TEXT DEFAULT '',
+      anuncio TEXT DEFAULT '',
+      lp TEXT DEFAULT '',
+      match TEXT DEFAULT '',
+      palavra_chave TEXT DEFAULT '',
+      segmento TEXT DEFAULT '',
+      uf TEXT DEFAULT '',
+      synced_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(user_id, moskit_deal_id)
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS monaco_ads_metrics (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      data DATE NOT NULL,
+      conta TEXT NOT NULL DEFAULT '',
+      campanha TEXT NOT NULL DEFAULT '',
+      grupo TEXT NOT NULL DEFAULT '',
+      anuncio TEXT NOT NULL DEFAULT '',
+      investimento NUMERIC(12,2) DEFAULT 0,
+      impressoes INTEGER DEFAULT 0,
+      cliques INTEGER DEFAULT 0,
+      conversoes NUMERIC(8,2) DEFAULT 0,
+      ctr NUMERIC(8,6) DEFAULT 0,
+      cpc NUMERIC(8,4) DEFAULT 0,
+      cpl_ads NUMERIC(8,4) DEFAULT 0,
+      synced_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(user_id, data, campanha, grupo, anuncio)
+    )`;
     console.log('✅ Banco de dados pronto');
   } catch (err) {
     console.error('âŒ Erro nas migrations:', err);
