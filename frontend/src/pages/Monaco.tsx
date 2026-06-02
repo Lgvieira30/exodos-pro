@@ -301,7 +301,8 @@ export default function Monaco() {
     setSyncMsg('');
     try {
       const r = await monacoApi.syncMoskit();
-      setSyncMsg(`✅ ${r.data.synced} novos leads, ${r.data.updated} atualizados`);
+      const d = r.data;
+      setSyncMsg(`✅ ${d.synced} novos, ${d.updated} atualizados — buscados: ${d.total_fetched ?? '?'} deals (${d.excluded_filter ?? 0} excluídos pelo filtro Mônaco, ${d.older_than_cutoff ?? 0} mais antigos que 01/05)`);
       await Promise.all([loadStatus(), loadReport()]);
     } catch (e: any) {
       setSyncMsg('❌ ' + (e.response?.data?.error?.message || e.message));
