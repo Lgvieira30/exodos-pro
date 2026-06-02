@@ -108,6 +108,80 @@ function mapDealToLead(deal: any) {
   };
 }
 
+// GET /api/monaco/debug/moskit — diagnóstico: mostra raw deals do Moskit sem filtro
+monacoRouter.get('/debug/moskit', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const [integration] = await sql`
+      SELECT id, access_token FROM user_integrations
+      WHERE user_id = ${req.userId!} AND platform = 'moskit' AND is_active = true
+    `;
+    if (!integration) return res.status(400).json({ success: false, error: { message: 'Moskit não configurado' } });
+
+    const from = String(req.query.from || DATA_INICIAL);
+    const url = `${MOSKIT_API}/deals?quantity=100&sort=id&order=desc`;
+    const resp = await axios.get(url, {
+      headers: { Accept: 'application/json', apikey: integration.access_token },
+      timeout: 25000,
+    });
+
+    const deals: any[] = Array.isArray(resp.data) ? resp.data : [];
+    const headers = resp.headers as any;
+    const nextPageToken = headers['x-moskit-listing-next-page-token'] || '';
+
+    const stats = deals.map((deal: any) => {
+      const dateStr = deal.dateCreated ? deal.dateCreated.split('T')[0] : '';
+      const url = getCustomField(deal, CF.url);
+      const campanha = getCustomField(deal, CF.campanha);
+      const source = getCustomField(deal, CF.source);
+      const medium = getCustomField(deal, CF.medium);
+      const passaFiltro = isMonacoGoogleAdsDeal(deal);
+      const maisAntigo = dateStr && dateStr < from;
+
+      let motivo = '';
+      if (maisAntigo) motivo = `mais antigo que ${from}`;
+      else if (!passaFiltro) {
+        if (url.includes('bee2go.com.br')) motivo = 'URL Beemon';
+        else if (String(deal.origin || '').toLowerCase() === 'moskit') motivo = 'origin=moskit (manual)';
+        else if (String(deal.source || '').toLowerCase() === 'manual') motivo = 'source=manual';
+        else if (!url.includes('lp.monacobr.com.br')) motivo = `URL não é lp.monacobr.com.br (${url.slice(0, 80)})`;
+        else if (!url.includes('utm_source=google') && !url.includes('gclid=')) motivo = 'URL sem utm_source=google ou gclid';
+        else motivo = `source=${source} medium=${medium}`;
+      } else motivo = '✅ Monaco Google Ads';
+
+      return {
+        id: deal.id,
+        data: dateStr,
+        nome: deal.name,
+        status: deal.status,
+        passaFiltro,
+        motivo,
+        url: url.slice(0, 100),
+        campanha,
+      };
+    });
+
+    const totalDeals = deals.length;
+    const passaram = stats.filter((s: any) => s.passaFiltro).length;
+    const maisAntigos = stats.filter((s: any) => s.motivo.startsWith('mais antigo')).length;
+    const excluidos = stats.filter((s: any) => !s.passaFiltro && !s.motivo.startsWith('mais antigo')).length;
+
+    res.json({
+      success: true,
+      data: {
+        total_retornados: totalDeals,
+        passaram_filtro: passaram,
+        mais_antigos_que_cutoff: maisAntigos,
+        excluidos_pelo_filtro: excluidos,
+        has_next_page: !!nextPageToken,
+        cutoff_date: from,
+        deals: stats,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
 // GET /api/monaco/sync/status
 monacoRouter.get('/sync/status', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
@@ -150,6 +224,9 @@ monacoRouter.post('/sync/moskit', requireAuth, async (req: AuthRequest, res: Res
   let updated = 0;
   let page = 1;
   let nextPageToken = '';
+  let totalFetched = 0;
+  let totalExcludedFilter = 0;
+  let totalOlder = 0;
 
   try {
     for (let i = 0; i < 50; i++) {
@@ -164,13 +241,14 @@ monacoRouter.post('/sync/moskit', requireAuth, async (req: AuthRequest, res: Res
       const deals: any[] = resp.data;
       if (!Array.isArray(deals) || deals.length === 0) break;
 
+      totalFetched += deals.length;
       let foundOlder = false;
       const toUpsert: ReturnType<typeof mapDealToLead>[] = [];
 
       for (const deal of deals) {
         const dateStr = deal.dateCreated ? deal.dateCreated.split('T')[0] : '';
-        if (dateStr && dateStr < DATA_INICIAL) { foundOlder = true; continue; }
-        if (!isMonacoGoogleAdsDeal(deal)) continue;
+        if (dateStr && dateStr < DATA_INICIAL) { foundOlder = true; totalOlder++; continue; }
+        if (!isMonacoGoogleAdsDeal(deal)) { totalExcludedFilter++; continue; }
         toUpsert.push(mapDealToLead(deal));
       }
 
@@ -216,7 +294,7 @@ monacoRouter.post('/sync/moskit', requireAuth, async (req: AuthRequest, res: Res
       WHERE id = ${integration.id}
     `;
 
-    res.json({ success: true, data: { synced, updated, pages: page } });
+    res.json({ success: true, data: { synced, updated, pages: page, total_fetched: totalFetched, excluded_filter: totalExcludedFilter, older_than_cutoff: totalOlder } });
   } catch (err: any) {
     await sql`
       UPDATE user_integrations SET last_sync_at = NOW(), last_sync_status = 'error'
