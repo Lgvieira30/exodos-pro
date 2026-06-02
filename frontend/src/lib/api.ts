@@ -96,6 +96,8 @@ export const monacoApi = {
   syncMoskit: () => api.post('/monaco/sync/moskit').then((r) => r.data),
   ingestAds: (rows: any[]) => api.post('/monaco/ingest/ads', { rows }).then((r) => r.data),
   clearAds: () => api.delete('/monaco/ads').then((r) => r.data),
+  ingestCrm: (rows: any[]) => api.post('/monaco/ingest/crm', { rows }).then((r) => r.data),
+  clearCrm: () => api.delete('/monaco/crm').then((r) => r.data),
   report: (params: { from: string; to: string; compare_from?: string; compare_to?: string }) =>
     api.get('/monaco/report', { params }).then((r) => r.data),
 };

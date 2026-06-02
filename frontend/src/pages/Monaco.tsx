@@ -92,7 +92,7 @@ const PRESETS = [
   { label: 'Esta Semana', get: () => getWeekRange(0), compare: () => getWeekRange(-1) },
   { label: 'Semana Passada', get: () => getWeekRange(-1), compare: () => getWeekRange(-2) },
   { label: 'Últimos 7d', get: () => getLast(7), compare: () => getLast(7, 1) },
-  { label: 'Últimos 14d', get: () => getLast(14), compare: () => getLast(14, 1) },
+  { label: 'Maio 2026', get: () => ({ from: '2026-05-01', to: '2026-05-31' }), compare: () => ({ from: '2026-04-01', to: '2026-04-30' }) },
   { label: 'Últimos 30d', get: () => getLast(30), compare: () => getLast(30, 1) },
 ];
 
@@ -255,6 +255,10 @@ export default function Monaco() {
   const [importText, setImportText] = useState('');
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  const [showImportCrm, setShowImportCrm] = useState(false);
+  const [importCrmText, setImportCrmText] = useState('');
+  const [importingCrm, setImportingCrm] = useState(false);
+  const [importCrmMsg, setImportCrmMsg] = useState('');
   const [showSetup, setShowSetup] = useState(false);
   const [moskitKey, setMoskitKey] = useState('');
   const [moskitNick, setMoskitNick] = useState('Monaco - Produção');
@@ -378,6 +382,49 @@ export default function Monaco() {
     }
   };
 
+  const handleImportCrm = async () => {
+    if (!importCrmText.trim()) return;
+    setImportingCrm(true);
+    setImportCrmMsg('');
+    try {
+      let rows: any[];
+      const text = importCrmText.trim();
+      if (text.startsWith('[') || text.startsWith('{')) {
+        rows = JSON.parse(text);
+        if (!Array.isArray(rows)) rows = [rows];
+      } else {
+        const lines = text.split('\n').filter((l) => l.trim());
+        const headers = lines[0].split(/[,\t;]/).map((h) => h.trim().toLowerCase().replace(/[\s-]+/g, '_'));
+        rows = lines.slice(1).map((line) => {
+          const vals = line.split(/[,\t;]/);
+          const obj: any = {};
+          headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim().replace(/^"|"$/g, ''); });
+          return obj;
+        });
+      }
+      const normalized = rows.map((r) => ({
+        data: parseDateStr(r.data || r.date || r.Data || r.Date),
+        lead: String(r.lead || r.Lead || r.nome || r.Nome || ''),
+        status: String(r.status || r.Status || 'Aberto'),
+        campanha: String(r.campanha || r.Campanha || ''),
+        grupo: String(r.grupo || r.Grupo || ''),
+        anuncio: String(r.anuncio || r.Anuncio || r.anúncio || ''),
+        lp: String(r.lp || r.LP || ''),
+        match: String(r.match || r.Match || ''),
+        palavra_chave: String(r.palavra_chave || r['palavra-chave'] || r.palavrachave || ''),
+      })).filter((r) => r.data && r.lead);
+      if (!normalized.length) throw new Error('Nenhuma linha válida encontrada. Campos obrigatórios: data, lead.');
+      const resp = await monacoApi.ingestCrm(normalized);
+      setImportCrmMsg(`✅ ${resp.data.inserted} inseridos, ${resp.data.updated} atualizados (${normalized.length} linhas)`);
+      setImportCrmText('');
+      await Promise.all([loadStatus(), loadReport()]);
+    } catch (e: any) {
+      setImportCrmMsg('❌ ' + e.message);
+    } finally {
+      setImportingCrm(false);
+    }
+  };
+
   const campaignTree = useMemo(() => buildTree(report?.campaigns || []), [report]);
 
   const summary = report?.summary;
@@ -431,6 +478,9 @@ function enviarParaExodosPro(dados) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => setShowImportCrm(true)} style={btnStyle('secondary')}>
+            <Users size={13} /> Importar CRM
+          </button>
           <button onClick={() => setShowImport(true)} style={btnStyle('secondary')}>
             <Upload size={13} /> Importar Ads
           </button>
@@ -835,6 +885,37 @@ function enviarParaExodosPro(dados) {
           <button onClick={handleSaveKey} disabled={savingKey || !moskitKey.trim()} style={btnStyle('primary', savingKey || !moskitKey.trim())}>
             {savingKey ? 'Salvando…' : 'Salvar e Conectar'}
           </button>
+        </Modal>
+      )}
+
+      {/* ── Import CRM Modal ── */}
+      {showImportCrm && (
+        <Modal title="Importar Leads CRM" onClose={() => { setShowImportCrm(false); setImportCrmMsg(''); }} wide>
+          <div style={{ background: GREEN_DIM, border: `1px solid ${GREEN}20`, borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: GREEN }}>
+            <Info size={12} style={{ display: 'inline', marginRight: 6 }} />
+            Cole aqui os dados da planilha CRM como JSON ou CSV. Campos esperados: <strong>data, lead, status</strong> (Ganhou/Perdeu/Aberto), campanha, grupo, anuncio, match, palavra_chave
+          </div>
+          <label style={labelStyle}>Cole os dados (JSON ou CSV com cabeçalho)</label>
+          <textarea
+            value={importCrmText}
+            onChange={(e) => setImportCrmText(e.target.value)}
+            placeholder={'[\n  {"data":"2026-05-26","lead":"Empresa X","status":"Ganhou","campanha":"Search - Alta Intenção","grupo":"Multas","palavra_chave":"gestão de multas"}\n]'}
+            rows={10}
+            style={{ ...inputStyle, fontFamily: 'monospace', fontSize: 11, resize: 'vertical', marginBottom: 12 }}
+          />
+          {importCrmMsg && (
+            <div style={{ background: importCrmMsg.startsWith('✅') ? GREEN_DIM : RED_DIM, border: `1px solid ${importCrmMsg.startsWith('✅') ? GREEN : RED}30`, borderRadius: 6, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: importCrmMsg.startsWith('✅') ? GREEN : RED }}>
+              {importCrmMsg}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleImportCrm} disabled={importingCrm || !importCrmText.trim()} style={btnStyle('primary', importingCrm || !importCrmText.trim())}>
+              {importingCrm ? 'Importando…' : 'Importar Leads'}
+            </button>
+            <button onClick={async () => { if (confirm('Limpar todos os leads CRM importados?')) { await monacoApi.clearCrm(); await Promise.all([loadStatus(), loadReport()]); setImportCrmMsg('✅ Dados CRM limpos.'); }}} style={{ ...btnStyle('secondary'), color: RED }}>
+              Limpar CRM
+            </button>
+          </div>
         </Modal>
       )}
 

@@ -224,6 +224,7 @@ monacoRouter.post('/sync/moskit', requireAuth, async (req: AuthRequest, res: Res
   let updated = 0;
   let page = 1;
   let nextPageToken = '';
+  let startOffset = 0;
   let totalFetched = 0;
   let totalExcludedFilter = 0;
   let totalOlder = 0;
@@ -231,7 +232,11 @@ monacoRouter.post('/sync/moskit', requireAuth, async (req: AuthRequest, res: Res
   try {
     for (let i = 0; i < 50; i++) {
       let url = `${MOSKIT_API}/deals?quantity=100&sort=id&order=desc`;
-      if (nextPageToken) url += `&nextPageToken=${encodeURIComponent(nextPageToken)}`;
+      if (nextPageToken) {
+        url += `&nextPageToken=${encodeURIComponent(nextPageToken)}`;
+      } else if (i > 0) {
+        url += `&start=${startOffset}`;
+      }
 
       const resp = await axios.get(url, {
         headers: { Accept: 'application/json', apikey: apiKey },
@@ -242,6 +247,7 @@ monacoRouter.post('/sync/moskit', requireAuth, async (req: AuthRequest, res: Res
       if (!Array.isArray(deals) || deals.length === 0) break;
 
       totalFetched += deals.length;
+      startOffset += deals.length;
       let foundOlder = false;
       const toUpsert: ReturnType<typeof mapDealToLead>[] = [];
 
@@ -285,7 +291,7 @@ monacoRouter.post('/sync/moskit', requireAuth, async (req: AuthRequest, res: Res
         headers['X-Moskit-Listing-Next-Page-Token'] ||
         '';
 
-      if (foundOlder || deals.length < 100 || !nextPageToken) break;
+      if (foundOlder || deals.length < 100) break;
       page++;
     }
 
@@ -365,6 +371,74 @@ monacoRouter.post('/ingest/ads', requireAuth, async (req: AuthRequest, res: Resp
 // DELETE /api/monaco/ads — limpar todos os dados de ads do usuário
 monacoRouter.delete('/ads', requireAuth, async (req: AuthRequest, res: Response) => {
   await sql`DELETE FROM monaco_ads_metrics WHERE user_id = ${req.userId!}`;
+  res.json({ success: true });
+});
+
+// POST /api/monaco/ingest/crm — importar leads CRM da planilha
+monacoRouter.post('/ingest/crm', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { rows } = req.body as { rows: any[] };
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return res.status(400).json({ success: false, error: { message: 'Envie um array "rows" com os dados do CRM.' } });
+  }
+
+  let inserted = 0;
+  let updated = 0;
+
+  for (const row of rows) {
+    const lead = String(row.lead || row.Lead || row.nome || row.Nome || '').trim();
+    const dataStr = String(row.data || row.Data || row.date || '').split('T')[0];
+    if (!lead || !dataStr) continue;
+
+    const campanha = String(row.campanha || row.Campanha || '');
+    const grupo = String(row.grupo || row.Grupo || '');
+    const anuncio = String(row.anuncio || row.Anuncio || '');
+    const lp = String(row.lp || row.LP || '');
+    const match = String(row.match || row.Match || '');
+    const palavra_chave = String(row.palavra_chave || row['palavra-chave'] || '');
+
+    const statusRaw = String(row.status || row.Status || '').trim().toLowerCase();
+    const statusMap: Record<string, string> = {
+      ganhou: 'Ganhou', won: 'Ganhou', '1': 'Ganhou', fechado: 'Ganhou',
+      perdeu: 'Perdeu', lost: 'Perdeu', '2': 'Perdeu',
+      aberto: 'Aberto', open: 'Aberto', '3': 'Aberto', 'em aberto': 'Aberto',
+    };
+    const status = statusMap[statusRaw] || (statusRaw ? 'Aberto' : 'Aberto');
+
+    const syntheticId = row.moskit_deal_id ||
+      ('sheet_' + Buffer.from(`${lead}|${dataStr}|${campanha}`).toString('base64').replace(/[+=\/]/g, '').slice(0, 40));
+
+    const existing = await sql`
+      SELECT id FROM monaco_crm_leads WHERE user_id = ${req.userId!} AND moskit_deal_id = ${syntheticId}
+    `;
+
+    if (existing.length > 0) {
+      await sql`
+        UPDATE monaco_crm_leads SET
+          data = ${dataStr}, lead = ${lead}, status = ${status},
+          campanha = ${campanha}, grupo = ${grupo}, anuncio = ${anuncio},
+          lp = ${lp}, match = ${match}, palavra_chave = ${palavra_chave}, synced_at = NOW()
+        WHERE user_id = ${req.userId!} AND moskit_deal_id = ${syntheticId}
+      `;
+      updated++;
+    } else {
+      await sql`
+        INSERT INTO monaco_crm_leads
+          (user_id, moskit_deal_id, data, lead, status, campanha, grupo, anuncio, lp, match, palavra_chave)
+        VALUES (
+          ${req.userId!}, ${syntheticId}, ${dataStr}, ${lead}, ${status},
+          ${campanha}, ${grupo}, ${anuncio}, ${lp}, ${match}, ${palavra_chave}
+        )
+      `;
+      inserted++;
+    }
+  }
+
+  res.json({ success: true, data: { inserted, updated, total: inserted + updated } });
+});
+
+// DELETE /api/monaco/crm — limpar todos os leads CRM do usuário
+monacoRouter.delete('/crm', requireAuth, async (req: AuthRequest, res: Response) => {
+  await sql`DELETE FROM monaco_crm_leads WHERE user_id = ${req.userId!}`;
   res.json({ success: true });
 });
 
