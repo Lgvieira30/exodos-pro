@@ -389,7 +389,6 @@ monacoRouter.post('/ingest/crm', requireAuth, async (req: AuthRequest, res: Resp
     const dataStr = String(row.data || row.Data || row.date || '').split('T')[0];
     if (!lead || !dataStr) continue;
 
-    const status = String(row.status || row.Status || 'Aberto');
     const campanha = String(row.campanha || row.Campanha || '');
     const grupo = String(row.grupo || row.Grupo || '');
     const anuncio = String(row.anuncio || row.Anuncio || '');
@@ -397,7 +396,16 @@ monacoRouter.post('/ingest/crm', requireAuth, async (req: AuthRequest, res: Resp
     const match = String(row.match || row.Match || '');
     const palavra_chave = String(row.palavra_chave || row['palavra-chave'] || '');
 
-    const syntheticId = row.moskit_deal_id || ('sheet_' + Buffer.from(`${lead}|${dataStr}|${campanha}`).toString('base64').replace(/[+=\/]/g, '').slice(0, 40));
+    const statusRaw = String(row.status || row.Status || '').trim().toLowerCase();
+    const statusMap: Record<string, string> = {
+      ganhou: 'Ganhou', won: 'Ganhou', '1': 'Ganhou', fechado: 'Ganhou',
+      perdeu: 'Perdeu', lost: 'Perdeu', '2': 'Perdeu',
+      aberto: 'Aberto', open: 'Aberto', '3': 'Aberto', 'em aberto': 'Aberto',
+    };
+    const status = statusMap[statusRaw] || (statusRaw ? 'Aberto' : 'Aberto');
+
+    const syntheticId = row.moskit_deal_id ||
+      ('sheet_' + Buffer.from(`${lead}|${dataStr}|${campanha}`).toString('base64').replace(/[+=\/]/g, '').slice(0, 40));
 
     const existing = await sql`
       SELECT id FROM monaco_crm_leads WHERE user_id = ${req.userId!} AND moskit_deal_id = ${syntheticId}
