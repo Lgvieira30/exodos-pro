@@ -158,6 +158,24 @@ async function runMigrations() {
       synced_at TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE(user_id, data, campanha, grupo, anuncio)
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS beemon_crm_leads (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      moskit_deal_id TEXT NOT NULL,
+      data DATE,
+      lead TEXT DEFAULT '',
+      empresa TEXT DEFAULT '',
+      veiculos TEXT DEFAULT '',
+      estado TEXT DEFAULT '',
+      status TEXT DEFAULT 'Aberto',
+      utm_source TEXT DEFAULT '',
+      utm_campaign TEXT DEFAULT '',
+      utm_term TEXT DEFAULT '',
+      utm_content TEXT DEFAULT '',
+      pagina TEXT DEFAULT '',
+      synced_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(user_id, moskit_deal_id)
+    )`;
     console.log('✅ Banco de dados pronto');
   } catch (err) {
     console.error('âŒ Erro nas migrations:', err);

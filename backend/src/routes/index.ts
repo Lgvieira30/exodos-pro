@@ -9,6 +9,7 @@ import { adSetsRouter } from './ad-sets.js';
 import { aiRouter } from './ai.js';
 import { campaignGeneratorRouter } from './campaign-generator.js';
 import { monacoRouter } from './monaco.js';
+import { beemonRouter } from './beemon.js';
 
 export const router = Router();
 
@@ -22,3 +23,4 @@ router.use('/ad-sets', adSetsRouter);
 router.use('/ai', aiRouter);
 router.use('/campaign-generator', campaignGeneratorRouter);
 router.use('/monaco', monacoRouter);
+router.use('/beemon', beemonRouter);

@@ -106,6 +106,13 @@ export const monacoApi = {
     api.get('/monaco/report', { params }).then((r) => r.data),
 };
 
+export const beemonApi = {
+  syncCrm: () => api.post('/beemon/sync/crm').then((r) => r.data),
+  leads: () => api.get('/beemon/leads').then((r) => r.data),
+  report: (from?: string, to?: string) =>
+    api.get('/beemon/report', { params: { from, to } }).then((r) => r.data),
+};
+
 export const campaignGeneratorApi = {
   generate: (brief: {
     empresa: string;
