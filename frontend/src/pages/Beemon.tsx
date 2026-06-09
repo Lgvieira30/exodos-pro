@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Trophy, Users, CheckCircle2, Clock, XCircle, Layers, Megaphone, Image } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { beemonApi } from '../lib/api';
 import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
@@ -22,6 +23,18 @@ const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigi
 interface Lead { moskit_deal_id: string; data: string | null; lead: string; status: string; utm_source: string; utm_campaign: string; utm_term: string; utm_content: string; pagina: string; }
 
 const STATUS_COLOR: Record<string, string> = { Ganhou: S_GREEN, Aberto: S_YELLOW, Perdido: S_RED };
+
+function ChartTip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: '#0E0F12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '8px 12px', fontSize: '11px' }}>
+      <p style={{ color: 'rgba(240,240,240,0.4)', marginBottom: '4px' }}>{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.name} style={{ color: p.color, fontWeight: 700 }}>{p.name}: {p.value}</p>
+      ))}
+    </div>
+  );
+}
 
 export default function Beemon() {
   const [report, setReport] = useState<any>(null);
@@ -64,6 +77,10 @@ export default function Beemon() {
   const hasPrev = (prev.oportunidades || 0) > 0;
   const pct = (cur: number, p: number) => p > 0 ? ((cur - p) / p) * 100 : (cur > 0 ? 100 : 0);
   const rows: RankRow[] = report?.[tab] || [];
+  const dailyData = (report?.daily || []).map((d: any) => ({
+    day: d.date ? d.date.split('-').reverse().slice(0, 2).join('/') : '',
+    Ganhos: Number(d.ganhos), Abertos: Number(d.abertos), Perdidos: Number(d.perdidos),
+  }));
 
   const card: React.CSSProperties = { background: BG_SURFACE, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px' };
 
@@ -76,7 +93,7 @@ export default function Beemon() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '28px 32px' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .bm-row:hover{background:rgba(255,255,255,0.03)!important}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .bm-row:hover{background:rgba(255,255,255,0.03)!important} @media(max-width:860px){.bm-grid{grid-template-columns:1fr!important}}`}</style>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px', flexWrap: 'wrap', gap: '12px' }}>
@@ -134,6 +151,54 @@ export default function Beemon() {
 
       {leads.length > 0 && (
         <>
+          {/* Gráfico diário + Funil */}
+          <div className="bm-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '16px', marginBottom: '20px' }}>
+            <div style={card}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: FG }}>Leads por dia</p>
+              <p style={{ fontSize: '11px', color: FG_SUBTLE, marginBottom: '14px' }}>CRM — empilhado por status</p>
+              {dailyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={dailyData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis dataKey="day" stroke="transparent" tick={{ fill: FG_SUBTLE, fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis hide />
+                    <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Bar dataKey="Ganhos" stackId="a" fill={S_GREEN} />
+                    <Bar dataKey="Abertos" stackId="a" fill={S_YELLOW} />
+                    <Bar dataKey="Perdidos" stackId="a" fill={S_RED} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: FG_SUBTLE, fontSize: '12px' }}>Sem dados no período</div>
+              )}
+            </div>
+
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: FG }}>Funil de Conversão</p>
+                <p style={{ fontSize: '11px', color: FG_SUBTLE }}>Oportunidades → Clientes</p>
+              </div>
+              <div style={{ background: 'rgba(61,184,232,0.12)', border: `1px solid rgba(61,184,232,0.25)`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                <p style={{ fontSize: '26px', fontWeight: 800, color: S_BLUE, lineHeight: 1 }}>{t.oportunidades}</p>
+                <p style={{ fontSize: '11px', color: FG_MUTED, marginTop: '4px' }}>Oportunidades</p>
+              </div>
+              <p style={{ textAlign: 'center', fontSize: '11px', color: FG_MUTED, fontWeight: 600 }}>↓ {winRate.toFixed(0)}% viraram cliente</p>
+              <div style={{ background: 'rgba(52,211,153,0.12)', border: `1px solid rgba(52,211,153,0.25)`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                <p style={{ fontSize: '26px', fontWeight: 800, color: S_GREEN, lineHeight: 1 }}>{t.ganhos}</p>
+                <p style={{ fontSize: '11px', color: FG_MUTED, marginTop: '4px' }}>Ganhos (clientes)</p>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {([['Abertos', t.abertos, S_YELLOW], ['Perdidos', t.perdidos, S_RED]] as const).map(([lbl, val, col]) => (
+                  <div key={lbl} style={{ flex: 1, background: BG_ELEVATED, borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '16px', fontWeight: 800, color: col }}>{val}</p>
+                    <p style={{ fontSize: '10px', color: FG_SUBTLE }}>{lbl}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Rankings */}
           <div style={{ ...card, marginBottom: '20px', padding: 0, overflow: 'hidden' }}>
             <div style={{ display: 'flex', gap: '4px', padding: '14px 18px', borderBottom: `1px solid ${BORDER}` }}>
