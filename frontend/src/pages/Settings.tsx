@@ -40,6 +40,7 @@ export default function Settings() {
   const [showGoogleSecret, setShowGoogleSecret] = useState(false);
   const [showGoogleToken, setShowGoogleToken] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [metaOauthLoading, setMetaOauthLoading] = useState(false);
 
   const metaAccounts = integrations.filter((i) => i.platform === 'meta');
   const googleAccounts = integrations.filter((i) => i.platform === 'google');
@@ -59,8 +60,35 @@ export default function Settings() {
     } else if (google === 'error') {
       flash(`Erro ao conectar o Google Ads: ${params.get('message') || 'tente novamente'}`, false);
     }
-    if (google) window.history.replaceState({}, '', window.location.pathname);
+
+    const meta = params.get('meta');
+    if (meta === 'connected') {
+      const count = params.get('count');
+      flash(`Meta Ads conectado!${count ? ` ${count} conta(s) encontrada(s).` : ''} Sincronize para carregar os dados.`, true);
+      integrationsApi.list().then((r) => setIntegrations(r.data?.integrations || [])).catch(() => {});
+    } else if (meta === 'error') {
+      flash(`Erro ao conectar o Meta Ads: ${params.get('message') || 'tente novamente'}`, false);
+    }
+
+    if (google || meta) window.history.replaceState({}, '', window.location.pathname);
   }, []);
+
+  async function handleMetaOAuth() {
+    setMetaOauthLoading(true);
+    try {
+      const r = await integrationsApi.metaOAuthStart(form.nickname || undefined);
+      const url = r.data?.url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        flash('Nao foi possivel iniciar o login do Meta', false);
+        setMetaOauthLoading(false);
+      }
+    } catch (err: any) {
+      flash(err.response?.data?.error?.message || 'Login do Meta indisponivel. Use a conexao manual abaixo.', false);
+      setMetaOauthLoading(false);
+    }
+  }
 
   async function handleGoogleOAuth() {
     setOauthLoading(true);
@@ -307,13 +335,23 @@ export default function Settings() {
           </div>
         )}
 
-        {/* Botão adicionar / formulário */}
+        {/* Botão principal: login OAuth com 1 clique */}
+        <button
+          onClick={handleMetaOAuth}
+          disabled={metaOauthLoading}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '11px 14px', borderRadius: '11px', border: 'none', background: metaOauthLoading ? BG_ELEVATED : '#1877f2', color: metaOauthLoading ? FG_SUBTLE : '#fff', fontSize: '13px', fontWeight: 700, cursor: metaOauthLoading ? 'default' : 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center', opacity: metaOauthLoading ? 0.7 : 1 }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          {metaOauthLoading ? 'Redirecionando...' : 'Conectar com Facebook'}
+        </button>
+
+        {/* Botão secundário: conexão manual (avançado) */}
         <button
           onClick={() => setShowForm((v) => !v)}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: `1px solid ${BORDER_MED}`, background: 'rgba(255,255,255,0.04)', color: FG_MUTED, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', marginTop: '8px', borderRadius: '10px', border: `1px solid ${BORDER_MED}`, background: 'transparent', color: FG_SUBTLE, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center' }}
         >
-          {showForm ? <ChevronUp size={14} /> : <Plus size={14} />}
-          {showForm ? 'Cancelar' : 'Adicionar conta Meta Ads'}
+          {showForm ? <ChevronUp size={13} /> : <Plus size={13} />}
+          {showForm ? 'Cancelar' : 'Conectar manualmente (avançado)'}
         </button>
 
         {showForm && (

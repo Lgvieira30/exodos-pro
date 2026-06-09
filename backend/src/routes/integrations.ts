@@ -119,6 +119,104 @@ integrationsRouter.get('/google/oauth/callback', async (req: Request, res: Respo
   }
 });
 
+// ══════════ Meta (Facebook) OAuth ══════════
+
+const META_API_VERSION = 'v24.0';
+
+function metaConfig() {
+  return {
+    appId: process.env.META_APP_ID || '',
+    appSecret: process.env.META_APP_SECRET || '',
+  };
+}
+
+function metaRedirectUri(req: Request): string {
+  if (process.env.META_OAUTH_REDIRECT_URI) return process.env.META_OAUTH_REDIRECT_URI;
+  const proto = (req.headers['x-forwarded-proto'] as string)?.split(',')[0] || req.protocol;
+  return `${proto}://${req.get('host')}/api/integrations/meta/oauth/callback`;
+}
+
+// ─── Callback do OAuth do Meta (PUBLICO — o Facebook redireciona o navegador para ca) ───
+integrationsRouter.get('/meta/oauth/callback', async (req: Request, res: Response) => {
+  const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const fail = (msg: string) =>
+    res.redirect(`${frontend}/settings?meta=error&message=${encodeURIComponent(msg)}`);
+
+  const { code, state, error: oauthError, error_description } = req.query as Record<string, string>;
+  if (oauthError) return fail(error_description || oauthError);
+  if (!code || !state) return fail('Codigo ou state ausente');
+
+  let userId: string;
+  let nickname: string | undefined;
+  try {
+    const payload = jwt.verify(state, process.env.JWT_SECRET!) as {
+      userId: string; nickname?: string; purpose?: string;
+    };
+    if (payload.purpose !== 'meta_oauth') throw new Error('state invalido');
+    userId = payload.userId;
+    nickname = payload.nickname;
+  } catch {
+    return fail('Sessao expirada, conecte novamente');
+  }
+
+  const { appId, appSecret } = metaConfig();
+  if (!appId || !appSecret) return fail('OAuth do Meta nao configurado no servidor');
+
+  try {
+    // 1. Troca o code por um token de curta duracao
+    const shortRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/oauth/access_token`, {
+      params: { client_id: appId, client_secret: appSecret, redirect_uri: metaRedirectUri(req), code },
+    });
+    const shortToken: string = shortRes.data.access_token;
+
+    // 2. Troca pelo token de longa duracao (~60 dias)
+    const longRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/oauth/access_token`, {
+      params: { grant_type: 'fb_exchange_token', client_id: appId, client_secret: appSecret, fb_exchange_token: shortToken },
+    });
+    const longToken: string = longRes.data.access_token;
+
+    // 3. Descobre as contas de anuncio que esse login acessa
+    const acctRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/me/adaccounts`, {
+      params: { fields: 'account_id,name', access_token: longToken, limit: 200 },
+    });
+    const accounts: any[] = acctRes.data?.data || [];
+    if (accounts.length === 0) return fail('Nenhuma conta de anuncios do Meta encontrada para este login');
+
+    // Salva uma integracao por conta; ativa a primeira
+    await sql`UPDATE user_integrations SET is_active = false WHERE user_id = ${userId} AND platform = 'meta'`;
+    let first = true;
+    for (const acc of accounts) {
+      const accountId = String(acc.account_id || '').replace('act_', '');
+      if (!accountId) continue;
+      const accName = first ? (nickname || acc.name || null) : (acc.name || null);
+      const [existing] = await sql`
+        SELECT id FROM user_integrations
+        WHERE user_id = ${userId} AND platform = 'meta' AND account_id = ${accountId}
+      `;
+      if (existing) {
+        await sql`
+          UPDATE user_integrations SET
+            app_id = ${appId}, access_token = ${longToken},
+            nickname = COALESCE(${accName}, nickname), is_active = ${first}, updated_at = NOW()
+          WHERE id = ${existing.id}
+        `;
+      } else {
+        await sql`
+          INSERT INTO user_integrations (user_id, platform, app_id, access_token, account_id, nickname, is_active)
+          VALUES (${userId}, 'meta', ${appId}, ${longToken}, ${accountId}, ${accName}, ${first})
+        `;
+      }
+      first = false;
+    }
+
+    return res.redirect(`${frontend}/settings?meta=connected&count=${accounts.length}`);
+  } catch (err: any) {
+    const m = err.response?.data?.error?.message || err.message || 'Erro no OAuth do Meta';
+    console.error('[meta/oauth/callback] ERRO:', m, JSON.stringify(err.response?.data || {}));
+    return fail(String(m));
+  }
+});
+
 // ─── Daqui para baixo, tudo exige autenticacao ───
 integrationsRouter.use(requireAuth);
 
@@ -146,6 +244,29 @@ integrationsRouter.get('/google/oauth/start', (req: AuthRequest, res: Response) 
     state,
   });
   res.json({ success: true, data: { url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` } });
+});
+
+// Inicia o fluxo OAuth do Meta — devolve a URL do dialogo do Facebook
+integrationsRouter.get('/meta/oauth/start', (req: AuthRequest, res: Response) => {
+  const { appId, appSecret } = metaConfig();
+  if (!appId || !appSecret) {
+    res.status(500).json({ success: false, error: { message: 'OAuth do Meta nao configurado no servidor (defina META_APP_ID e META_APP_SECRET).' } });
+    return;
+  }
+  const nickname = (req.query.nickname as string) || undefined;
+  const state = jwt.sign(
+    { userId: req.userId!, nickname, purpose: 'meta_oauth' },
+    process.env.JWT_SECRET!,
+    { expiresIn: '10m' }
+  );
+  const params = new URLSearchParams({
+    client_id: appId,
+    redirect_uri: metaRedirectUri(req),
+    response_type: 'code',
+    scope: 'ads_read',
+    state,
+  });
+  res.json({ success: true, data: { url: `https://www.facebook.com/${META_API_VERSION}/dialog/oauth?${params.toString()}` } });
 });
 
 integrationsRouter.get('/', async (req: AuthRequest, res: Response) => {

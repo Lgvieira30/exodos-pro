@@ -138,7 +138,7 @@ syncRouter.post('/meta', async (req: AuthRequest, res: Response) => {
 
   try {
     const { access_token, account_id } = integration;
-    const BASE = `https://graph.facebook.com/v20.0`;
+    const BASE = `https://graph.facebook.com/v24.0`;
 
     // Build explicit date ranges so time_increment=1 (daily breakout) is always respected.
     // date_preset alone can cause the API to return a single aggregate row instead of daily rows.

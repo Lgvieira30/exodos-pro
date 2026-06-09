@@ -75,6 +75,8 @@ export const integrationsApi = {
   remove: (id: string) => api.delete(`/integrations/${id}`).then((r) => r.data),
   googleOAuthStart: (nickname?: string) =>
     api.get('/integrations/google/oauth/start', { params: nickname ? { nickname } : {} }).then((r) => r.data),
+  metaOAuthStart: (nickname?: string) =>
+    api.get('/integrations/meta/oauth/start', { params: nickname ? { nickname } : {} }).then((r) => r.data),
 };
 
 export const adSetsApi = {
