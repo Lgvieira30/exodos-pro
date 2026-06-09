@@ -18,7 +18,6 @@ const S_YELLOW = '#FACC15';
 const S_RED = '#F87171';
 
 interface RankRow { chave: string; leads: number; ganhos: number; abertos: number; perdidos: number; }
-interface CruzRow { criativo: string; total_crm: number; ganhos: number; abertos: number; perdidos: number; investimento: number | null; leads_meta: number | null; }
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 interface Lead { moskit_deal_id: string; data: string | null; lead: string; status: string; utm_source: string; utm_campaign: string; utm_term: string; utm_content: string; pagina: string; }
 
@@ -81,8 +80,58 @@ export default function Beemon() {
     day: d.date ? d.date.split('-').reverse().slice(0, 2).join('/') : '',
     Ganhos: Number(d.ganhos), Abertos: Number(d.abertos), Perdidos: Number(d.perdidos),
   }));
+  const meta = report?.metaMetrics || { spend: 0, leads: 0, clicks: 0, impressions: 0, cpl: 0, cpc: 0, ctr: 0 };
+  const topCriativo = (report?.cruzamento || []).find((c: any) => Number(c.ganhos) > 0);
+  const resumo = report
+    ? `No período, a BeeMôn ${meta.spend > 0 ? `investiu ${brl(meta.spend)} em Meta Ads gerando ${meta.leads} leads (CPL ${brl(meta.cpl)}). ` : ''}` +
+      `O CRM registrou ${t.oportunidades} oportunidade(s), sendo ${t.ganhos} ganho(s) e ${t.abertos} em aberto — win rate de ${winRate.toFixed(0)}%.` +
+      `${topCriativo ? ` O criativo que mais virou cliente foi "${topCriativo.criativo}", com ${topCriativo.ganhos} ganho(s).` : ''}`
+    : '';
 
   const card: React.CSSProperties = { background: BG_SURFACE, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px' };
+
+  function renderCross(title: string, subtitle: string, colLabel: string, crossRows: any[]) {
+    if (!crossRows || crossRows.length === 0) return null;
+    return (
+      <div style={{ ...card, marginBottom: '20px', padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Trophy size={15} color={S_GREEN} />
+          <p style={{ fontSize: '13px', fontWeight: 800, color: FG }}>{title}</p>
+          <span style={{ fontSize: '11px', color: FG_SUBTLE }}>{subtitle}</span>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, background: BG_ELEVATED, minWidth: '760px' }}>
+            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700 }}>#</span>
+            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textTransform: 'uppercase' }}>{colLabel}</span>
+            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>CRM</span>
+            <span style={{ fontSize: '10px', color: S_GREEN, fontWeight: 700, textAlign: 'right' }}>GANHOS</span>
+            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>TAXA</span>
+            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>INVEST.</span>
+            <span style={{ fontSize: '10px', color: S_BLUE, fontWeight: 700, textAlign: 'right' }}>CUSTO/GANHO</span>
+          </div>
+          {crossRows.map((r: any, i: number) => {
+            const nome = r.criativo ?? r.conjunto ?? r.chave ?? '—';
+            const total = Number(r.total_crm || 0);
+            const ganhos = Number(r.ganhos || 0);
+            const taxa = total > 0 ? (ganhos / total) * 100 : 0;
+            const inv = Number(r.investimento || 0);
+            const custoGanho = inv > 0 && ganhos > 0 ? inv / ganhos : null;
+            return (
+              <div key={nome + i} className="bm-row" style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, alignItems: 'center', minWidth: '760px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? S_GREEN : FG_SUBTLE }}>{i + 1}º</span>
+                <span style={{ fontSize: '13px', color: FG, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={nome}>{nome}</span>
+                <span style={{ fontSize: '13px', color: FG, textAlign: 'right' }}>{total}</span>
+                <span style={{ fontSize: '13px', color: ganhos > 0 ? S_GREEN : FG_SUBTLE, fontWeight: 800, textAlign: 'right' }}>{ganhos}</span>
+                <span style={{ fontSize: '12px', color: FG_MUTED, textAlign: 'right' }}>{taxa.toFixed(0)}%</span>
+                <span style={{ fontSize: '12px', color: inv > 0 ? FG : FG_SUBTLE, textAlign: 'right' }}>{inv > 0 ? brl(inv) : '—'}</span>
+                <span style={{ fontSize: '13px', color: custoGanho ? S_BLUE : FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>{custoGanho ? brl(custoGanho) : '—'}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: BG }}>
@@ -115,6 +164,35 @@ export default function Beemon() {
           </button>
         </div>
       </div>
+
+      {/* Resumo Executivo automático */}
+      {report && (
+        <div style={{ ...card, marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(61,184,232,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '15px' }}>📋</div>
+          <div>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Resumo Executivo</p>
+            <p style={{ fontSize: '13px', color: FG, lineHeight: 1.6 }}>{resumo}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Métricas do Meta (quando sincronizado) */}
+      {meta.spend > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }}>
+          {[
+            { label: 'Investimento Meta', value: brl(meta.spend) },
+            { label: 'Leads Meta', value: meta.leads.toLocaleString('pt-BR') },
+            { label: 'CPL Meta', value: brl(meta.cpl) },
+            { label: 'Cliques', value: meta.clicks.toLocaleString('pt-BR') },
+            { label: 'CTR', value: `${meta.ctr.toFixed(2)}%` },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ ...card, padding: '14px 16px' }}>
+              <p style={{ fontSize: '20px', fontWeight: 800, color: FG, lineHeight: 1 }}>{value}</p>
+              <p style={{ fontSize: '10px', color: FG_MUTED, marginTop: '6px', fontWeight: 500 }}>{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* CRM Totals */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }}>
@@ -230,50 +308,9 @@ export default function Beemon() {
             ))}
           </div>
 
-          {/* Criativo × CRM × Ganhos — o ranking que importa */}
-          {(() => {
-            const cruz: CruzRow[] = report?.cruzamento || [];
-            if (cruz.length === 0) return null;
-            return (
-              <div style={{ ...card, marginBottom: '20px', padding: 0, overflow: 'hidden' }}>
-                <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Trophy size={15} color={S_GREEN} />
-                  <p style={{ fontSize: '13px', fontWeight: 800, color: FG }}>Criativo × CRM × Ganhos</p>
-                  <span style={{ fontSize: '11px', color: FG_SUBTLE }}>— ordenado por quem mais gera clientes, não leads</span>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, background: BG_ELEVATED, minWidth: '760px' }}>
-                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700 }}>#</span>
-                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textTransform: 'uppercase' }}>Criativo</span>
-                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>CRM</span>
-                    <span style={{ fontSize: '10px', color: S_GREEN, fontWeight: 700, textAlign: 'right' }}>GANHOS</span>
-                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>TAXA</span>
-                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>INVEST.</span>
-                    <span style={{ fontSize: '10px', color: S_BLUE, fontWeight: 700, textAlign: 'right' }}>CUSTO/GANHO</span>
-                  </div>
-                  {cruz.map((r, i) => {
-                    const taxa = r.total_crm > 0 ? (r.ganhos / r.total_crm) * 100 : 0;
-                    const inv = Number(r.investimento || 0);
-                    const custoGanho = inv > 0 && r.ganhos > 0 ? inv / r.ganhos : null;
-                    return (
-                      <div key={r.criativo} className="bm-row" style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, alignItems: 'center', minWidth: '760px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? S_GREEN : FG_SUBTLE }}>{i + 1}º</span>
-                        <span style={{ fontSize: '13px', color: FG, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.criativo}>{r.criativo}</span>
-                        <span style={{ fontSize: '13px', color: FG, textAlign: 'right' }}>{r.total_crm}</span>
-                        <span style={{ fontSize: '13px', color: r.ganhos > 0 ? S_GREEN : FG_SUBTLE, fontWeight: 800, textAlign: 'right' }}>{r.ganhos}</span>
-                        <span style={{ fontSize: '12px', color: FG_MUTED, textAlign: 'right' }}>{taxa.toFixed(0)}%</span>
-                        <span style={{ fontSize: '12px', color: inv > 0 ? FG : FG_SUBTLE, textAlign: 'right' }}>{inv > 0 ? brl(inv) : '—'}</span>
-                        <span style={{ fontSize: '13px', color: custoGanho ? S_BLUE : FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>{custoGanho ? brl(custoGanho) : '—'}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p style={{ padding: '10px 18px', fontSize: '10px', color: FG_SUBTLE }}>
-                  💡 "Custo por ganho" = investimento do Meta ÷ ganhos do CRM. Investimento aparece quando o criativo casa com um anúncio do Meta sincronizado.
-                </p>
-              </div>
-            );
-          })()}
+          {/* Cruzamentos: Criativo e Conjunto × CRM × Ganhos */}
+          {renderCross('Criativo × CRM × Ganhos', '— ordenado por quem mais gera clientes, não leads', 'Criativo', report?.cruzamento || [])}
+          {renderCross('Conjunto × CRM × Ganhos', '— qual público mais vira cliente', 'Conjunto (público)', report?.cruzamentoConjuntos || [])}
 
           {/* Lista de leads (pra conferir os UTMs reais) */}
           <div style={{ ...card, padding: 0, overflow: 'hidden' }}>

@@ -253,6 +253,51 @@ beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
     LIMIT 40
   `;
 
+  // ─── Conjunto × CRM × Ganhos (por publico, casando utm_term com o nome do conjunto no Meta) ───
+  const cruzamentoConjuntos = await sql`
+    SELECT
+      l.utm_term AS conjunto,
+      COUNT(*) AS total_crm,
+      COUNT(*) FILTER (WHERE l.status = 'Ganhou') AS ganhos,
+      COUNT(*) FILTER (WHERE l.status = 'Aberto') AS abertos,
+      COUNT(*) FILTER (WHERE l.status = 'Perdido') AS perdidos,
+      MAX(s.spend) AS investimento,
+      MAX(s.leads) AS leads_meta
+    FROM beemon_crm_leads l
+    LEFT JOIN ad_sets s ON s.user_id = l.user_id AND LOWER(TRIM(s.name)) = LOWER(TRIM(l.utm_term))
+    WHERE l.user_id = ${req.userId!} AND l.data BETWEEN ${from} AND ${to}
+      AND l.utm_term IS NOT NULL AND l.utm_term != ''
+    GROUP BY l.utm_term
+    ORDER BY COUNT(*) FILTER (WHERE l.status = 'Ganhou') DESC, COUNT(*) DESC
+    LIMIT 40
+  `;
+
+  // ─── Métricas do Meta no período (todas as campanhas Meta = Beemon) ───
+  const [meta] = await sql`
+    SELECT
+      COALESCE(SUM(m.spend), 0) AS spend,
+      COALESCE(SUM(m.leads), 0) AS leads,
+      COALESCE(SUM(m.clicks), 0) AS clicks,
+      COALESCE(SUM(m.impressions), 0) AS impressions
+    FROM metrics m
+    JOIN campaigns c ON c.id = m.campaign_id
+    WHERE c.user_id = ${req.userId!} AND c.platform = 'meta'
+      AND m.date BETWEEN ${from} AND ${to}
+  `;
+  const metaSpend = Number(meta?.spend || 0);
+  const metaLeads = Number(meta?.leads || 0);
+  const metaClicks = Number(meta?.clicks || 0);
+  const metaImpr = Number(meta?.impressions || 0);
+  const metaMetrics = {
+    spend: metaSpend,
+    leads: metaLeads,
+    clicks: metaClicks,
+    impressions: metaImpr,
+    cpl: metaLeads > 0 ? metaSpend / metaLeads : 0,
+    cpc: metaClicks > 0 ? metaSpend / metaClicks : 0,
+    ctr: metaImpr > 0 ? (metaClicks / metaImpr) * 100 : 0,
+  };
+
   res.json({
     success: true,
     data: {
@@ -261,8 +306,10 @@ beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
       totals,
       previous,
       daily,
+      metaMetrics,
       campanhas, conjuntos, criativos,
       cruzamento,
+      cruzamentoConjuntos,
     },
   });
 });
