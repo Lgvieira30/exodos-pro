@@ -298,6 +298,30 @@ beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
     ctr: metaImpr > 0 ? (metaClicks / metaImpr) * 100 : 0,
   };
 
+  // ─── Campanha × CRM × Ganhos (casa utm_campaign com o nome da campanha Meta + gasto no periodo) ───
+  const cruzamentoCampanhas = await sql`
+    SELECT
+      l.utm_campaign AS campanha,
+      COUNT(*) AS total_crm,
+      COUNT(*) FILTER (WHERE l.status = 'Ganhou') AS ganhos,
+      COUNT(*) FILTER (WHERE l.status = 'Aberto') AS abertos,
+      COUNT(*) FILTER (WHERE l.status = 'Perdido') AS perdidos,
+      MAX(cs.spend) AS investimento,
+      MAX(cs.leads) AS leads_meta
+    FROM beemon_crm_leads l
+    LEFT JOIN (
+      SELECT c.name AS cname, SUM(m.spend) AS spend, SUM(m.leads) AS leads
+      FROM campaigns c JOIN metrics m ON m.campaign_id = c.id
+      WHERE c.user_id = ${req.userId!} AND c.platform = 'meta' AND m.date BETWEEN ${from} AND ${to}
+      GROUP BY c.name
+    ) cs ON LOWER(TRIM(cs.cname)) = LOWER(TRIM(l.utm_campaign))
+    WHERE l.user_id = ${req.userId!} AND l.data BETWEEN ${from} AND ${to}
+      AND l.utm_campaign IS NOT NULL AND l.utm_campaign != ''
+    GROUP BY l.utm_campaign
+    ORDER BY COUNT(*) FILTER (WHERE l.status = 'Ganhou') DESC, COUNT(*) DESC
+    LIMIT 40
+  `;
+
   res.json({
     success: true,
     data: {
@@ -310,6 +334,7 @@ beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
       campanhas, conjuntos, criativos,
       cruzamento,
       cruzamentoConjuntos,
+      cruzamentoCampanhas,
     },
   });
 });

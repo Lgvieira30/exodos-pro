@@ -81,11 +81,18 @@ export default function Beemon() {
     Ganhos: Number(d.ganhos), Abertos: Number(d.abertos), Perdidos: Number(d.perdidos),
   }));
   const meta = report?.metaMetrics || { spend: 0, leads: 0, clicks: 0, impressions: 0, cpl: 0, cpc: 0, ctr: 0 };
-  const topCriativo = (report?.cruzamento || []).find((c: any) => Number(c.ganhos) > 0);
-  const resumo = report
-    ? `No período, a BeeMôn ${meta.spend > 0 ? `investiu ${brl(meta.spend)} em Meta Ads gerando ${meta.leads} leads (CPL ${brl(meta.cpl)}). ` : ''}` +
-      `O CRM registrou ${t.oportunidades} oportunidade(s), sendo ${t.ganhos} ganho(s) e ${t.abertos} em aberto — win rate de ${winRate.toFixed(0)}%.` +
-      `${topCriativo ? ` O criativo que mais virou cliente foi "${topCriativo.criativo}", com ${topCriativo.ganhos} ganho(s).` : ''}`
+  type CruzC = { nome: string; ganhos: number; inv: number; total: number; custoCliente: number | null };
+  const cruzCriativos: CruzC[] = (report?.cruzamento || []).map((c: any) => {
+    const ganhos = Number(c.ganhos || 0), inv = Number(c.investimento || 0), total = Number(c.total_crm || 0);
+    return { nome: c.criativo as string, ganhos, inv, total, custoCliente: inv > 0 && ganhos > 0 ? inv / ganhos : null };
+  });
+  const campeao = [...cruzCriativos].sort((a, b) => b.ganhos - a.ganhos)[0];
+  const escalar = cruzCriativos.filter((c) => c.ganhos > 0 && c.custoCliente != null).sort((a, b) => (a.custoCliente! - b.custoCliente!))[0];
+  const pausar = cruzCriativos.filter((c) => c.inv > 0 && c.ganhos === 0).sort((a, b) => b.inv - a.inv)[0];
+  const volumeSemVenda = cruzCriativos.filter((c) => c.ganhos === 0 && c.total > 0).sort((a, b) => b.total - a.total)[0];
+  const resumoHeadline = report
+    ? `${meta.spend > 0 ? `Investimento ${brl(meta.spend)} · ${meta.leads} leads (CPL ${brl(meta.cpl)}). ` : ''}` +
+      `CRM: ${t.oportunidades} oportunidades · ${t.ganhos} ganhos · win rate ${winRate.toFixed(0)}%.`
     : '';
 
   const card: React.CSSProperties = { background: BG_SURFACE, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px' };
@@ -107,7 +114,7 @@ export default function Beemon() {
             <span style={{ fontSize: '10px', color: S_GREEN, fontWeight: 700, textAlign: 'right' }}>GANHOS</span>
             <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>TAXA</span>
             <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>INVEST.</span>
-            <span style={{ fontSize: '10px', color: S_BLUE, fontWeight: 700, textAlign: 'right' }}>CUSTO/GANHO</span>
+            <span style={{ fontSize: '10px', color: S_BLUE, fontWeight: 700, textAlign: 'right' }}>CUSTO/CLIENTE</span>
           </div>
           {crossRows.map((r: any, i: number) => {
             const nome = r.criativo ?? r.conjunto ?? r.chave ?? '—';
@@ -142,7 +149,7 @@ export default function Beemon() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '28px 32px' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .bm-row:hover{background:rgba(255,255,255,0.03)!important} @media(max-width:860px){.bm-grid{grid-template-columns:1fr!important}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .bm-row:hover{background:rgba(255,255,255,0.03)!important} @media(max-width:860px){.bm-grid{grid-template-columns:1fr!important}.bm-grid2{grid-template-columns:1fr!important}}`}</style>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px', flexWrap: 'wrap', gap: '12px' }}>
@@ -165,13 +172,26 @@ export default function Beemon() {
         </div>
       </div>
 
-      {/* Resumo Executivo automático */}
+      {/* Resumo Executivo automático (estruturado) */}
       {report && (
-        <div style={{ ...card, marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(61,184,232,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '15px' }}>📋</div>
-          <div>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Resumo Executivo</p>
-            <p style={{ fontSize: '13px', color: FG, lineHeight: 1.6 }}>{resumo}</p>
+        <div style={{ ...card, marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '15px' }}>📋</span>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: FG_MUTED, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resumo Executivo</p>
+          </div>
+          <p style={{ fontSize: '13px', color: FG, lineHeight: 1.6, marginBottom: '14px' }}>{resumoHeadline}</p>
+          <div className="bm-grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+            {[
+              { icon: '🏆', label: 'Campeão em vendas', val: campeao && campeao.ganhos > 0 ? `${campeao.nome} — ${campeao.ganhos} ganhos` : 'sem ganhos no período', color: S_GREEN },
+              { icon: '🚀', label: 'O que escalar', val: escalar ? `${escalar.nome} — melhor custo/cliente (${brl(escalar.custoCliente!)})` : 'sem candidato claro ainda', color: S_BLUE },
+              { icon: '⛔', label: 'O que pausar', val: pausar ? `${pausar.nome} — ${brl(pausar.inv)} gastos e 0 ganhos` : 'nada gastando à toa', color: S_RED },
+              { icon: '⚠️', label: 'Volume sem venda', val: volumeSemVenda ? `${volumeSemVenda.nome} — ${volumeSemVenda.total} leads, 0 ganhos (revisar)` : '—', color: S_YELLOW },
+            ].map((it) => (
+              <div key={it.label} style={{ background: BG_ELEVATED, borderRadius: '10px', padding: '10px 12px', borderLeft: `2px solid ${it.color}` }}>
+                <p style={{ fontSize: '10px', fontWeight: 700, color: it.color, textTransform: 'uppercase', marginBottom: '3px' }}>{it.icon} {it.label}</p>
+                <p style={{ fontSize: '12px', color: FG, lineHeight: 1.4 }}>{it.val}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -308,8 +328,9 @@ export default function Beemon() {
             ))}
           </div>
 
-          {/* Cruzamentos: Criativo e Conjunto × CRM × Ganhos */}
-          {renderCross('Criativo × CRM × Ganhos', '— ordenado por quem mais gera clientes, não leads', 'Criativo', report?.cruzamento || [])}
+          {/* Cruzamentos × CRM × Ganhos (campanha → conjunto → criativo) */}
+          {renderCross('Campanha × CRM × Ganhos', '— ordenado por ganhos, depois custo/cliente', 'Campanha', report?.cruzamentoCampanhas || [])}
+          {renderCross('Criativo × CRM × Ganhos', '— qual criativo mais vira cliente, não lead', 'Criativo', report?.cruzamento || [])}
           {renderCross('Conjunto × CRM × Ganhos', '— qual público mais vira cliente', 'Conjunto (público)', report?.cruzamentoConjuntos || [])}
 
           {/* Lista de leads (pra conferir os UTMs reais) */}
