@@ -17,6 +17,8 @@ const S_YELLOW = '#FACC15';
 const S_RED = '#F87171';
 
 interface RankRow { chave: string; leads: number; ganhos: number; abertos: number; perdidos: number; }
+interface CruzRow { criativo: string; total_crm: number; ganhos: number; abertos: number; perdidos: number; investimento: number | null; leads_meta: number | null; }
+const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 interface Lead { moskit_deal_id: string; data: string | null; lead: string; status: string; utm_source: string; utm_campaign: string; utm_term: string; utm_content: string; pagina: string; }
 
 const STATUS_COLOR: Record<string, string> = { Ganhou: S_GREEN, Aberto: S_YELLOW, Perdido: S_RED };
@@ -162,6 +164,51 @@ export default function Beemon() {
               </div>
             ))}
           </div>
+
+          {/* Criativo × CRM × Ganhos — o ranking que importa */}
+          {(() => {
+            const cruz: CruzRow[] = report?.cruzamento || [];
+            if (cruz.length === 0) return null;
+            return (
+              <div style={{ ...card, marginBottom: '20px', padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Trophy size={15} color={S_GREEN} />
+                  <p style={{ fontSize: '13px', fontWeight: 800, color: FG }}>Criativo × CRM × Ganhos</p>
+                  <span style={{ fontSize: '11px', color: FG_SUBTLE }}>— ordenado por quem mais gera clientes, não leads</span>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, background: BG_ELEVATED, minWidth: '760px' }}>
+                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700 }}>#</span>
+                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textTransform: 'uppercase' }}>Criativo</span>
+                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>CRM</span>
+                    <span style={{ fontSize: '10px', color: S_GREEN, fontWeight: 700, textAlign: 'right' }}>GANHOS</span>
+                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>TAXA</span>
+                    <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>INVEST.</span>
+                    <span style={{ fontSize: '10px', color: S_BLUE, fontWeight: 700, textAlign: 'right' }}>CUSTO/GANHO</span>
+                  </div>
+                  {cruz.map((r, i) => {
+                    const taxa = r.total_crm > 0 ? (r.ganhos / r.total_crm) * 100 : 0;
+                    const inv = Number(r.investimento || 0);
+                    const custoGanho = inv > 0 && r.ganhos > 0 ? inv / r.ganhos : null;
+                    return (
+                      <div key={r.criativo} className="bm-row" style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, alignItems: 'center', minWidth: '760px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? S_GREEN : FG_SUBTLE }}>{i + 1}º</span>
+                        <span style={{ fontSize: '13px', color: FG, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.criativo}>{r.criativo}</span>
+                        <span style={{ fontSize: '13px', color: FG, textAlign: 'right' }}>{r.total_crm}</span>
+                        <span style={{ fontSize: '13px', color: r.ganhos > 0 ? S_GREEN : FG_SUBTLE, fontWeight: 800, textAlign: 'right' }}>{r.ganhos}</span>
+                        <span style={{ fontSize: '12px', color: FG_MUTED, textAlign: 'right' }}>{taxa.toFixed(0)}%</span>
+                        <span style={{ fontSize: '12px', color: inv > 0 ? FG : FG_SUBTLE, textAlign: 'right' }}>{inv > 0 ? brl(inv) : '—'}</span>
+                        <span style={{ fontSize: '13px', color: custoGanho ? S_BLUE : FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>{custoGanho ? brl(custoGanho) : '—'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p style={{ padding: '10px 18px', fontSize: '10px', color: FG_SUBTLE }}>
+                  💡 "Custo por ganho" = investimento do Meta ÷ ganhos do CRM. Investimento aparece quando o criativo casa com um anúncio do Meta sincronizado.
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Lista de leads (pra conferir os UTMs reais) */}
           <div style={{ ...card, padding: 0, overflow: 'hidden' }}>

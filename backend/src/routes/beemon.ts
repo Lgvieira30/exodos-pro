@@ -232,6 +232,27 @@ beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
     ranking('utm_content'),
   ]);
 
+  // ─── Criativo × CRM × Ganhos (o ranking que importa) ───
+  // Cruza os leads do CRM (por utm_content = nome do criativo) com o gasto do Meta
+  // (tabela ads, casando pelo nome do anuncio). Onde nao casa, o investimento fica nulo.
+  const cruzamento = await sql`
+    SELECT
+      l.utm_content AS criativo,
+      COUNT(*) AS total_crm,
+      COUNT(*) FILTER (WHERE l.status = 'Ganhou') AS ganhos,
+      COUNT(*) FILTER (WHERE l.status = 'Aberto') AS abertos,
+      COUNT(*) FILTER (WHERE l.status = 'Perdido') AS perdidos,
+      MAX(a.spend) AS investimento,
+      MAX(a.leads) AS leads_meta
+    FROM beemon_crm_leads l
+    LEFT JOIN ads a ON a.user_id = l.user_id AND LOWER(TRIM(a.name)) = LOWER(TRIM(l.utm_content))
+    WHERE l.user_id = ${req.userId!} AND l.data BETWEEN ${from} AND ${to}
+      AND l.utm_content IS NOT NULL AND l.utm_content != ''
+    GROUP BY l.utm_content
+    ORDER BY COUNT(*) FILTER (WHERE l.status = 'Ganhou') DESC, COUNT(*) DESC
+    LIMIT 40
+  `;
+
   res.json({
     success: true,
     data: {
@@ -241,6 +262,7 @@ beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
       previous,
       daily,
       campanhas, conjuntos, criativos,
+      cruzamento,
     },
   });
 });

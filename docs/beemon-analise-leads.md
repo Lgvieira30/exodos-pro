@@ -73,3 +73,33 @@ Objetivo: identificar evolução ou queda de desempenho.
 > **Nunca tomar decisão olhando apenas o Meta Ads.**
 > Fonte da verdade: **CRM → Ganhos → Qualidade dos Leads**.
 > Toda recomendação deve ser baseada no cruzamento **Meta Ads + CRM**.
+
+---
+
+## Mapa dos UTMs (confirmado com dados reais)
+
+A LP `bee2go.com.br` grava no CRM (Moskit) os UTMs do anúncio:
+
+| UTM | Significa | Casa com (Meta) |
+|-----|-----------|-----------------|
+| `utm_campaign` | Campanha (ex: `bee_meta_lead_0426`) | nome da campanha |
+| `utm_term` | Conjunto / público (ex: `Always On - LAL (ICP) (5)`, `Mar Aberto`, `RMK (3)`) | nome do conjunto |
+| `utm_content` | **Criativo / anúncio** (ex: `Vídeo - O cliente devolveu o carro...`) | **nome do anúncio** |
+| `utm_id` | ID do conjunto no Meta | `ad_sets.meta_id` |
+| `utm_medium` | Posicionamento (Instagram_Reels, FB Mobile Reels, Stories) | — |
+
+> O cruzamento principal é por **`utm_content` ↔ nome do anúncio** no Meta.
+
+## Relatório mensal — formato de referência (Notion, Maio/2026)
+
+1. **Resumo Executivo** (narrativo)
+2. **Métricas Principais** — Investimento, Leads, CPL médio, Cliques, CPC, Alcance, CTR
+3. **Ranking de Campanhas** — por volume de leads e por melhor CPL
+4. **CRM** — OPEN/WON/LOST, taxa de fechamento/perda, segmentos, **Meta Ads × CRM** (leads vs oportunidades), diagnóstico
+5. **Ranking de Criativos** — volume + melhor CPL + leitura estratégica + plano de ação
+6. **Criativo × CRM × Ganhos** ← *o ranking mais importante*:
+   `Criativo · Total CRM · Ganhos · Abertos · Perdidos · Taxa de ganho · Investimento Meta · CPL Meta · Custo por ganho`
+   - Custo por ganho = Investimento Meta ÷ Ganhos CRM
+   - Decisão por **eficiência em vendas**, não por CPL (ex.: criativo com CPL alto mas melhor custo/ganho ganha do "lead barato")
+
+> Mônaco usa a mesma lógica, trocando **Criativo** por **Palavra-chave/termo** (canal = Google). O bloco de CRM é idêntico.
