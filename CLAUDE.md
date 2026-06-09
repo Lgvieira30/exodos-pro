@@ -17,7 +17,7 @@ Futuramente um SaaS para agências brasileiras (concorrentes: RD Station, Optmyz
 | Backend | Easypanel (VPS Hostinger) | Online | porta 3001 |
 | Banco de dados | Easypanel (PostgreSQL interno) | Online | serviço `exodos-pro_db` |
 | Meta Ads | Conectado | — | sync funcionando |
-| Google Ads | Pendente | — | rota não implementada |
+| Google Ads | Implementado | — | login OAuth ("Entrar com Google") + sync real |
 
 ### Como o Easypanel funciona
 - O Easypanel roda no VPS da Hostinger
@@ -139,14 +139,24 @@ GET  /api/metrics/:id                    [auth]
 
 GET  /api/sync/status                    [auth]
 POST /api/sync/meta                      [auth]  ✅ implementado
-POST /api/sync/google                    [auth]  ⚠️ não implementado
+POST /api/sync/google                    [auth]  ✅ implementado
 
 GET  /api/analyze/dashboard              [auth]
 GET  /api/analyze/:id                    [auth]
 
 GET/POST  /api/integrations              [auth]
-DELETE    /api/integrations/:platform    [auth]
+DELETE    /api/integrations/:id          [auth]
+PATCH     /api/integrations/:id/activate [auth]
+GET       /api/integrations/google/oauth/start     [auth]   inicia "Entrar com Google"
+GET       /api/integrations/google/oauth/callback           público — redirect do Google
 ```
+
+> **Google Ads OAuth** — o login "Entrar com Google" usa credenciais de nível
+> plataforma definidas no Easypanel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+> `GOOGLE_DEVELOPER_TOKEN` e `GOOGLE_OAUTH_REDIRECT_URI`. O OAuth Client é criado
+> no Google Cloud Console (tipo "Aplicativo da Web") e a redirect URI registrada lá
+> deve ser exatamente `https://SEU-BACKEND/api/integrations/google/oauth/callback`.
+> O formulário manual (Customer ID + tokens) continua disponível como fallback avançado.
 
 ---
 
@@ -166,7 +176,7 @@ DELETE    /api/integrations/:platform    [auth]
 | 1 | `CommandCenter.tsx` — re-integrar ao `App.tsx` ou deletar | ⚠️ Pendente |
 | 2 | Campanhas pausadas no Dashboard/Professor/Analytics | ✅ Feito |
 | 3 | Cor primária: trocar `#6B9AE8` por `#3DB8E8` no `App.tsx` | ⚠️ Pendente |
-| 4 | Google Ads — implementar `/api/sync/google` real | ⚠️ Pendente |
+| 4 | Google Ads — sync real + login OAuth ("Entrar com Google") | ✅ Feito (falta setar env vars no Easypanel) |
 | 5 | Dados mock → chamadas reais via `api.ts` | ✅ Feito (Dashboard usa API real) |
 | 6 | Redis — cache de métricas | ⚠️ Pendente |
 | 7 | `FRONTEND_URL` no Easypanel — liberar CORS do Vercel | ⚠️ Adicionar no painel |
