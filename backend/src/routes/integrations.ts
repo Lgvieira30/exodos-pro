@@ -71,7 +71,7 @@ integrationsRouter.get('/google/oauth/callback', async (req: Request, res: Respo
     let customerIds: string[] = [];
     try {
       const listRes = await axios.get(
-        'https://googleads.googleapis.com/v18/customers:listAccessibleCustomers',
+        'https://googleads.googleapis.com/v23/customers:listAccessibleCustomers',
         { headers: { Authorization: `Bearer ${accessToken}`, 'developer-token': developerToken } }
       );
       customerIds = (listRes.data?.resourceNames || [])
