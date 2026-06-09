@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Trophy, Users, CheckCircle2, Clock, XCircle, Layers, Megaphone, Image } from 'lucide-react';
 import { beemonApi } from '../lib/api';
+import { DateRangePicker, DateRange, defaultRange } from '../components/DateRangePicker';
 
 const BG = '#090909';
 const BG_SURFACE = '#0E0F12';
@@ -27,24 +28,25 @@ export default function Beemon() {
   const [syncing, setSyncing] = useState(false);
   const [msg, setMsg] = useState('');
   const [tab, setTab] = useState<'campanhas' | 'conjuntos' | 'criativos'>('campanhas');
+  const [range, setRange] = useState<DateRange>(defaultRange());
 
-  async function load() {
+  async function load(rg: DateRange) {
     const [r, l] = await Promise.all([
-      beemonApi.report().catch(() => null),
+      beemonApi.report(rg.from, rg.to).catch(() => null),
       beemonApi.leads().catch(() => null),
     ]);
     setReport(r?.data || null);
     setLeads(l?.data?.leads || []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(range); }, [range]); // eslint-disable-line
 
   async function handleSync() {
     setSyncing(true); setMsg('');
     try {
       const r = await beemonApi.syncCrm();
       setMsg(r.data?.message || 'Sincronizado!');
-      await load();
+      await load(range);
     } catch (e: any) {
       setMsg(e?.response?.data?.error?.message || 'Erro ao sincronizar.');
     } finally {
@@ -54,7 +56,11 @@ export default function Beemon() {
   }
 
   const t = report?.totals || { oportunidades: 0, ganhos: 0, abertos: 0, perdidos: 0 };
+  const prev = report?.previous || { oportunidades: 0, ganhos: 0, abertos: 0, perdidos: 0 };
   const winRate = t.oportunidades > 0 ? (t.ganhos / t.oportunidades) * 100 : 0;
+  const prevWin = prev.oportunidades > 0 ? (prev.ganhos / prev.oportunidades) * 100 : 0;
+  const hasPrev = (prev.oportunidades || 0) > 0;
+  const pct = (cur: number, p: number) => p > 0 ? ((cur - p) / p) * 100 : (cur > 0 ? 100 : 0);
   const rows: RankRow[] = report?.[tab] || [];
 
   const card: React.CSSProperties = { background: BG_SURFACE, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '18px 20px' };
@@ -81,7 +87,8 @@ export default function Beemon() {
             <p style={{ fontSize: '12px', color: FG_MUTED, marginTop: '2px' }}>Meta Ads + CRM — qualidade real dos leads</p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <DateRangePicker value={range} onChange={setRange} />
           {msg && <span style={{ fontSize: '11px', color: msg.includes('Erro') ? S_RED : FG, fontWeight: 600 }}>{msg}</span>}
           <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: `1px solid ${BORDER_MED}`, background: 'rgba(255,255,255,0.08)', color: FG, fontSize: '12px', fontWeight: 700, cursor: syncing ? 'not-allowed' : 'pointer', opacity: syncing ? 0.6 : 1, fontFamily: 'inherit' }}>
             <RefreshCw size={13} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
@@ -93,17 +100,22 @@ export default function Beemon() {
       {/* CRM Totals */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }}>
         {[
-          { label: 'Oportunidades', value: t.oportunidades, color: S_BLUE, Icon: Users },
-          { label: 'Ganhos', value: t.ganhos, color: S_GREEN, Icon: CheckCircle2 },
-          { label: 'Abertos', value: t.abertos, color: S_YELLOW, Icon: Clock },
-          { label: 'Perdidos', value: t.perdidos, color: S_RED, Icon: XCircle },
-          { label: 'Win Rate', value: `${winRate.toFixed(0)}%`, color: S_GREEN, Icon: Trophy },
-        ].map(({ label, value, color, Icon }) => (
+          { label: 'Oportunidades', value: t.oportunidades, color: S_BLUE, Icon: Users, delta: pct(t.oportunidades, prev.oportunidades), good: t.oportunidades >= prev.oportunidades as boolean | null },
+          { label: 'Ganhos', value: t.ganhos, color: S_GREEN, Icon: CheckCircle2, delta: pct(t.ganhos, prev.ganhos), good: t.ganhos >= prev.ganhos as boolean | null },
+          { label: 'Abertos', value: t.abertos, color: S_YELLOW, Icon: Clock, delta: pct(t.abertos, prev.abertos), good: null as boolean | null },
+          { label: 'Perdidos', value: t.perdidos, color: S_RED, Icon: XCircle, delta: pct(t.perdidos, prev.perdidos), good: (t.perdidos <= prev.perdidos) as boolean | null },
+          { label: 'Win Rate', value: `${winRate.toFixed(0)}%`, color: S_GREEN, Icon: Trophy, delta: pct(winRate, prevWin), good: (winRate >= prevWin) as boolean | null },
+        ].map(({ label, value, color, Icon, delta, good }) => (
           <div key={label} style={card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={16} color={color} />
               </div>
+              {hasPrev && (
+                <span title="vs período anterior" style={{ fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px', color: good === true ? S_GREEN : good === false ? S_RED : FG_MUTED }}>
+                  {delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(0)}%
+                </span>
+              )}
             </div>
             <p style={{ fontSize: '24px', fontWeight: 800, color: FG, lineHeight: 1 }}>{value}</p>
             <p style={{ fontSize: '11px', color: FG_MUTED, marginTop: '5px', fontWeight: 500 }}>{label}</p>

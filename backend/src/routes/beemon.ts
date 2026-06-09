@@ -163,20 +163,53 @@ beemonRouter.get('/leads', async (req: AuthRequest, res: Response) => {
   res.json({ success: true, data: { leads } });
 });
 
-// GET /api/beemon/report?from=&to= — resumo CRM + rankings por UTM
+// GET /api/beemon/report?from=&to= — resumo CRM + rankings por UTM + comparativo
 beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
   const today = new Date().toISOString().split('T')[0];
   const to = (req.query.to as string) || today;
   const from = (req.query.from as string) || new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0];
 
-  const [totals] = await sql`
-    SELECT
-      COUNT(*) AS oportunidades,
+  // Periodo anterior de mesma duracao (para o comparativo semana vs semana)
+  const fromD = new Date(from), toD = new Date(to);
+  const lenDays = Math.round((toD.getTime() - fromD.getTime()) / 86400000) + 1;
+  const prevTo = new Date(fromD); prevTo.setDate(prevTo.getDate() - 1);
+  const prevFrom = new Date(prevTo); prevFrom.setDate(prevFrom.getDate() - lenDays + 1);
+  const prevFromStr = prevFrom.toISOString().split('T')[0];
+  const prevToStr = prevTo.toISOString().split('T')[0];
+
+  const totalsFor = async (dFrom: string, dTo: string) => {
+    const [t] = await sql`
+      SELECT
+        COUNT(*) AS oportunidades,
+        COUNT(*) FILTER (WHERE status = 'Ganhou') AS ganhos,
+        COUNT(*) FILTER (WHERE status = 'Aberto') AS abertos,
+        COUNT(*) FILTER (WHERE status = 'Perdido') AS perdidos
+      FROM beemon_crm_leads
+      WHERE user_id = ${req.userId!} AND data BETWEEN ${dFrom} AND ${dTo}
+    `;
+    return {
+      oportunidades: Number(t?.oportunidades || 0),
+      ganhos: Number(t?.ganhos || 0),
+      abertos: Number(t?.abertos || 0),
+      perdidos: Number(t?.perdidos || 0),
+    };
+  };
+
+  const [totals, previous] = await Promise.all([
+    totalsFor(from, to),
+    totalsFor(prevFromStr, prevToStr),
+  ]);
+
+  // Série diária (leads por dia, por status) para gráfico/calendário
+  const daily = await sql`
+    SELECT data::text AS date,
+      COUNT(*) AS leads,
       COUNT(*) FILTER (WHERE status = 'Ganhou') AS ganhos,
       COUNT(*) FILTER (WHERE status = 'Aberto') AS abertos,
       COUNT(*) FILTER (WHERE status = 'Perdido') AS perdidos
     FROM beemon_crm_leads
     WHERE user_id = ${req.userId!} AND data BETWEEN ${from} AND ${to}
+    GROUP BY data ORDER BY data
   `;
 
   const ranking = (col: 'utm_campaign' | 'utm_term' | 'utm_content') => sql`
@@ -203,12 +236,10 @@ beemonRouter.get('/report', async (req: AuthRequest, res: Response) => {
     success: true,
     data: {
       period: { from, to },
-      totals: {
-        oportunidades: Number(totals?.oportunidades || 0),
-        ganhos: Number(totals?.ganhos || 0),
-        abertos: Number(totals?.abertos || 0),
-        perdidos: Number(totals?.perdidos || 0),
-      },
+      previousPeriod: { from: prevFromStr, to: prevToStr },
+      totals,
+      previous,
+      daily,
       campanhas, conjuntos, criativos,
     },
   });
