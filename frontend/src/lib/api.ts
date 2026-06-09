@@ -33,8 +33,8 @@ export const authApi = {
 };
 
 export const campaignsApi = {
-  list: (from?: string, to?: string) =>
-    api.get('/campaigns', { params: from ? { from, to } : {} }).then((r) => r.data),
+  list: (from?: string, to?: string, platform?: string) =>
+    api.get('/campaigns', { params: { ...(from ? { from, to } : {}), ...(platform ? { platform } : {}) } }).then((r) => r.data),
   get: (id: string) => api.get(`/campaigns/${id}`).then((r) => r.data),
   create: (data: Record<string, unknown>) => api.post('/campaigns', data).then((r) => r.data),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/campaigns/${id}`, data).then((r) => r.data),
@@ -42,8 +42,8 @@ export const campaignsApi = {
 };
 
 export const metricsApi = {
-  dashboard: (from?: string, to?: string) =>
-    api.get('/metrics/dashboard', { params: { from, to } }).then((r) => r.data),
+  dashboard: (from?: string, to?: string, platform?: string) =>
+    api.get('/metrics/dashboard', { params: { from, to, ...(platform ? { platform } : {}) } }).then((r) => r.data),
   campaign: (id: string, from?: string, to?: string) =>
     api.get(`/metrics/${id}`, { params: { from, to } }).then((r) => r.data),
 };

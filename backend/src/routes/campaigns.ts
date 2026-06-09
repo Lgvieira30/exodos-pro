@@ -11,6 +11,7 @@ campaignsRouter.use(requireAuth);
 campaignsRouter.get('/', async (req: AuthRequest, res: Response) => {
   const from = (req.query.from as string) || null;
   const to   = (req.query.to   as string) || null;
+  const platform = (req.query.platform as string) || null;
 
   const campaigns = await sql`
     SELECT c.*,
@@ -30,6 +31,7 @@ campaignsRouter.get('/', async (req: AuthRequest, res: Response) => {
       AND (${from}::date IS NULL OR m.date >= ${from}::date)
       AND (${to}::date   IS NULL OR m.date <= ${to}::date)
     WHERE c.user_id = ${req.userId!}
+      AND (${platform}::text IS NULL OR c.platform = ${platform})
     GROUP BY c.id
     ORDER BY c.created_at DESC
   `;
