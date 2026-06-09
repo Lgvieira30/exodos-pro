@@ -73,6 +73,8 @@ export const integrationsApi = {
     api.post('/integrations', data).then((r) => r.data),
   activate: (id: string) => api.patch(`/integrations/${id}/activate`).then((r) => r.data),
   remove: (id: string) => api.delete(`/integrations/${id}`).then((r) => r.data),
+  googleOAuthStart: (nickname?: string) =>
+    api.get('/integrations/google/oauth/start', { params: nickname ? { nickname } : {} }).then((r) => r.data),
 };
 
 export const adSetsApi = {

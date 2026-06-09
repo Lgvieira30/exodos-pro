@@ -440,7 +440,12 @@ syncRouter.post('/google', async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const { app_id: client_id, app_secret: client_secret, access_token: refresh_token, account_id, developer_token } = integration;
+  // Credenciais do app: usa o que estiver salvo na integracao e, se faltar, cai para as env vars da plataforma
+  const client_id = integration.app_id || process.env.GOOGLE_CLIENT_ID;
+  const client_secret = integration.app_secret || process.env.GOOGLE_CLIENT_SECRET;
+  const refresh_token = integration.access_token;
+  const account_id = integration.account_id;
+  const developer_token = integration.developer_token || process.env.GOOGLE_DEVELOPER_TOKEN;
 
   if (!developer_token) {
     res.status(400).json({ success: false, error: { message: 'Developer token do Google Ads nao configurado. Reconecte a conta em Configuracoes.' } });

@@ -39,6 +39,7 @@ export default function Settings() {
   const [syncingGoogle, setSyncingGoogle] = useState(false);
   const [showGoogleSecret, setShowGoogleSecret] = useState(false);
   const [showGoogleToken, setShowGoogleToken] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   const metaAccounts = integrations.filter((i) => i.platform === 'meta');
   const googleAccounts = integrations.filter((i) => i.platform === 'google');
@@ -47,7 +48,36 @@ export default function Settings() {
 
   useEffect(() => {
     integrationsApi.list().then((r) => setIntegrations(r.data?.integrations || [])).catch(() => {});
+
+    // Trata o retorno do OAuth do Google (redirecionado de volta para /settings)
+    const params = new URLSearchParams(window.location.search);
+    const google = params.get('google');
+    if (google === 'connected') {
+      const count = params.get('count');
+      flash(`Google Ads conectado!${count ? ` ${count} conta(s) encontrada(s).` : ''} Sincronize para carregar os dados.`, true);
+      integrationsApi.list().then((r) => setIntegrations(r.data?.integrations || [])).catch(() => {});
+    } else if (google === 'error') {
+      flash(`Erro ao conectar o Google Ads: ${params.get('message') || 'tente novamente'}`, false);
+    }
+    if (google) window.history.replaceState({}, '', window.location.pathname);
   }, []);
+
+  async function handleGoogleOAuth() {
+    setOauthLoading(true);
+    try {
+      const r = await integrationsApi.googleOAuthStart(googleForm.nickname || undefined);
+      const url = r.data?.url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        flash('Nao foi possivel iniciar o login do Google', false);
+        setOauthLoading(false);
+      }
+    } catch (err: any) {
+      flash(err.response?.data?.error?.message || 'Login do Google indisponivel. Use a conexao manual abaixo.', false);
+      setOauthLoading(false);
+    }
+  }
 
   function flash(text: string, ok: boolean) {
     setMsg({ text, ok });
@@ -405,13 +435,23 @@ export default function Settings() {
           </div>
         )}
 
-        {/* Botão adicionar / formulário Google */}
+        {/* Botão principal: login OAuth com 1 clique */}
+        <button
+          onClick={handleGoogleOAuth}
+          disabled={oauthLoading}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '11px 14px', borderRadius: '11px', border: `1px solid ${BORDER_MED}`, background: oauthLoading ? BG_ELEVATED : '#fff', color: oauthLoading ? FG_SUBTLE : '#1f1f1f', fontSize: '13px', fontWeight: 700, cursor: oauthLoading ? 'default' : 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center', opacity: oauthLoading ? 0.7 : 1 }}
+        >
+          <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          {oauthLoading ? 'Redirecionando...' : 'Entrar com Google'}
+        </button>
+
+        {/* Botão secundário: conexão manual (avançado) */}
         <button
           onClick={() => setShowGoogleForm((v) => !v)}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: `1px solid ${BORDER_MED}`, background: 'rgba(255,255,255,0.04)', color: FG_MUTED, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', marginTop: '8px', borderRadius: '10px', border: `1px solid ${BORDER_MED}`, background: 'transparent', color: FG_SUBTLE, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center' }}
         >
-          {showGoogleForm ? <ChevronUp size={14} /> : <Plus size={14} />}
-          {showGoogleForm ? 'Cancelar' : 'Adicionar conta Google Ads'}
+          {showGoogleForm ? <ChevronUp size={13} /> : <Plus size={13} />}
+          {showGoogleForm ? 'Cancelar' : 'Conectar manualmente (avançado)'}
         </button>
 
         {showGoogleForm && (
