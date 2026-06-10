@@ -107,35 +107,41 @@ export default function Beemon() {
           <span style={{ fontSize: '11px', color: FG_SUBTLE }}>{subtitle}</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, background: BG_ELEVATED, minWidth: '760px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '22px 1fr 66px 56px 58px 50px 78px 84px', gap: '0 8px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, background: BG_ELEVATED, minWidth: '800px' }}>
             <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700 }}>#</span>
             <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textTransform: 'uppercase' }}>{colLabel}</span>
-            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>CRM</span>
-            <span style={{ fontSize: '10px', color: S_GREEN, fontWeight: 700, textAlign: 'right' }}>GANHOS</span>
-            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>TAXA</span>
-            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>INVEST.</span>
-            <span style={{ fontSize: '10px', color: S_BLUE, fontWeight: 700, textAlign: 'right' }}>CUSTO/CLIENTE</span>
+            <span style={{ fontSize: '10px', color: '#A78BFA', fontWeight: 700, textAlign: 'right' }} title="Geração — Meta Ads">LEADS META</span>
+            <span style={{ fontSize: '10px', color: S_GREEN, fontWeight: 700, textAlign: 'right' }} title="Qualidade — CRM">GANHOS</span>
+            <span style={{ fontSize: '10px', color: S_YELLOW, fontWeight: 700, textAlign: 'right' }}>ABERTOS</span>
+            <span style={{ fontSize: '10px', color: S_RED, fontWeight: 700, textAlign: 'right' }}>PERD</span>
+            <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>INVEST</span>
+            <span style={{ fontSize: '10px', color: S_BLUE, fontWeight: 700, textAlign: 'right' }}>CUSTO/CLI.</span>
           </div>
           {crossRows.map((r: any, i: number) => {
             const nome = r.criativo ?? r.conjunto ?? r.chave ?? '—';
-            const total = Number(r.total_crm || 0);
             const ganhos = Number(r.ganhos || 0);
-            const taxa = total > 0 ? (ganhos / total) * 100 : 0;
+            const abertos = Number(r.abertos || 0);
+            const perdidos = Number(r.perdidos || 0);
+            const leadsMeta = Number(r.leads_meta || 0);
             const inv = Number(r.investimento || 0);
-            const custoGanho = inv > 0 && ganhos > 0 ? inv / ganhos : null;
+            const custoCliente = inv > 0 && ganhos > 0 ? inv / ganhos : null;
             return (
-              <div key={nome + i} className="bm-row" style={{ display: 'grid', gridTemplateColumns: '24px 1fr 60px 60px 64px 90px 90px', gap: '0 10px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, alignItems: 'center', minWidth: '760px' }}>
+              <div key={nome + i} className="bm-row" style={{ display: 'grid', gridTemplateColumns: '22px 1fr 66px 56px 58px 50px 78px 84px', gap: '0 8px', padding: '11px 18px', borderBottom: `1px solid ${BORDER}`, alignItems: 'center', minWidth: '800px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? S_GREEN : FG_SUBTLE }}>{i + 1}º</span>
                 <span style={{ fontSize: '13px', color: FG, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={nome}>{nome}</span>
-                <span style={{ fontSize: '13px', color: FG, textAlign: 'right' }}>{total}</span>
+                <span style={{ fontSize: '13px', color: leadsMeta > 0 ? '#A78BFA' : FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>{leadsMeta > 0 ? leadsMeta : '—'}</span>
                 <span style={{ fontSize: '13px', color: ganhos > 0 ? S_GREEN : FG_SUBTLE, fontWeight: 800, textAlign: 'right' }}>{ganhos}</span>
-                <span style={{ fontSize: '12px', color: FG_MUTED, textAlign: 'right' }}>{taxa.toFixed(0)}%</span>
+                <span style={{ fontSize: '13px', color: FG_MUTED, textAlign: 'right' }}>{abertos}</span>
+                <span style={{ fontSize: '13px', color: FG_MUTED, textAlign: 'right' }}>{perdidos}</span>
                 <span style={{ fontSize: '12px', color: inv > 0 ? FG : FG_SUBTLE, textAlign: 'right' }}>{inv > 0 ? brl(inv) : '—'}</span>
-                <span style={{ fontSize: '13px', color: custoGanho ? S_BLUE : FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>{custoGanho ? brl(custoGanho) : '—'}</span>
+                <span style={{ fontSize: '13px', color: custoCliente ? S_BLUE : FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>{custoCliente ? brl(custoCliente) : '—'}</span>
               </div>
             );
           })}
         </div>
+        <p style={{ padding: '9px 18px', fontSize: '10px', color: FG_SUBTLE, lineHeight: 1.5 }}>
+          <span style={{ color: '#A78BFA', fontWeight: 700 }}>Leads Meta</span> = geração (camada Meta). <span style={{ color: S_GREEN, fontWeight: 700 }}>Ganhos</span>/<span style={{ color: S_YELLOW, fontWeight: 700 }}>Abertos</span>/<span style={{ color: S_RED, fontWeight: 700 }}>Perdidos</span> = status no CRM (camada qualidade). <strong>Não são a mesma coisa</strong> — um lead entra no CRM e depois recebe um status.
+        </p>
       </div>
     );
   }
@@ -277,9 +283,18 @@ export default function Beemon() {
                 <p style={{ fontSize: '13px', fontWeight: 700, color: FG }}>Funil de Conversão</p>
                 <p style={{ fontSize: '11px', color: FG_SUBTLE }}>Oportunidades → Clientes</p>
               </div>
+              {meta.leads > 0 && (
+                <>
+                  <div style={{ background: 'rgba(167,139,250,0.12)', border: `1px solid rgba(167,139,250,0.25)`, borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '22px', fontWeight: 800, color: '#A78BFA', lineHeight: 1 }}>{meta.leads}</p>
+                    <p style={{ fontSize: '11px', color: FG_MUTED, marginTop: '4px' }}>Leads Meta (geração)</p>
+                  </div>
+                  <p style={{ textAlign: 'center', fontSize: '11px', color: FG_SUBTLE }}>↓ entraram no CRM</p>
+                </>
+              )}
               <div style={{ background: 'rgba(61,184,232,0.12)', border: `1px solid rgba(61,184,232,0.25)`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
                 <p style={{ fontSize: '26px', fontWeight: 800, color: S_BLUE, lineHeight: 1 }}>{t.oportunidades}</p>
-                <p style={{ fontSize: '11px', color: FG_MUTED, marginTop: '4px' }}>Oportunidades</p>
+                <p style={{ fontSize: '11px', color: FG_MUTED, marginTop: '4px' }}>Oportunidades (CRM)</p>
               </div>
               <p style={{ textAlign: 'center', fontSize: '11px', color: FG_MUTED, fontWeight: 600 }}>↓ {winRate.toFixed(0)}% viraram cliente</p>
               <div style={{ background: 'rgba(52,211,153,0.12)', border: `1px solid rgba(52,211,153,0.25)`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
@@ -309,7 +324,7 @@ export default function Beemon() {
             <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 70px 70px 70px 70px', gap: '0 12px', padding: '12px 18px', borderBottom: `1px solid ${BORDER}`, background: BG_ELEVATED }}>
               <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700 }}>#</span>
               <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textTransform: 'uppercase' }}>{tab === 'campanhas' ? 'Campanha (utm_campaign)' : tab === 'conjuntos' ? 'Conjunto (utm_term)' : 'Criativo (utm_content)'}</span>
-              <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>LEADS</span>
+              <span style={{ fontSize: '10px', color: FG_SUBTLE, fontWeight: 700, textAlign: 'right' }}>OPORT.</span>
               <span style={{ fontSize: '10px', color: S_GREEN, fontWeight: 700, textAlign: 'right' }}>GANHOS</span>
               <span style={{ fontSize: '10px', color: S_YELLOW, fontWeight: 700, textAlign: 'right' }}>ABERTOS</span>
               <span style={{ fontSize: '10px', color: S_RED, fontWeight: 700, textAlign: 'right' }}>PERD.</span>
