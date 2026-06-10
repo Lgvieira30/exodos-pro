@@ -106,12 +106,17 @@ const STATUS_CHIP: Record<string, { label: string; color: string }> = {
 };
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
+type Delta = { pct: number; good: boolean | null } | null;
+function deltaColor(good: boolean | null) {
+  return good === true ? NEON : good === false ? S_RED : FG_MUTED;
+}
 function KpiCard({
-  label, abbr, value, sub, subColor, icon: Icon, iconColor,
+  label, abbr, value, sub, subColor, icon: Icon, iconColor, delta,
 }: {
   label: string; abbr?: string; value: string;
   sub: string; subColor: string;
   icon: React.ElementType; iconColor: string;
+  delta?: Delta;
 }) {
   return (
     <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: '16px', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: 'none' }}>
@@ -119,7 +124,13 @@ function KpiCard({
         <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={17} color={FG_MUTED} />
         </div>
-        <span style={{ fontSize: '10px', fontWeight: 600, color: subColor }}>{sub}</span>
+        {delta ? (
+          <span title="vs período anterior" style={{ fontSize: '10px', fontWeight: 700, color: deltaColor(delta.good), display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+            {delta.pct >= 0 ? '▲' : '▼'} {Math.abs(delta.pct).toFixed(0)}%
+          </span>
+        ) : (
+          <span style={{ fontSize: '10px', fontWeight: 600, color: subColor }}>{sub}</span>
+        )}
       </div>
       <div>
         <p style={{ fontSize: '26px', fontWeight: 800, color: FG, lineHeight: 1, marginBottom: '4px' }}>{value}</p>
@@ -161,15 +172,19 @@ export default function Dashboard() {
   const [lastSync, setLastSync] = useState<{ at: string | null; status: string | null }>({ at: null, status: null });
   const [showPaused, setShowPaused] = useState(false);
   const [chartMetric, setChartMetric] = useState<'leads' | 'spend'>('leads');
+  const [brand, setBrand] = useState<'all' | 'meta' | 'google'>('all');
+  const [previous, setPrevious] = useState<any>(null);
 
-  const load = useCallback(async (r: DateRange) => {
+  const load = useCallback(async (r: DateRange, b: 'all' | 'meta' | 'google') => {
+    const platform = b === 'all' ? undefined : b;
     try {
       const [metricsRes, campaignsRes, syncStatusRes] = await Promise.all([
-        metricsApi.dashboard(r.from, r.to).catch(() => null),
-        campaignsApi.list(r.from, r.to).catch(() => ({ campaigns: [] })),
+        metricsApi.dashboard(r.from, r.to, platform).catch(() => null),
+        campaignsApi.list(r.from, r.to, platform).catch(() => null),
         syncApi.status().catch(() => null),
       ]);
       setSummary(metricsRes?.data?.summary || {});
+      setPrevious(metricsRes?.data?.previous || null);
       setWeekly(metricsRes?.data?.weekly || []);
       setCampaigns(campaignsRes?.data?.campaigns || []);
 
@@ -187,14 +202,14 @@ export default function Dashboard() {
     }
   }, []);
 
-  useEffect(() => { load(range); }, [range]); // eslint-disable-line
+  useEffect(() => { load(range, brand); }, [range, brand]); // eslint-disable-line
 
   async function handleSync() {
     setSyncing(true); setSyncMsg('');
     try {
       const res = await syncApi.meta();
       setSyncMsg(res.data?.message || 'Sincronizado!');
-      await load(range);
+      await load(range, brand);
     } catch (err: any) {
       setSyncMsg(err.response?.data?.error?.message || 'Erro ao sincronizar.');
     } finally {
@@ -214,7 +229,18 @@ export default function Dashboard() {
   const lds = n(summary?.leads);
   const cpl = n(summary?.cpa);
   const roas = n(summary?.roas);
-  const avgCtr = campaigns.filter(c => c.avg_ctr > 0).reduce((a, c, _, arr) => a + n(c.avg_ctr) / arr.length, 0);
+  const avgCtr = n(summary?.ctr) > 0
+    ? n(summary?.ctr)
+    : campaigns.filter(c => c.avg_ctr > 0).reduce((a, c, _, arr) => a + n(c.avg_ctr) / arr.length, 0);
+
+  // ── Comparativo vs período anterior (mesma duração) ──
+  const pctChange = (cur: number, prev: number) => prev > 0 ? ((cur - prev) / prev) * 100 : (cur > 0 ? 100 : 0);
+  const hasPrev = !!previous && (n(previous.spend) > 0 || n(previous.leads) > 0);
+  const dSpend: Delta = hasPrev ? { pct: pctChange(sp, n(previous.spend)), good: null } : null;
+  const dLeads: Delta = hasPrev ? (() => { const p = pctChange(lds, n(previous.leads)); return { pct: p, good: p >= 0 }; })() : null;
+  const dCpl: Delta = hasPrev && n(previous.cpa) > 0 ? (() => { const p = pctChange(cpl, n(previous.cpa)); return { pct: p, good: p <= 0 }; })() : null;
+  const dCtr: Delta = hasPrev && n(previous.ctr) > 0 ? (() => { const p = pctChange(avgCtr, n(previous.ctr)); return { pct: p, good: p >= 0 }; })() : null;
+  const dRoas: Delta = hasPrev && n(previous.roas) > 0 ? (() => { const p = pctChange(roas, n(previous.roas)); return { pct: p, good: p >= 0 }; })() : null;
 
   const scoreColor = !analysis ? FG_SUBTLE : analysis.score >= 75 ? NEON : analysis.score >= 50 ? AMBER : RED;
   const scoreLabel = !analysis ? '—' : analysis.score >= 75 ? 'Saudável' : analysis.score >= 50 ? 'Atenção' : 'Crítico';
@@ -247,6 +273,13 @@ export default function Dashboard() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '4px', background: BG_ELEVATED, borderRadius: '10px', padding: '3px' }}>
+            {([['all', 'Todas'], ['meta', 'Beemon'], ['google', 'Mônaco']] as const).map(([key, lbl]) => (
+              <button key={key} onClick={() => setBrand(key)} style={{ padding: '5px 12px', borderRadius: '7px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: brand === key ? 'rgba(255,255,255,0.10)' : 'transparent', color: brand === key ? FG : FG_MUTED, transition: 'all 0.15s' }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
           <DateRangePicker value={range} onChange={setRange} />
           {syncMsg && (
             <span style={{ fontSize: '11px', color: syncMsg.includes('Erro') ? S_RED : FG, padding: '5px 10px', borderRadius: '8px', background: 'transparent', fontWeight: 600 }}>
@@ -291,11 +324,11 @@ export default function Dashboard() {
 
       {/* ── KPI Row ────────────────────────────────────────────────────────── */}
       <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }}>
-        <KpiCard label="Total Investido" value={sp > 0 ? `R$ ${sp.toLocaleString('pt-BR')}` : '--'} sub="no período" subColor={FG_SUBTLE} icon={DollarSign} iconColor={BLUE} />
-        <KpiCard label="Leads Gerados" value={lds > 0 ? lds.toLocaleString('pt-BR') : '--'} sub={lds > 0 ? 'contatos' : 'sem dados'} subColor={lds > 0 ? NEON : FG_SUBTLE} icon={Users} iconColor={NEON} />
-        <KpiCard label="Custo por Lead" abbr="CPL" value={cpl > 0 ? `R$ ${cpl.toFixed(0)}` : '--'} sub={cplStatus(cpl).label} subColor={cplStatus(cpl).color} icon={Target} iconColor={AMBER} />
-        <KpiCard label="Taxa de Cliques" abbr="CTR" value={avgCtr > 0 ? `${avgCtr.toFixed(2)}%` : '--'} sub={ctrStatus(avgCtr).label} subColor={ctrStatus(avgCtr).color} icon={MousePointer2} iconColor={BLUE} />
-        <KpiCard label="Retorno s/ Gasto" abbr="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '--'} sub={roasStatus(roas).label} subColor={roasStatus(roas).color} icon={Zap} iconColor={NEON} />
+        <KpiCard label="Total Investido" value={sp > 0 ? `R$ ${sp.toLocaleString('pt-BR')}` : '--'} sub="no período" subColor={FG_SUBTLE} icon={DollarSign} iconColor={BLUE} delta={dSpend} />
+        <KpiCard label="Leads Gerados" value={lds > 0 ? lds.toLocaleString('pt-BR') : '--'} sub={lds > 0 ? 'contatos' : 'sem dados'} subColor={lds > 0 ? NEON : FG_SUBTLE} icon={Users} iconColor={NEON} delta={dLeads} />
+        <KpiCard label="Custo por Lead" abbr="CPL" value={cpl > 0 ? `R$ ${cpl.toFixed(0)}` : '--'} sub={cplStatus(cpl).label} subColor={cplStatus(cpl).color} icon={Target} iconColor={AMBER} delta={dCpl} />
+        <KpiCard label="Taxa de Cliques" abbr="CTR" value={avgCtr > 0 ? `${avgCtr.toFixed(2)}%` : '--'} sub={ctrStatus(avgCtr).label} subColor={ctrStatus(avgCtr).color} icon={MousePointer2} iconColor={BLUE} delta={dCtr} />
+        <KpiCard label="Retorno s/ Gasto" abbr="ROAS" value={roas > 0 ? `${roas.toFixed(1)}x` : '--'} sub={roasStatus(roas).label} subColor={roasStatus(roas).color} icon={Zap} iconColor={NEON} delta={dRoas} />
       </div>
 
       {/* ── Main Grid ──────────────────────────────────────────────────────── */}

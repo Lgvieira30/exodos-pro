@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers, Database, Wand2, Building2 } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, BarChart3, Rocket, Settings, LogOut, Menu, X, Layers, Database, Wand2, Building2, Hexagon } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Wizard from './pages/Wizard';
@@ -12,6 +12,7 @@ import Campaigns from './pages/Campaigns';
 import Diagnostico from './pages/Diagnostico';
 import CampaignGenerator from './pages/CampaignGenerator';
 import Monaco from './pages/Monaco';
+import Beemon from './pages/Beemon';
 import { Logo } from './components/Logo';
 import './styles/globals.css';
 
@@ -30,6 +31,7 @@ const NAV_MAIN = [
   { to: '/professor', label: 'Professor IA', icon: GraduationCap },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/monaco', label: 'Mônaco', icon: Building2 },
+  { to: '/beemon', label: 'BeeMôn', icon: Hexagon },
 ];
 
 const NAV_ACTIONS = [
@@ -276,6 +278,7 @@ function ProtectedLayout() {
           <Route path="diagnostico" element={<Diagnostico />} />
           <Route path="gerador" element={<CampaignGenerator />} />
           <Route path="monaco" element={<Monaco />} />
+          <Route path="beemon" element={<Beemon />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
       </main>

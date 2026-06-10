@@ -33,8 +33,8 @@ export const authApi = {
 };
 
 export const campaignsApi = {
-  list: (from?: string, to?: string) =>
-    api.get('/campaigns', { params: from ? { from, to } : {} }).then((r) => r.data),
+  list: (from?: string, to?: string, platform?: string) =>
+    api.get('/campaigns', { params: { ...(from ? { from, to } : {}), ...(platform ? { platform } : {}) } }).then((r) => r.data),
   get: (id: string) => api.get(`/campaigns/${id}`).then((r) => r.data),
   create: (data: Record<string, unknown>) => api.post('/campaigns', data).then((r) => r.data),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/campaigns/${id}`, data).then((r) => r.data),
@@ -42,8 +42,8 @@ export const campaignsApi = {
 };
 
 export const metricsApi = {
-  dashboard: (from?: string, to?: string) =>
-    api.get('/metrics/dashboard', { params: { from, to } }).then((r) => r.data),
+  dashboard: (from?: string, to?: string, platform?: string) =>
+    api.get('/metrics/dashboard', { params: { from, to, ...(platform ? { platform } : {}) } }).then((r) => r.data),
   campaign: (id: string, from?: string, to?: string) =>
     api.get(`/metrics/${id}`, { params: { from, to } }).then((r) => r.data),
 };
@@ -75,6 +75,8 @@ export const integrationsApi = {
   remove: (id: string) => api.delete(`/integrations/${id}`).then((r) => r.data),
   googleOAuthStart: (nickname?: string) =>
     api.get('/integrations/google/oauth/start', { params: nickname ? { nickname } : {} }).then((r) => r.data),
+  metaOAuthStart: (nickname?: string) =>
+    api.get('/integrations/meta/oauth/start', { params: nickname ? { nickname } : {} }).then((r) => r.data),
 };
 
 export const adSetsApi = {
@@ -102,6 +104,13 @@ export const monacoApi = {
   clearCrm: () => api.delete('/monaco/crm').then((r) => r.data),
   report: (params: { from: string; to: string; compare_from?: string; compare_to?: string }) =>
     api.get('/monaco/report', { params }).then((r) => r.data),
+};
+
+export const beemonApi = {
+  syncCrm: () => api.post('/beemon/sync/crm').then((r) => r.data),
+  leads: () => api.get('/beemon/leads').then((r) => r.data),
+  report: (from?: string, to?: string) =>
+    api.get('/beemon/report', { params: { from, to } }).then((r) => r.data),
 };
 
 export const campaignGeneratorApi = {

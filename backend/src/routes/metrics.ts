@@ -15,11 +15,21 @@ function dateRange(req: any, defaultDays = 7) {
   return { from, to };
 }
 
-// GET /api/metrics/dashboard
+// GET /api/metrics/dashboard?platform=meta|google
 metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
   const { from, to } = dateRange(req, 7);
+  const platform = (req.query.platform as string) || null;
 
-  const [summary] = await sql`
+  // Período anterior de mesmo tamanho, imediatamente antes de `from` (pro comparativo)
+  const fromD = new Date(from);
+  const toD = new Date(to);
+  const lenDays = Math.round((toD.getTime() - fromD.getTime()) / 86400000) + 1;
+  const prevTo = new Date(fromD); prevTo.setDate(prevTo.getDate() - 1);
+  const prevFrom = new Date(prevTo); prevFrom.setDate(prevFrom.getDate() - lenDays + 1);
+  const prevFromStr = prevFrom.toISOString().split('T')[0];
+  const prevToStr = prevTo.toISOString().split('T')[0];
+
+  const summaryFor = (dFrom: string, dTo: string) => sql`
     SELECT
       COALESCE(SUM(m.spend), 0)                                          AS total_spend,
       COALESCE(SUM(m.leads), 0)                                          AS total_leads,
@@ -37,10 +47,14 @@ metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
       COUNT(DISTINCT c.id)                                                AS total_campaigns
     FROM campaigns c
     LEFT JOIN metrics m ON m.campaign_id = c.id
-      AND m.date >= ${from} AND m.date <= ${to}
+      AND m.date >= ${dFrom} AND m.date <= ${dTo}
     WHERE c.user_id = ${req.userId!}
       AND c.status = 'active'
+      AND (${platform}::text IS NULL OR c.platform = ${platform})
   `;
+
+  const [summary] = await summaryFor(from, to);
+  const [previous] = await summaryFor(prevFromStr, prevToStr);
 
   const weekly = await sql`
     SELECT
@@ -57,25 +71,30 @@ metricsRouter.get('/dashboard', async (req: AuthRequest, res: Response) => {
     JOIN campaigns c ON c.id = m.campaign_id
     WHERE c.user_id = ${req.userId!}
       AND m.date >= ${from} AND m.date <= ${to}
+      AND (${platform}::text IS NULL OR c.platform = ${platform})
     GROUP BY m.date
     ORDER BY m.date
   `;
+
+  const fmt = (s: any) => ({
+    spend: Number(s.total_spend),
+    leads: Number(s.total_leads),
+    clicks: Number(s.total_clicks),
+    impressions: Number(s.total_impressions),
+    cpa: Number(s.avg_cpa),
+    roas: Number(s.avg_roas),
+    ctr: Number(s.avg_ctr),
+    cpc: Number(s.avg_cpc),
+    campaigns: Number(s.total_campaigns),
+  });
 
   res.json({
     success: true,
     data: {
       period: { from, to },
-      summary: {
-        spend: Number(summary.total_spend),
-        leads: Number(summary.total_leads),
-        clicks: Number(summary.total_clicks),
-        impressions: Number(summary.total_impressions),
-        cpa: Number(summary.avg_cpa),
-        roas: Number(summary.avg_roas),
-        ctr: Number(summary.avg_ctr),
-        cpc: Number(summary.avg_cpc),
-        campaigns: Number(summary.total_campaigns),
-      },
+      previousPeriod: { from: prevFromStr, to: prevToStr },
+      summary: fmt(summary),
+      previous: fmt(previous),
       weekly,
     },
   });
